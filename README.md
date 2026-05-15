@@ -1,28 +1,58 @@
-# my-awesome-skills 🧠🛠️
+# my-awesome-skills
 
-**Note:** *This is currently my personal toolkit for daily development, but I've made it public for anyone who wants to use, fork, or learn from it.*
+**Note:** This is my personal toolkit for daily development, made public for anyone who wants to use, fork, or learn from it.
 
-An expanding collection of highly opinionated, Staff-level skills for **OpenCode** and **Claude Code**. 
+A growing collection of opinionated, Staff-level skills for OpenCode and Claude Code. 
 
-By default, AI coding agents tend to generate functional but generic code (often referred to as "AI slop"). They nest logic too deeply, ignore memory alignment, and write verbose commit messages. 
+By default, AI coding agents produce functional but generic code. They nest logic too deeply, ignore architectural patterns, and write verbose commit messages. These skills enforce strict standards—functioning as an automated Senior Engineer that demands clean, maintainable, and highly optimized code.
 
-These skills act as a strict, automated Senior Engineer—forcing the AI to write clean, maintainable, and highly optimized code. Because this is my evolving personal toolkit, new skills are actively being developed and added as my workflows change.
+## Skill Library
 
-## 📦 Current Skill Library
+The following specialized skills are currently available:
 
-This repository currently includes the following specialized skills:
+### Code Quality & Architecture
 
-- **`logic-cleaner`**: A language-agnostic, ruthless refactoring engine. Forces the AI to flatten nested `if` statements (using guard clauses), simplify boolean algebra, and eliminate magic numbers.
-- **`go-architect`**: Strict standards for modern Go. Enforces memory alignment in structs, strict typing for enums (no raw strings), interface philosophy, and concurrency safety.
-- **`python-architect`**: Modern Python 3.10+ standards. Enforces strict type hinting, `dataclasses`/Pydantic for memory optimization, and safe concurrency using Context Managers and TaskGroups.
-- **`commit-author`**: A Git history cleaner. Reads the `git diff` and generates concise, meaningful commit messages strictly following the Conventional Commits specification.
+- **`logic-cleaner`**: Language-agnostic refactoring engine that flattens nested conditionals using guard clauses, simplifies boolean logic, and eliminates magic numbers.
+- **`go-architect`**: Enforces strict Go standards including memory-aligned structs, typed enums (no raw strings), interface design philosophy, and concurrency safety.
+- **`python-architect`**: Enforces modern Python 3.10+ standards with strict type hints, dataclass/Pydantic usage, and safe concurrency patterns.
+- **`improve-codebase-architecture`**: Identifies architectural friction points and proposes deepening opportunities guided by domain language (CONTEXT.md) and architecture decisions (docs/adr/).
 
-## 🚀 Installation
+### Development Workflows
 
-These skills are designed to be drop-in ready for OpenCode (and are fully compatible with Claude Code).
+- **`commit-author`**: Generates concise, meaningful commit messages following the Conventional Commits specification from git diffs.
+- **`tdd`**: Test-driven development workflow with red-green-refactor loop emphasizing behavior verification through public interfaces.
+- **`caveman`**: Ultra-compressed communication mode that reduces token usage by ~75% while preserving technical accuracy.
+- **`grill-me`**: Stress-tests plans and designs through relentless questioning until reaching shared understanding.
 
-### Global Installation (Recommended)
-To make these skills available across all your projects, clone this repository and copy the folders into your global skills directory.
+### Domain & Documentation
+
+- **`ubiquitous-language`**: Extracts and formalizes DDD-style glossaries from conversations, identifying ambiguities and proposing canonical terminology. (From Matt Pocock)
+- **`demo-script-architect`**: Designs presenter-centric demo scripts with narrative flow, visual guidance, and progressive capability reveals.
+
+## Recommended Official Claude Code Skills
+
+These official Claude Code skills complement the custom skills above and are highly recommended:
+
+- **`frontend-design`**: Create distinctive, production-grade frontend interfaces with high design quality. Generates creative, polished code that avoids generic AI aesthetics.
+- **`xlsx`**: Work with spreadsheet files (.xlsx, .xlsm, .csv, .tsv) for data manipulation, analysis, formatting, and conversion tasks.
+
+## Attribution
+
+Several skills in this repository are adapted from [Matt Pocock's skills](https://github.com/mattpocock/skills):
+- `ubiquitous-language`
+- `tdd`
+- `caveman`
+- `improve-codebase-architecture`
+
+The original implementations have been customized and integrated into this toolkit.
+
+## Installation
+
+These skills are designed as drop-in modules for OpenCode and Claude Code.
+
+### Global Installation
+
+Clone this repository and copy the skill folders to your global skills directory.
 
 **Windows:**
 ```powershell

@@ -1,3 +1,6 @@
 # IDEs
 .idea/
 .vscode/
+
+# Claude Code
+.claude/
