@@ -1,0 +1,930 @@
+# ralvaskills — Technical Specification
+
+> Personal, ever-growing collection of Staff-level AI skills for Claude Code and OpenCode.  
+> Enforces strict clean architecture and professional standards across all projects.
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Repository & Folder Structure](#repository--folder-structure)
+3. [Skill Authoring Guide](#skill-authoring-guide)
+4. [CLI Design & Commands (`rsk`)](#cli-design--commands-rsk)
+5. [Bundle & Skill Catalog](#bundle--skill-catalog)
+6. [Roadmap](#roadmap)
+
+---
+
+## Overview
+
+### Identity
+
+| Thing | Value |
+|---|---|
+| GitHub repo | `ralvarezdev/ralvaskills` |
+| Go module | `github.com/ralvarezdev/ralvaskills` |
+| CLI binary | `rsk` |
+| Install | `go install github.com/ralvarezdev/ralvaskills@latest` |
+
+### Skill Sources
+
+The CLI manages skills from two independent sources:
+
+| Source ID | Origin | Update mechanism |
+|---|---|---|
+| `local` | This repo (`ralvarezdev/ralvaskills`) | `git pull` |
+| `official` | Anthropic's repo (`anthropics/skills`) | Cached clone, re-fetched on demand |
+
+- **Local skills** are symlinked from the cloned repo — updates propagate instantly across all projects on `git pull`.
+- **Official skills** are fetched and cached at `~/.ralvaskills/cache/anthropic/` — never copied into this repo.
+
+### Design Principles
+
+- Skills are **focused** — each does one thing well, under ~500 tokens in the SKILL.md body.
+- Skills are **composable** — they chain into workflows (see [Workflow Pipelines](#workflow-pipelines)).
+- Skills that reference specific language, framework, or library versions **must** include a `STACK.md` file — the single source of truth for version tracking.
+- Bundles are **declarative** — a bundle is a named list of skill refs; no duplication.
+- The CLI is **config-driven** — repo paths and preferences live in `~/.config/rsk/config.json`, set once via `rsk init`.
+- **Personal skills** (any skill whose path contains a `personal/` segment) are excluded from bundle installs by default — they are self-contained, non-reusable, and not intended for other developers.
+
+---
+
+## Repository & Folder Structure
+
+```
+ralvaskills/                          # current state — (📋) marks planned additions/moves
+│
+├── cli/                              # 📋 to be created — Go CLI source (binary: rsk)
+│   ├── main.go
+│   ├── go.mod
+│   ├── go.sum
+│   ├── cmd/
+│   │   ├── root.go                   # cobra root, version flag
+│   │   ├── init.go                   # rsk init [flags]
+│   │   ├── install.go                # rsk install [bundle...] [flags]
+│   │   ├── uninstall.go              # rsk uninstall [bundle|skill] [flags]
+│   │   ├── update.go                 # rsk update [bundle|skill] [flags]
+│   │   ├── status.go                 # rsk status [flags]
+│   │   └── list.go                   # rsk list [flags]
+│   └── internal/
+│       ├── config/
+│       │   ├── config.go             # load/save ~/.config/rsk/config.json
+│       │   └── bundles.go            # bundle & skill ref definitions
+│       ├── skill/
+│       │   ├── skill.go              # Skill, Bundle, SkillRef structs
+│       │   ├── registry.go           # walks skills/ root; any folder with SKILL.md is a skill (recursion stops); parses SKILL.md + STACK.md
+│       │   ├── linker.go             # symlink create/remove logic
+│       │   └── version.go            # semver comparison helpers
+│       ├── source/
+│       │   ├── local.go              # resolves skills from local repo clone
+│       │   └── official.go           # fetches/caches from anthropics/skills
+│       └── ui/
+│           └── output.go             # colored terminal output helpers
+│
+├── skills/                           # all reusable local skills
+│   ├── languages/
+│   │   ├── go-architect/             # ✅ exists — needs Go 1.24 audit + STACK.md
+│   │   └── python-architect/         # ✅ exists — needs Python 3.13 audit + STACK.md
+│   ├── databases/                    # 📋 new category
+│   │   └── sql-architect/            # 📋 planned
+│   ├── frameworks/
+│   │   ├── fastapi-architect/        # 📋 planned
+│   │   ├── gin-architect/            # 📋 planned
+│   │   ├── react-architect/          # 📋 planned
+│   │   └── nextjs-architect/         # 📋 planned
+│   ├── protocols/
+│   │   ├── rest-api-architect/       # 📋 planned
+│   │   └── grpc-architect/           # 📋 planned
+│   ├── encoding/                     # 📋 new category
+│   │   └── protobuf-architect/       # 📋 planned — proto3, buf, protovalidate
+│   ├── messaging/                    # 📋 new category
+│   │   └── event-driven-architect/   # 📋 planned
+│   ├── tooling/
+│   │   ├── cli-tool-architect/       # 📋 planned
+│   │   ├── rsk-guide/                # ✅ exists (v0.1.0 — tracks the planned rsk CLI)
+│   │   └── skill-builder/            # 📋 planned — meta-skill: scaffolds new skills following ralvaskills standards (no STACK.md — has no library stack)
+│   ├── design/
+│   │   ├── ddd-architect/            # 📋 planned
+│   │   └── hexagonal-arch/           # 📋 planned
+│   ├── ai-ml/
+│   │   ├── llm-app-architect/        # 📋 planned
+│   │   ├── agent-architect/          # 📋 planned
+│   │   └── ml-pipeline-architect/    # 📋 planned
+│   ├── infra/
+│   │   ├── docker-architect/         # 📋 planned
+│   │   ├── ci-cd-architect/          # 📋 planned
+│   │   └── observability-architect/  # 📋 planned
+│   ├── robotics/
+│   │   └── ros2-architect/           # 📋 planned
+│   ├── quality/
+│   │   ├── security-reviewer/        # 📋 planned
+│   │   ├── api-contract-reviewer/    # 📋 planned
+│   │   └── performance-reviewer/     # 📋 planned
+│   ├── frontend/
+│   │   └── ui-ux-architect/          # 📋 planned
+│   └── workflows/
+│       ├── commit-author/            # ✅ exists
+│       ├── tdd/                      # ✅ exists
+│       ├── grill-with-docs/          # ✅ exists (formerly grill-me; absorbed ubiquitous-language)
+│       ├── caveman/                  # ✅ exists
+│       ├── logic-cleaner/            # ✅ exists
+│       ├── code-design-refactor/     # 📋 planned
+│       ├── feature-planner/          # 📋 planned
+│       ├── improve-codebase-architecture/  # ✅ exists
+│       └── design-patterns/          # 📋 planned — pattern catalog (workflow reference)
+│
+│   └── personal/                     # 📋 new category — personal skills, never auto-bundled
+│       └── demo-script-architect/    # ✅ exists (moved from workflows/)
+│
+├── .github/
+│   └── workflows/
+│       └── release.yml               # 📋 to be created — builds rsk binaries on tag push
+│
+├── README.md
+└── LICENSE
+```
+
+**Legend:** ✅ exists · 📋 planned/to be created · 🔀 needs to be moved from current location
+
+### Discovery rule
+
+**Skills are auto-discovered by `SKILL.md` presence.** The CLI walks the `skills/` root recursively; any folder containing `SKILL.md` is a skill and recursion stops there. Folders without `SKILL.md` are pure organizational hierarchy.
+
+This means:
+
+- **Adding a category** = `mkdir skills/<category>` — no spec change required.
+- **Category labels** are inferred from `path.Dir` relative to the skills root; not centrally registered.
+- **Skills can be nested at any depth** under `skills/`. The shape shown above is a recommended convention, not a constraint.
+- **Nested `SKILL.md` is forbidden** — a skill folder must not contain a subfolder that also has its own `SKILL.md`. The CLI errors on detection: `✗ skills/<path>: nested SKILL.md at <subpath>; move the inner skill outside its parent`.
+- **`personal/` opt-in is path-segment-based** — any skill whose path contains a `personal/` segment requires `--personal`. The literal location of `personal/` doesn't matter (currently `skills/personal/`).
+
+**Pending migrations from current repo state:**
+- _(none — all prior migrations applied)_
+
+### Local Cache (outside repo)
+
+All paths shown below are **defaults** — every one is configurable via `config.json` (see [`rsk init`](#configuration-rsk-init)).
+
+```
+~/.ralvaskills/                       # default base — overridable via config
+  cache/
+    anthropic/                        # default value of  official_cache
+      skills/                         # cloned anthropics/skills repo
+        docx/
+        xlsx/
+        pdf/
+        pptx/
+        frontend-design/
+        find-docs/
+      last-updated.json
+    versions.json                     # default value of  versions_cache  (TTL: 24h)
+~/.config/rsk/
+  config.json                         # CLI config — path is fixed (XDG convention)
+~/.claude/skills/                     # default  global_targets.claude-code
+~/.config/opencode/skills/            # default  global_targets.opencode
+```
+
+> **Note:** Any skill whose path contains a `personal/` segment is never symlinked by `rsk install`. Personal skills must be installed explicitly via `rsk install --skill demo-script-architect --personal`. The rule is path-based, so the literal location of `personal/` doesn't matter — it currently lives at `skills/personal/`, but could be anywhere.
+
+---
+
+## Skill Authoring Guide
+
+### Anatomy of a Skill
+
+Every skill is a folder containing a required `SKILL.md` and optional supporting files:
+
+```
+skill-name/
+├── SKILL.md          # required — frontmatter + instructions
+├── STACK.md          # required for version-sensitive skills — dependency version registry
+├── scripts/          # optional — executable scripts (bash, python)
+├── references/       # optional — docs loaded into context on demand
+└── assets/           # optional — templates, examples
+```
+
+### SKILL.md Format
+
+The `SKILL.md` stays clean and focused on instructions. Stack version metadata lives in `STACK.md` — never in the skill body.
+
+```markdown
+---
+name: skill-name
+version: 1.0.0
+description: >
+  One or two sentences. This is what Claude reads to decide whether
+  to load this skill. Be specific about WHEN to use it, not just what it does.
+---
+
+# Skill Name
+
+[Instructions Claude will follow when this skill is active.]
+```
+
+### STACK.md Format
+
+Version-sensitive skills **must** include a `STACK.md` alongside `SKILL.md`. This file is for `rsk` tooling only — Claude never loads it unless explicitly asked. It is the single source of truth for what versions a skill was authored against.
+
+> The HTML comment (`<!-- skill-name/STACK.md -->`) in the examples below is a documentation label only — **omit it in your actual STACK.md**.
+
+```markdown
+# Stack Versions
+
+<!-- go-architect/STACK.md -->
+| Dependency | Pinned version |
+|---|---|
+| go | 1.24 |
+| viper | 2.0 |
+| validator | 10.22 |
+| zap | 1.27 |
+| fx | 1.22 |
+| cobra | 1.8 |
+| sqlx | 1.3 |
+| migrate | 4.18 |
+
+_Last reviewed: 2026-05-20_
+_Skill version at last review: 1.0.0_
+```
+
+```markdown
+# Stack Versions
+
+<!-- fastapi-architect/STACK.md -->
+| Dependency | Pinned version |
+|---|---|
+| python | 3.13 |
+| fastapi | 0.115 |
+| pydantic | 2.9 |
+| pydantic-settings | 2.6 |
+| sqlalchemy | 2.0 |
+| alembic | 1.14 |
+| uvicorn | 0.32 |
+| httpx | 0.28 |
+| ruff | 0.8 |
+| mypy | 1.13 |
+| uv | 0.5 |
+
+_Last reviewed: 2026-05-20_
+_Skill version at last review: 1.0.0_
+```
+
+`STACK.md` serves two purposes:
+- **`rsk status --stack`** reads it and fetches latest versions from **`proxy.golang.org`** (Go modules) and **`pypi.org`** (Python packages), surfacing a `⚠ stack may be outdated` warning per skill. Fetched data is cached for 24 h in `~/.ralvaskills/cache/versions.json`. **Fetching only happens when the user explicitly passes `--stack`** — `rsk` never reaches the network in the background. Pass `--refresh` to bypass the cache and force a re-fetch.
+- **You**, when auditing — `_Last reviewed_` and `_Skill version at last review_` tell you exactly when it was last checked and whether it has drifted from the current skill version.
+
+When updating a skill due to a stack change, always update `STACK.md` to match, refresh both metadata lines, and add a note in the skill body describing what changed.
+
+### Which Skills Need a `STACK.md`
+
+This table is a **heuristic keyed on the skill's parent folder name** — it's not enforced. Override per-skill when the skill genuinely has or lacks version-sensitive content.
+
+| Parent folder | Needs `STACK.md`? | Reason |
+|---|---|---|
+| `languages/` | ✅ Yes | Language version drives idioms and stdlib usage |
+| `databases/` | ✅ Yes | DB engine version drives query syntax, JSON support, index types — pin to target engine (PostgreSQL, MySQL, SQLite) |
+| `frameworks/` | ✅ Yes | Framework APIs change significantly between versions |
+| `protocols/` | ✅ Yes | Tooling versions matter (e.g. `buf`, gRPC spec) |
+| `encoding/` | ✅ Yes | Proto spec version, `buf`, `protovalidate` |
+| `messaging/` | ✅ Yes | Kafka/RabbitMQ client library versions |
+| `tooling/` | ✅ Yes | Cobra, Click, Typer versions — **exception:** meta-skills with no library stack (e.g. `skill-builder`) are exempt |
+| `ai-ml/` | ✅ Yes | Library APIs change rapidly (LangChain, LlamaIndex) |
+| `infra/` | ✅ Yes | Docker, compose spec, GitHub Actions runner versions |
+| `robotics/` | ✅ Yes | ROS2 distro (Jazzy, Kilted, etc.) |
+| `frontend/` | ✅ Yes | React, Next.js versions evolve quickly |
+| `design/` | ❌ No | Architectural patterns are version-agnostic |
+| `quality/` | ❌ No | Security/performance principles don't change with versions — add one if the skill references framework-specific vulnerability patterns |
+| `workflows/` | ❌ No | Workflow skills are tool/language agnostic |
+| `personal/` | Depends | Add if the skill references specific tooling |
+
+### Naming Convention
+
+All skill folder names follow `kebab-case` and end in a meaningful suffix:
+
+| Suffix | Meaning | Examples |
+|---|---|---|
+| `-architect` | Enforces structure/standards for a language, framework, or protocol | `go-architect`, `fastapi-architect`, `grpc-architect` |
+| `-arch` | Enforces an architectural pattern | `hexagonal-arch` |
+| `-reviewer` | Reviews existing code/contracts for issues | `security-reviewer`, `api-contract-reviewer` |
+| `-refactor` | Restructures existing code | `code-design-refactor` |
+| `-planner` | Designs something before implementation | `feature-planner` |
+| `-patterns` | Catalog of patterns or principles for a domain | `design-patterns` |
+| `-builder` | Scaffolds new artifacts of a given type (meta-tooling) | `skill-builder` |
+| `-guide` | Documentation or usage guide for a specific tool | `rsk-guide` |
+| (none) | Workflow tools that don't fit above | `tdd`, `commit-author`, `caveman` |
+
+### Version Field
+
+Every `SKILL.md` must include a `version` field in semver format:
+
+| Bump | When |
+|---|---|
+| `patch` (1.0.x) | Clarifications, wording fixes, minor library version update with no behavioral change |
+| `minor` (1.x.0) | New rules or sections added, library upgraded with new conventions enforced |
+| `major` (x.0.0) | Breaking change to skill behavior, or major language/framework version upgrade (e.g. Python 3.12 → 3.13, FastAPI 0.x → 1.x) |
+
+### Description Quality
+
+The `description` field is the most critical part of `SKILL.md`. Claude reads **only** this (plus the name) at startup and decides whether to load the full skill body based solely on it.
+
+**Bad:**
+```yaml
+description: Go best practices skill.
+```
+
+**Good:**
+```yaml
+description: >
+  Use when writing, reviewing, or refactoring Go code. Enforces memory-aligned
+  structs, typed enums (no raw strings), interface design philosophy, goroutine
+  safety, and idiomatic error handling. Based on Go 1.24 standards.
+```
+
+For version-sensitive skills, always mention the primary version in the description — it signals to Claude (and to you) that the skill may need updating when the version changes.
+
+### Supporting Files
+
+- `scripts/` — scripts Claude can execute via bash. Only their **output** enters context, not the source.
+- `references/` — markdown docs Claude loads on demand when the task requires deeper context.
+- `assets/` — templates or boilerplate Claude uses to generate output.
+
+All `.md` files inside a skill folder **must** use `UPPER_SNAKE_CASE` (e.g. `DEEP_MODULES.md`, `ADR_FORMAT.md`). `README.md` at the repo root is the only exception — it follows the universal tool convention.
+
+### Canonical Libraries Reference
+
+Language and framework architect skills must explicitly reference the canonical libraries for their stack. Claude should enforce their use over reinventing equivalent functionality.
+
+#### Go canonical libraries
+
+| Concern | Library |
+|---|---|
+| Config & env | `spf13/viper` |
+| Struct validation | `go-playground/validator` |
+| CLI | `spf13/cobra` + `spf13/pflag` |
+| HTTP router | `gin-gonic/gin` (REST) |
+| ORM / query builder | `jmoiron/sqlx`, `uptrace/bun`, or `go-gorm/gorm` |
+| gRPC | `google.golang.org/grpc` |
+| Protobuf | `google.golang.org/protobuf`, `buf` toolchain |
+| Logging | `uber-go/zap` or `rs/zerolog` |
+| Testing | `testify/suite`, `testify/mock` |
+| DI | `uber-go/fx` or `google/wire` |
+| Migrations | `golang-migrate/migrate` |
+
+#### Python canonical libraries
+
+| Concern | Library |
+|---|---|
+| Data validation & settings | `pydantic` v2, `pydantic-settings` |
+| Web framework | `fastapi` |
+| ASGI server | `uvicorn` |
+| ORM | `sqlalchemy` 2.x (async) |
+| Migrations | `alembic` |
+| HTTP client | `httpx` |
+| Testing | `pytest`, `pytest-asyncio` |
+| Type checking | `mypy` (strict mode) |
+| Linting / formatting | `ruff` |
+| Dependency management | `uv` |
+| CLI | `typer` |
+| Task queue | `celery`, `arq` |
+
+---
+
+## CLI Design & Commands (`rsk`)
+
+### Configuration (`rsk init`)
+
+Run once per machine. Writes `~/.config/rsk/config.json`.
+
+```bash
+rsk init
+```
+
+Prompts for:
+- Path to local `ralvaskills` repo clone
+- Which AI tools to support (multi-select: `claude-code`, `opencode`)
+- For each selected tool, the global skills directory (defaults shown):
+  - `claude-code` → `~/.claude/skills/`
+  - `opencode` → `~/.config/opencode/skills/`
+- Default behavior for `--global` (`all` enabled tools, or a single tool)
+
+`config.json` shape:
+```json
+{
+  "repo_path": "/home/user/ralvaskills",
+  "global_targets": {
+    "claude-code": "~/.claude/skills/",
+    "opencode": "~/.config/opencode/skills/"
+  },
+  "default_target_scope": "all",
+  "official_cache": "~/.ralvaskills/cache/anthropic/",
+  "versions_cache": "~/.ralvaskills/cache/versions.json"
+}
+```
+
+- `global_targets` — a map of every AI tool the user wants to support, with its skills directory. Add/remove keys to enable/disable tools.
+- `default_target_scope` — when `--global` is passed without `--for`, install to `all` configured targets, or pin to a single tool name (e.g. `"claude-code"`).
+
+**Per-command targeting:** all commands that act on global skills (`install`, `update`, `uninstall`, `status`) accept a `--for <tool>` flag to scope the operation to a single configured target, overriding `default_target_scope`. Examples:
+```bash
+rsk install global --global                            # uses default_target_scope (all by default)
+rsk install go-grpc --global --for claude-code         # Claude Code only
+rsk status --global --for opencode                     # OpenCode global skills only
+```
+
+> **CLI implementation note:** use `spf13/viper` to load this config (supports env var overrides via `RSK_*` prefixed vars) and `go-playground/validator` to validate required fields on load. This mirrors the canonical Go stack enforced by `go-architect`.
+
+---
+
+### Install
+
+```bash
+rsk install [bundle...] [flags]
+
+Flags:
+  --global            Install to global skills dir(s) instead of ./.claude/skills/
+  --for <tool>        Scope --global to a single configured tool (claude-code|opencode)
+  --skill <name>      Install a single skill by name (skip bundle)
+  --personal          Allow installing from personal/ folder (opt-in)
+  --version <v>       Pin to a specific repo tag (local skills only — official skills are not co-versioned)
+  --dry-run           Show what would be installed without doing it
+```
+
+Examples:
+```bash
+rsk install global --global                            # global skills, machine-wide
+rsk install go-grpc                                    # stack bundle for current project
+rsk install design docs                                # multiple bundles at once
+rsk install --skill go-architect                       # single skill by name
+rsk install go-grpc --version v1.1.0                  # pin to specific version
+rsk install --skill demo-script-architect --personal   # personal skill, explicit opt-in
+```
+
+**Behavior when a bundled skill is not yet created:**
+Skills marked as planned in a bundle are silently skipped with a warning — the install continues for all available skills:
+```
+⚠ react-architect is not yet available (planned). Skipping — it will be included automatically once released.
+✓ frontend-design installed (official)
+✓ nextjs-architect skipped — not yet available (planned)
+```
+
+**Behavior of `--version` with official skills:**
+`--version` is only valid for local skills/bundles (the `ralvaskills` repo is co-versioned). Official skills come from `anthropics/skills`, where each skill is independently versioned, so a single tag does not apply. Attempting to use `--version` with anything that resolves to an official skill errors out:
+```
+$ rsk install docs --version v1.0.0
+✗ --version is only supported for local skills/bundles.
+  Official skills (from anthropics/skills) are not co-versioned and always install at HEAD.
+  Drop --version to install the latest of each.
+```
+
+---
+
+### Update
+
+```bash
+rsk update [bundle|skill] [flags]
+
+Flags:
+  --global          Target global skills dir(s)
+  --for <tool>      Scope --global to a single configured tool (claude-code|opencode)
+  --official        Also re-fetch official (anthropics/skills) cache
+  --personal        Include personal/ skills in update
+  --dry-run         Show what would change
+```
+
+Examples:
+```bash
+rsk update                          # git pull + re-symlink all installed skills
+rsk update --official               # re-fetch anthropics/skills cache
+rsk update docs                     # re-fetch only the docs bundle
+rsk update --skill grpc-architect   # update one skill
+```
+
+Since local skills are symlinks, `rsk update` is essentially a `git pull` on the repo — all projects using symlinks get the update for free.
+
+---
+
+### Status
+
+```bash
+rsk status [flags]
+
+Flags:
+  --global          Show global skills only
+  --for <tool>      Scope --global to a single configured tool (claude-code|opencode)
+  --project         Show project skills only
+  --stack           Fetch latest versions (proxy.golang.org / PyPI) and show per-skill STACK.md drift (opt-in; no network calls otherwise)
+  --refresh         With --stack: bypass the 24h cache and force a re-fetch
+  --personal        Include personal/ skills in output
+```
+
+Example output:
+```
+ralvaskills v1.2.0  (github.com/ralvarezdev/ralvaskills)
+
+Global (~/.claude/skills/)
+  [ralva]  commit-author        v1.1.0  ✓ up to date
+  [ralva]  tdd                  v1.0.0  → v1.1.0 available
+  [anthr]  docx                 v2.3.1  ✓ up to date     [docs]
+  [anthr]  xlsx                 v2.3.1  ✓ up to date     [docs]
+  [anthr]  frontend-design      v1.0.0  ✓ up to date     [design]
+
+Project (./.claude/skills/)  [bundles: go-grpc]
+  [ralva]  go-architect         v1.2.0  ✓ up to date     [stack: go=1.24]
+  [ralva]  grpc-architect       v1.0.0  → v1.2.0 available
+  [ralva]  protobuf-architect   v1.0.0  ✓ up to date     [stack: buf=1.47]
+  [ralva]  docker-architect     v1.1.0  ✓ up to date
+  [ralva]  sql-architect        v1.0.0  ✓ up to date
+
+⚠  1 skill may reference outdated stack versions. Run 'rsk status --stack' for details.
+Run 'rsk update' to update all outdated skills.
+```
+
+---
+
+### List
+
+```bash
+rsk list [flags]
+
+Flags:
+  --bundle <name>   Show skills in a specific bundle
+  --source <s>      Filter by source: local | official
+  --installed       Show only installed skills
+  --personal        Include personal/ skills in listing
+```
+
+---
+
+### Uninstall
+
+```bash
+rsk uninstall [bundle|skill] [flags]
+
+Flags:
+  --global          Target global skills dir(s)
+  --for <tool>      Scope --global to a single configured tool (claude-code|opencode)
+  --personal        Allow uninstalling from personal/ folder (must match install opt-in)
+```
+
+---
+
+## Bundle & Skill Catalog
+
+### Bundle Naming Convention
+
+Bundle names follow `kebab-case`. Stack-specific bundles are named after their primary framework or protocol, not the language (e.g. `fastapi`, not `python-web`).
+
+---
+
+### Official Bundles (source: `official`)
+
+Skills fetched from `github.com/anthropics/skills`. Never stored in this repo.
+
+#### `docs`
+Document creation, editing, and technical reference retrieval skills.
+
+| Skill | Description |
+|---|---|
+| `docx` | Create and edit Word documents |
+| `xlsx` | Work with spreadsheets and data |
+| `pdf` | Create, fill, and manipulate PDFs |
+| `pptx` | Build presentation slide decks |
+| `find-docs` | Retrieve authoritative API references, library docs, and code examples for any developer technology |
+
+#### `design` (mixed: official + local)
+UI/UX and frontend design skills.
+
+| Skill | Source | Description |
+|---|---|---|
+| `frontend-design` | official | Production-grade UI, avoids generic AI aesthetics |
+| `react-architect` | local | Component structure, hooks, state, performance |
+| `nextjs-architect` | local | App router, server/client boundaries, data fetching |
+| `ui-ux-architect` | local | Accessibility, responsive layout, interaction feedback |
+
+---
+
+### Local Bundles (source: `local`)
+
+#### `global`
+Universal skills installed machine-wide. Apply to every project regardless of stack.
+
+| Skill | Category | Description |
+|---|---|---|
+| `commit-author` | workflows | Conventional Commits from git diffs |
+| `logic-cleaner` | workflows | Guard clauses, boolean simplification, magic numbers |
+| `code-design-refactor` | workflows | Extract/encapsulate, reduce coupling, SRP, naming |
+| `tdd` | workflows | Red-green-refactor loop, behavior-focused tests |
+| `grill-with-docs` | workflows | Stress-tests plans through relentless questioning; also extracts and maintains the domain glossary (CONTEXT.md) |
+| `caveman` | workflows | ~75% token reduction mode, preserves technical accuracy |
+| `feature-planner` | workflows | Requirement clarification → design → task breakdown |
+| `security-reviewer` | quality | Injection, auth issues, secret leakage, insecure defaults |
+| `ddd-architect` | design | Bounded contexts, aggregates, value objects, domain events |
+| `hexagonal-arch` | design | Ports & adapters enforcement, dependency direction |
+| `design-patterns` | workflows | When to apply, anti-patterns, Go & Python examples |
+| `improve-codebase-architecture` | workflows | ADR-aware architectural friction analysis |
+| `rsk-guide` | tooling | How to use the `rsk` CLI — discover, install, update, status, uninstall, bundle catalog |
+| `skill-builder` | tooling | Scaffolds new skills following ralvaskills naming, format, and STACK.md standards |
+
+---
+
+#### `go-grpc`
+Go service exposing a gRPC API.
+
+| Skill | Source |
+|---|---|
+| `go-architect` | local |
+| `grpc-architect` | local |
+| `protobuf-architect` | local |
+| `docker-architect` | local |
+| `sql-architect` | local |
+
+#### `go-rest`
+Go service exposing a REST API via Gin.
+
+| Skill | Source |
+|---|---|
+| `go-architect` | local |
+| `gin-architect` | local |
+| `rest-api-architect` | local |
+| `docker-architect` | local |
+| `sql-architect` | local |
+
+#### `go-cli`
+Go command-line tool.
+
+| Skill | Source |
+|---|---|
+| `go-architect` | local |
+| `cli-tool-architect` | local |
+| `docker-architect` | local |
+
+#### `fastapi`
+Python service exposing a REST API with FastAPI.
+
+| Skill | Source |
+|---|---|
+| `python-architect` | local |
+| `fastapi-architect` | local |
+| `rest-api-architect` | local |
+| `docker-architect` | local |
+| `sql-architect` | local |
+
+#### `llm-app`
+Python-based LLM application or RAG pipeline.
+
+| Skill | Source |
+|---|---|
+| `python-architect` | local |
+| `fastapi-architect` | local |
+| `llm-app-architect` | local |
+| `agent-architect` | local |
+| `hexagonal-arch` | local |
+| `docker-architect` | local |
+
+#### `ros2`
+ROS2 robotics application.
+
+| Skill | Source |
+|---|---|
+| `python-architect` | local |
+| `ros2-architect` | local |
+| `docker-architect` | local |
+
+---
+
+### Personal Skills (not bundled)
+
+Currently located in `skills/personal/`. Any skill whose path contains a `personal/` segment is never installed by `rsk install` unless `--personal` is passed explicitly.
+
+| Skill | Description |
+|---|---|
+| `demo-script-architect` | Presenter-centric demo scripts with narrative flow and progressive capability reveals |
+
+---
+
+### Composable Installs
+
+Instead of creating a bundle for every combination, compose installs:
+
+```bash
+# Full-stack: Next.js + FastAPI
+rsk install design fastapi
+
+# Full-stack: Next.js + Go REST
+rsk install design go-rest
+
+# Go gRPC service with document generation
+rsk install go-grpc docs
+
+# LLM app with full design and document capability
+rsk install llm-app design docs
+
+# First machine setup — global + docs
+rsk install global docs --global
+```
+
+---
+
+### Workflow Pipelines
+
+Skills chain into engineering pipelines. There are two canonical flows — pick the one that matches the work you're doing. Skills that don't appear in either pipeline (`caveman`, `skill-builder`) are utilities used independently as needed.
+
+#### New-feature pipeline
+
+Entry point for building something new.
+
+```
+feature-planner             ← clarify requirements, design, task breakdown
+    ↓
+grill-with-docs             ← stress-test the plan, capture domain terms
+    ↓
+ddd-architect               ← bounded contexts, aggregates, domain events
+    ↓
+hexagonal-arch              ← validate ports & adapters are correctly placed
+    ↓
+[stack architect]           ← go-architect / python-architect / etc.
+    ↓
+[framework architect]       ← fastapi-architect / gin-architect / etc.
+    ↓
+tdd                         ← implement with tests first
+    ↓
+logic-cleaner               ← polish expressions, guard clauses, magic numbers
+    ↓
+security-reviewer           ← catch vulns before shipping
+    ↓
+api-contract-reviewer       ← validate API surface (if applicable)
+    ↓
+performance-reviewer        ← N+1s, missing indexes, blocking I/O
+    ↓
+commit-author               ← generate conventional commit message
+```
+
+#### Refactor pipeline
+
+Entry point for restructuring existing code.
+
+```
+improve-codebase-architecture  ← ADR-aware friction analysis, identify hotspots
+    ↓
+grill-with-docs                ← stress-test the proposed refactor
+    ↓
+code-design-refactor           ← extract, decouple, SRP, naming, primitive obsession
+    ↓
+logic-cleaner                  ← guard clauses, boolean simplification, magic numbers
+    ↓
+[stack architect]              ← re-validate idioms after restructuring
+    ↓
+security-reviewer              ← regressions introduced by the refactor
+    ↓
+performance-reviewer           ← regressions introduced by the refactor
+    ↓
+commit-author                  ← generate conventional commit message
+```
+
+---
+
+## Roadmap
+
+Status legend: ✅ exists · 🔨 in progress · 📋 planned
+
+### Skills
+
+#### Languages
+| Skill | Status | Notes |
+|---|---|---|
+| `go-architect` | ✅ | Audit against Go 1.24 — add `slices`/`maps`/`cmp`, `viper`, `validator`, `zap`, `fx`; add `STACK.md` |
+| `python-architect` | ✅ | Audit against Python 3.13 — add `pydantic` v2, `ruff`, `uv`, `mypy` strict, `@override`; add `STACK.md` |
+
+#### Databases
+| Skill | Status | Notes |
+|---|---|---|
+| `sql-architect` | 📋 | Query patterns, indexing strategy, migration discipline, N+1 prevention — `STACK.md` pins target engine (PostgreSQL, MySQL, SQLite) |
+
+#### Frameworks
+| Skill | Status | Notes |
+|---|---|---|
+| `fastapi-architect` | 📋 | Layered structure, `pydantic` v2 schemas, `pydantic-settings`, async DI, lifespan |
+| `gin-architect` | 📋 | Middleware chain, `validator` tags, error handling, route grouping |
+| `react-architect` | 📋 | Component structure, custom hooks, `zustand`/`jotai`, `memo`/`lazy`/`suspense` |
+| `nextjs-architect` | 📋 | App router, server/client boundaries, server actions, data fetching patterns |
+
+#### Protocols
+| Skill | Status | Notes |
+|---|---|---|
+| `rest-api-architect` | 📋 | Router→service→repo layers, versioning, error contracts, pagination, OpenAPI |
+| `grpc-architect` | 📋 | Interceptors, error codes, reflection, streaming patterns |
+
+#### Encoding
+| Skill | Status | Notes |
+|---|---|---|
+| `protobuf-architect` | 📋 | Proto3 style, `buf` toolchain, `protovalidate` rules, breaking change detection |
+
+#### Messaging
+| Skill | Status | Notes |
+|---|---|---|
+| `event-driven-architect` | 📋 | Producer/consumer patterns, message schemas, idempotency, DLQs (Kafka/RabbitMQ) |
+
+#### Tooling
+| Skill | Status | Notes |
+|---|---|---|
+| `cli-tool-architect` | 📋 | `cobra`/`pflag` (Go), `typer` (Python), flag/env/config precedence |
+| `rsk-guide` | ✅ | v0.1.0 draft — quick-reference for the `rsk` CLI. Tracks the planned CLI design; promote to 1.0 once `rsk` ships. **Exempt from STACK.md** (meta-skill mirroring SPECS.md) |
+| `skill-builder` | 📋 | Knows SKILL.md/STACK.md format, naming convention, description quality rules, and category-to-STACK.md mapping — scaffolds a complete skill folder from a prompt. **Exempt from STACK.md** (meta-skill with no library stack) |
+
+#### Design
+| Skill | Status | Notes |
+|---|---|---|
+| `ddd-architect` | 📋 | Builds on the `grill-with-docs` domain glossary — adds aggregate rules, value objects, domain events |
+| `hexagonal-arch` | 📋 | Ports & adapters, dependency direction, test isolation |
+
+#### AI/ML
+| Skill | Status | Notes |
+|---|---|---|
+| `llm-app-architect` | 📋 | RAG patterns, prompt management, eval pipelines, LangChain/LlamaIndex |
+| `agent-architect` | 📋 | Tool definitions, memory patterns, orchestration loops, observability |
+| `ml-pipeline-architect` | 📋 | Ingestion → feature engineering → training → serving structure |
+
+#### Infra
+| Skill | Status | Notes |
+|---|---|---|
+| `docker-architect` | 📋 | Multi-stage builds, layer optimization, secrets handling, compose patterns |
+| `ci-cd-architect` | 📋 | GitHub Actions structure, test gates, deployment strategies |
+| `observability-architect` | 📋 | Structured logging (`zap`/`zerolog`), metrics naming, OpenTelemetry tracing |
+
+#### Robotics
+| Skill | Status | Notes |
+|---|---|---|
+| `ros2-architect` | 📋 | Node/topic/service/action structure, launch files, workspace & package layout |
+
+#### Quality
+| Skill | Status | Notes |
+|---|---|---|
+| `security-reviewer` | 📋 | Injection, auth issues, secret leakage, insecure defaults |
+| `api-contract-reviewer` | 📋 | Stability, versioning, documentation completeness |
+| `performance-reviewer` | 📋 | N+1 queries, missing indexes, blocking I/O in async code |
+
+#### Frontend
+| Skill | Status | Notes |
+|---|---|---|
+| `ui-ux-architect` | 📋 | Accessibility (ARIA, contrast), responsive layout, loading/error/empty states |
+
+#### Workflows
+| Skill | Status | Notes |
+|---|---|---|
+| `commit-author` | ✅ | |
+| `tdd` | ✅ | |
+| `grill-with-docs` | ✅ | Stress-tests plans through relentless questioning; absorbed the former `ubiquitous-language` skill (domain glossary extraction into `CONTEXT.md`) |
+| `caveman` | ✅ | |
+| `logic-cleaner` | ✅ | Expression-level only — intentionally narrow |
+| `code-design-refactor` | 📋 | Design-level: extract, decouple, SRP, naming, primitive obsession |
+| `feature-planner` | 📋 | Upstream planning — requirement → design → ordered task breakdown |
+| `improve-codebase-architecture` | ✅ | |
+| `design-patterns` | 📋 | When to apply, anti-patterns, concrete examples in Go & Python |
+
+#### Personal
+| Skill | Status | Notes |
+|---|---|---|
+| `demo-script-architect` | ✅ | Personal use only — not bundled, requires `--personal` flag |
+
+---
+
+### CLI (`rsk`)
+
+| Feature | Status | Notes |
+|---|---|---|
+| `rsk init` | 📋 | Config file setup, prompts for repo path and AI tool target |
+| `rsk install` | 📋 | Bundle + skill install via symlinks, `--personal` opt-in flag |
+| `rsk update` | 📋 | `git pull` + re-symlink, `--official` flag for Anthropic cache |
+| `rsk status` | 📋 | Version comparison, source labels `[ralva]`/`[anthr]`, bundle tags |
+| `rsk status --stack` | 📋 | Reads each skill's `STACK.md`, fetches latest versions from `proxy.golang.org` (Go) and `pypi.org` (Python), highlights stale skills; results cached 24 h; opt-in only — no background network calls; `--refresh` bypasses cache |
+| `rsk list` | 📋 | Full catalog with filters by bundle, source, installed state |
+| `rsk uninstall` | 📋 | Remove symlinks cleanly |
+| Official skill cache | 📋 | Clone and cache `anthropics/skills` at `~/.ralvaskills/cache/` |
+| GitHub Actions release | 📋 | Cross-platform binaries (linux/mac/windows) on tag push |
+| Homebrew tap | 📋 | `brew install ralvarezdev/tap/rsk` |
+
+---
+
+### Existing Skills to Audit
+
+Both `go-architect` and `python-architect` need a review pass before new skills are authored — they set the standard everything else references.
+
+#### `go-architect` → target Go 1.24
+- Add `slices`, `maps`, `cmp` stdlib package conventions
+- Add `spf13/viper` for config management
+- Add `go-playground/validator` struct tag rules
+- Add `uber-go/zap` or `rs/zerolog` for structured logging
+- Add `uber-go/fx` or `google/wire` for dependency injection
+- Review range-over-func iterator patterns
+- Add `STACK.md` with all pinned library versions
+
+#### `python-architect` → target Python 3.13
+- Add `pydantic` v2 model conventions (no v1 compatibility shims)
+- Add `pydantic-settings` for config/env loading
+- Add `ruff` as the single linter + formatter (replaces `black`/`isort`/`flake8`)
+- Add `uv` as the package and environment manager
+- Add `mypy` strict mode requirements
+- Add `@override` decorator usage
+- Add free-threaded mode awareness (GIL-optional builds)
+- Add `httpx` over `requests` for async-compatible HTTP
+- Add `STACK.md` with all pinned library versions

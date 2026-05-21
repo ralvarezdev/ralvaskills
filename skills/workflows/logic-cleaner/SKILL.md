@@ -1,6 +1,12 @@
 ---
 name: logic-cleaner
-description: Language-agnostic refactoring engine that reduces complexity and enforces strict cleanliness standards.
+version: 1.0.0
+description: >
+  Expression-level code cleanup — guard clauses, naming, magic values,
+  conditional simplification, duplication. Language-agnostic. Use when
+  the user asks to clean code, simplify expressions, remove magic numbers,
+  flatten nesting, or invokes /logic-cleaner. Out of scope: architecture,
+  module decomposition, class hierarchies — those belong to code-design-refactor.
 ---
 # Universal Logic & Code Cleanliness Standards
 
@@ -28,3 +34,13 @@ description: Language-agnostic refactoring engine that reduces complexity and en
 
 ## 6. Duplication (Rule of Three)
 * **WET vs DRY:** Logic may be duplicated once without abstraction (Write Everything Twice). Refactor into a shared, generic function only upon the *third* occurrence (Don't Repeat Yourself).
+
+## 7. Out of Scope
+
+This skill is **expression-level only** — intentionally narrow. Anything broader belongs to a different skill:
+
+- **Module decomposition, class hierarchies, dependency direction** → `code-design-refactor`
+- **Architecture-level friction, deepening opportunities** → `improve-codebase-architecture`
+- **API / contract design** → `api-contract-reviewer`
+
+If a finding requires changing module boundaries or class structure, stop and surface it — don't expand scope.

@@ -1,5 +1,6 @@
 ---
 name: caveman
+version: 1.0.0
 description: >
   Ultra-compressed communication mode. Cuts token usage ~75% by dropping
   filler, articles, and pleasantries while keeping full technical accuracy.
@@ -47,3 +48,7 @@ Example -- destructive op:
 > ```
 >
 > Caveman resume. Verify backup exist first.
+
+---
+
+_Adapted from [mattpocock/skills](https://github.com/mattpocock/skills)._

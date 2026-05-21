@@ -1,9 +1,12 @@
 ---
 name: tdd
+version: 1.0.0
 description: Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development.
 ---
 
 # Test-Driven Development
+
+_Methodology is **language-agnostic**. Examples in this file and in the supporting references (TESTS.md, MOCKING.md, etc.) are shown in TypeScript, but the principles apply equally to Go, Python, Rust, or any other language._
 
 ## Philosophy
 
@@ -13,7 +16,7 @@ description: Test-driven development with red-green-refactor loop. Use when user
 
 **Bad tests** are coupled to implementation. They mock internal collaborators, test private methods, or verify through external means (like querying a database directly instead of using the interface). The warning sign: your test breaks when you refactor, but behavior hasn't changed. If you rename an internal function and tests fail, those tests were testing implementation, not behavior.
 
-See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
+See [TESTS.md](TESTS.md) for examples and [MOCKING.md](MOCKING.md) for mocking guidelines.
 
 ## Anti-Pattern: Horizontal Slices
 
@@ -48,8 +51,8 @@ Before writing any code:
 
 - [ ] Confirm with user what interface changes are needed
 - [ ] Confirm with user which behaviors to test (prioritize)
-- [ ] Identify opportunities for [deep modules](deep-modules.md) (small interface, deep implementation)
-- [ ] Design interfaces for [testability](interface-design.md)
+- [ ] Identify opportunities for [deep modules](DEEP_MODULES.md) (small interface, deep implementation)
+- [ ] Design interfaces for [testability](INTERFACE_DESIGN.md)
 - [ ] List the behaviors to test (not implementation steps)
 - [ ] Get user approval on the plan
 
@@ -86,7 +89,7 @@ Rules:
 
 ### 4. Refactor
 
-After all tests pass, look for [refactor candidates](refactoring.md):
+After all tests pass, look for [refactor candidates](REFACTORING.md):
 
 - [ ] Extract duplication
 - [ ] Deepen modules (move complexity behind simple interfaces)
@@ -105,3 +108,7 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 [ ] Code is minimal for this test
 [ ] No speculative features added
 ```
+
+---
+
+_Adapted from [mattpocock/skills](https://github.com/mattpocock/skills)._
