@@ -86,22 +86,24 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   ├── languages/
 │   │   ├── go-architect/             # ✅ exists — Go 1.26 audit complete (v1.0.0); has STACK.md
 │   │   └── python-architect/         # ✅ exists — Python 3.14 audit complete (v1.0.0); has STACK.md
-│   ├── databases/                    # 📋 new category
-│   │   └── sql-architect/            # 📋 planned
+│   ├── databases/
+│   │   └── sql-architect/            # ✅ exists (v1.0.0 — PG 18 primary, MySQL/SQLite notes)
 │   ├── frameworks/
-│   │   ├── fastapi-architect/        # 📋 planned
-│   │   ├── gin-architect/            # 📋 planned
+│   │   ├── fastapi-architect/        # ✅ exists (v1.0.0 — FastAPI 0.136, feature-based, RFC 7807)
+│   │   ├── gin-architect/            # ✅ exists (v1.0.0 — Gin 1.12 on Go 1.26)
+│   │   ├── nethttp-architect/        # ✅ exists (v1.0.0 — stdlib net/http + Go 1.22+ enhanced ServeMux)
 │   │   ├── react-architect/          # 📋 planned
 │   │   └── nextjs-architect/         # 📋 planned
 │   ├── protocols/
-│   │   ├── rest-api-architect/       # 📋 planned
-│   │   └── grpc-architect/           # 📋 planned
-│   ├── encoding/                     # 📋 new category
-│   │   └── protobuf-architect/       # 📋 planned — proto3, buf, protovalidate
+│   │   ├── rest-api-architect/       # ✅ exists (v1.0.0 — snake_case JSON, ISO 8601, RFC 7807 errors, mandatory Idempotency-Key & ETag)
+│   │   └── grpc-architect/           # ✅ exists (v1.0.0 — vanilla gRPC, status codes, interceptor chain, deadlines, bufconn testing)
+│   ├── encoding/
+│   │   └── protobuf-architect/       # ✅ exists (v1.0.0 — proto3, Buf-style packages, protovalidate, breaking-change discipline)
 │   ├── messaging/                    # 📋 new category
 │   │   └── event-driven-architect/   # 📋 planned
 │   ├── tooling/
 │   │   ├── cli-tool-architect/       # 📋 planned
+│   │   ├── repo-tooling-architect/   # ✅ exists (v1.0.0 — .editorconfig/.gitignore, mise|proto, Task|just, pre-commit, Renovate)
 │   │   ├── rsk-guide/                # ✅ exists (v0.1.0 — tracks the planned rsk CLI)
 │   │   └── skill-builder/            # 📋 planned — meta-skill: scaffolds new skills following ralvaskills standards (no STACK.md — has no library stack)
 │   ├── design/
@@ -112,7 +114,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── agent-architect/          # 📋 planned
 │   │   └── ml-pipeline-architect/    # 📋 planned
 │   ├── infra/
-│   │   ├── docker-architect/         # 📋 planned
+│   │   ├── docker-architect/         # ✅ exists (v1.0.0 — Docker 29, Compose v2, distroless/slim defaults, multi-arch, Trivy)
 │   │   ├── ci-cd-architect/          # 📋 planned
 │   │   └── observability-architect/  # 📋 planned
 │   ├── robotics/
@@ -625,6 +627,7 @@ Universal skills installed machine-wide. Apply to every project regardless of st
 | `design-patterns` | workflows | When to apply, anti-patterns, Go & Python examples |
 | `improve-codebase-architecture` | workflows | ADR-aware architectural friction analysis |
 | `rsk-guide` | tooling | How to use the `rsk` CLI — discover, install, update, status, uninstall, bundle catalog |
+| `repo-tooling-architect` | tooling | Repo-level productivity files — `.editorconfig`, `.gitignore`, tool version pinning (mise/proto), task runner (Task/just), pre-commit, Renovate |
 | `skill-builder` | tooling | Scaffolds new skills following ralvaskills naming, format, and STACK.md standards |
 
 ---
@@ -640,13 +643,24 @@ Go service exposing a gRPC API.
 | `docker-architect` | local |
 | `sql-architect` | local |
 
-#### `go-rest`
-Go service exposing a REST API via Gin.
+#### `gin`
+Go service exposing a REST API via the Gin framework.
 
 | Skill | Source |
 |---|---|
 | `go-architect` | local |
 | `gin-architect` | local |
+| `rest-api-architect` | local |
+| `docker-architect` | local |
+| `sql-architect` | local |
+
+#### `nethttp`
+Go service exposing a REST API via the stdlib `net/http` package (Go 1.22+ enhanced ServeMux — no framework dependency).
+
+| Skill | Source |
+|---|---|
+| `go-architect` | local |
+| `nethttp-architect` | local |
 | `rest-api-architect` | local |
 | `docker-architect` | local |
 | `sql-architect` | local |
@@ -712,8 +726,11 @@ Instead of creating a bundle for every combination, compose installs:
 # Full-stack: Next.js + FastAPI
 rsk install design fastapi
 
-# Full-stack: Next.js + Go REST
-rsk install design go-rest
+# Full-stack: Next.js + Go REST (Gin)
+rsk install design gin
+
+# Full-stack: Next.js + Go REST (stdlib net/http)
+rsk install design nethttp
 
 # Go gRPC service with document generation
 rsk install go-grpc docs
@@ -800,26 +817,27 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 #### Databases
 | Skill | Status | Notes |
 |---|---|---|
-| `sql-architect` | 📋 | Query patterns, indexing strategy, migration discipline, N+1 prevention — `STACK.md` pins target engine (PostgreSQL, MySQL, SQLite) |
+| `sql-architect` | ✅ | v1.0.0 — PostgreSQL 18 primary, MySQL 9 & SQLite 3.53 notes. Enforces UUID v7 PKs + UNIQUE naturals, soft delete by default, forward-only migrations, parameter binding, cursor pagination, EXPLAIN-driven indexing |
 
 #### Frameworks
 | Skill | Status | Notes |
 |---|---|---|
-| `fastapi-architect` | 📋 | Layered structure, `pydantic` v2 schemas, `pydantic-settings`, async DI, lifespan |
-| `gin-architect` | 📋 | Middleware chain, `validator` tags, error handling, route grouping |
+| `fastapi-architect` | ✅ | v1.0.0 — FastAPI 0.136 on Python 3.14. Feature-based structure, Pydantic v2 request/response separation, URL-prefix versioning (`/v1/...`), async DI with lifespan, RFC 7807 problem-details errors, in-house OAuth2+JWT (pyjwt+argon2-cffi) or external IdP with switching criterion |
+| `gin-architect` | ✅ | v1.0.0 — Gin 1.12 on Go 1.26. Feature-based structure, struct-tag validation, RFC 7807 middleware, in-house JWT (golang-jwt+argon2) or external IdP, route groups for URL versioning, OpenAPI via swaggo/swag or kin-openapi |
+| `nethttp-architect` | ✅ | v1.0.0 — stdlib `net/http` on Go 1.26 (no router framework). Enhanced ServeMux method patterns, middleware function-wrap chain, RFC 7807, mandatory production timeouts, kin-openapi for spec |
 | `react-architect` | 📋 | Component structure, custom hooks, `zustand`/`jotai`, `memo`/`lazy`/`suspense` |
 | `nextjs-architect` | 📋 | App router, server/client boundaries, server actions, data fetching patterns |
 
 #### Protocols
 | Skill | Status | Notes |
 |---|---|---|
-| `rest-api-architect` | 📋 | Router→service→repo layers, versioning, error contracts, pagination, OpenAPI |
-| `grpc-architect` | 📋 | Interceptors, error codes, reflection, streaming patterns |
+| `rest-api-architect` | ✅ | v1.0.0 — framework-agnostic REST conventions. Plural-noun URLs, URL-prefix versioning (`/v1/`), cursor pagination, `snake_case` JSON + ISO 8601 timestamps, RFC 7807 problem-details errors, **mandatory `Idempotency-Key`** on POST/PATCH, **mandatory `ETag` + `If-Match`** on PUT/PATCH, OpenAPI 3.1 generated from code |
+| `grpc-architect` | ✅ | v1.0.0 — vanilla gRPC over HTTP/2. Service definitions, `status.Error` + standard codes, domain→code mapping, mandatory interceptor chain (recovery, request-id, slog, auth, protovalidate, metrics), client-side deadlines, context propagation, reflection off in prod, `bufconn` testing. Language-agnostic protocol; Go-specific examples |
 
 #### Encoding
 | Skill | Status | Notes |
 |---|---|---|
-| `protobuf-architect` | 📋 | Proto3 style, `buf` toolchain, `protovalidate` rules, breaking change detection |
+| `protobuf-architect` | ✅ | v1.0.0 — proto3, Buf-style hierarchical packages (`<org>.<product>.<resource>.<version>`), `protovalidate` CEL validation, `buf lint` / `buf breaking` CI, `buf generate` + `buf.gen.yaml` v2, field-number reservation discipline, well-known-type conventions. Language-agnostic schema layer |
 
 #### Messaging
 | Skill | Status | Notes |
@@ -830,6 +848,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | Skill | Status | Notes |
 |---|---|---|
 | `cli-tool-architect` | 📋 | `cobra`/`pflag` (Go), `typer` (Python), flag/env/config precedence |
+| `repo-tooling-architect` | ✅ | v1.0.0 — cross-language repo productivity layer. `.editorconfig` + `.gitignore` always; `mise` (default) / `proto` (alternative) for tool version pinning; `Task` (default) / `just` (alternative) for task running + dotenv; minimal pre-commit hooks; Renovate for dependency updates; explicit "when to skip" guidance |
 | `rsk-guide` | ✅ | v0.1.0 draft — quick-reference for the `rsk` CLI. Tracks the planned CLI design; promote to 1.0 once `rsk` ships. **Exempt from STACK.md** (meta-skill mirroring SPECS.md) |
 | `skill-builder` | 📋 | Knows SKILL.md/STACK.md format, naming convention, description quality rules, and category-to-STACK.md mapping — scaffolds a complete skill folder from a prompt. **Exempt from STACK.md** (meta-skill with no library stack) |
 
@@ -849,7 +868,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 #### Infra
 | Skill | Status | Notes |
 |---|---|---|
-| `docker-architect` | 📋 | Multi-stage builds, layer optimization, secrets handling, compose patterns |
+| `docker-architect` | ✅ | v1.0.0 — Docker 29, Compose v2 (`docker compose` + `docker-compose.yaml`), per-language base defaults (distroless Go, debian-slim Python/Node), BuildKit cache+secret mounts, multi-arch (amd64+arm64), Trivy scanning, language-specific recipes |
 | `ci-cd-architect` | 📋 | GitHub Actions structure, test gates, deployment strategies |
 | `observability-architect` | 📋 | Structured logging (`zap`/`zerolog`), metrics naming, OpenTelemetry tracing |
 
