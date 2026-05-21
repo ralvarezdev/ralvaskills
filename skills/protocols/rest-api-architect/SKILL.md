@@ -1,15 +1,7 @@
 ---
 name: rest-api-architect
 version: 1.0.0
-description: >
-  Cross-language REST API conventions: resource URLs, HTTP method semantics,
-  correct status codes, URL-prefix versioning, cursor pagination, snake_case
-  JSON with ISO 8601 timestamps, RFC 7807 problem-details errors, mandatory
-  Idempotency-Key on POST/PATCH, mandatory ETag + If-Match on PUT/PATCH, and
-  OpenAPI as the source of truth. Use when designing REST endpoints, reviewing
-  an API surface, writing an OpenAPI spec, or auditing an existing API for
-  conventions. Framework-agnostic — pair with fastapi-architect, gin-architect,
-  or similar for implementation specifics.
+description: Cross-language REST conventions — resource URLs, method semantics, status codes, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 7807 errors, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth. Framework-agnostic. Use when designing or auditing REST endpoints.
 ---
 
 # REST API Architecture

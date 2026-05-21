@@ -1,13 +1,7 @@
 ---
 name: python-architect
 version: 1.0.0
-description: >
-  Enforces strict enterprise standards for Python 3.14 — modern typing
-  (PEP 649 deferred annotations), immutable dataclasses, Protocol-based DI,
-  asyncio discipline, pytest 9, and the recommended `psycopg + .sql files
-  via importlib.resources` data-access pattern. Use when writing, reviewing,
-  or refactoring Python code, scaffolding a new Python service, or auditing
-  an existing codebase against modern idioms.
+description: Python 3.14 enterprise standards — modern typing (PEP 649), immutable dataclasses, Protocol-based DI, asyncio discipline, pytest 9, psycopg + .sql files via importlib.resources. Use when writing, reviewing, or scaffolding Python code.
 ---
 
 # Python Architecture Standards

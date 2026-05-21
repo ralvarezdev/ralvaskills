@@ -1,12 +1,7 @@
 ---
 name: rsk-guide
 version: 0.1.0
-description: >
-  Quick reference for the `rsk` CLI — how to discover, install, update, and check
-  ralvaskills bundles and individual skills. Use when the user mentions `rsk`,
-  asks how to install/list/update skills, wants to set up ralvaskills, or wants
-  to check what's installed and whether it's up to date. CLI is currently planned;
-  commands below match the SPECS design.
+description: Quick reference for the rsk CLI — discover, install, update, check ralvaskills bundles and skills. Use when user mentions rsk, asks how to install/list/update skills, or wants to set up ralvaskills. (CLI is planned; commands match SPECS.)
 ---
 
 # RSK Guide

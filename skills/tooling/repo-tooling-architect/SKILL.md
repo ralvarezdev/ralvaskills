@@ -1,14 +1,7 @@
 ---
 name: repo-tooling-architect
 version: 1.0.0
-description: >
-  Cross-language standards for the repo-level "developer core" — `.editorconfig`,
-  `.gitignore`, tool version pinning (mise default; proto alternative), task
-  runner (Task default; just alternative), pre-commit hooks (minimal set),
-  environment variables via Task's dotenv loading + external secret manager,
-  and Renovate for dependency updates. Use when scaffolding a new repo,
-  reviewing the productivity-tooling layer of an existing repo, deciding
-  whether a tool is worth adding, or auditing why builds are slow / divergent.
+description: Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), minimal pre-commit, env vars via dotenv + external secret manager, Renovate. Use when scaffolding or auditing a repo's tooling layer.
 ---
 
 # Repo Tooling Architecture
@@ -59,7 +52,7 @@ Always include. Curate per language; never copy a 500-line GitHub default that c
 - **Trim aggressively.** A clean `.gitignore` is documentation; a noisy one is noise.
 - **Local-only exclusions** (`.idea/`, `.vscode/settings.json`) go in `.git/info/exclude` per-developer or `~/.gitignore_global`, not the repo's `.gitignore`.
 
-## 3. Tool version pinning — mise (default) or proto (alternative)
+## 3. Tool version pinning — mise (default), proto (alternative)
 
 The problem: "works on my machine" because each dev has different Go / Python / Node versions. CI uses yet another version. Fix: pin every tool the repo needs in a file, install with one command.
 
@@ -79,31 +72,14 @@ trivy = "0.70"
 
 ```bash
 mise install                     # installs everything pinned
-go version                       # → 1.26 (regardless of system Go)
 ```
 
-- **Why mise as default:** broadest tool coverage via asdf-legacy plugins, available through `winget`/`brew`/`scoop`, large community.
-- **Shell activation required:** add `eval "$(mise activate bash)"` (or zsh/fish/pwsh equivalent) to your shell config.
+- **Why mise as default:** broadest tool coverage via asdf-legacy plugins, available through `winget`/`brew`/`scoop`.
+- **Shell activation required:** `eval "$(mise activate bash)"` (or zsh/fish/pwsh equivalent).
 
 ### Alternative: `proto` with `.prototools`
 
-```toml
-# .prototools
-go = "1.26"
-python = "3.14"
-node = "22"
-task = "3.51"
-golangci-lint = "2.12"
-buf = "1.69"
-trivy = "0.70"
-```
-
-```bash
-proto install
-```
-
-- **When to pick proto:** you value strict separation of concerns. Proto only manages binary versions — env loading and tasks are owned by `task` (see below). No shell activation needed; PATH-based shims work out of the box.
-- **Trade-off:** smaller plugin ecosystem than mise. Every tool in our STACK files is supported, but obscure tools may need a custom WASM plugin.
+Same key-value shape, file named `.prototools`, install with `proto install`. Pick proto when you want strict separation (proto manages only binary versions; `task` handles env + tasks) and no shell-activation step (PATH-shim based). Trade-off: smaller plugin ecosystem; obscure tools may need a custom WASM plugin.
 
 **Either way:** the pinned-versions file is committed; CI installs the same versions; nobody runs "whatever's on their machine."
 
@@ -154,27 +130,7 @@ tasks:
 
 ### Alternative: just with `justfile`
 
-```just
-set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
-set dotenv-load
-
-proto:
-    buf generate
-
-test:
-    go test -race ./...
-
-up:
-    docker compose up -d
-
-# Run with: just run 9000
-run port="8080":
-    @echo "running on {{port}}"
-    ./bin/app --port {{port}}
-```
-
-- **When to pick just:** you prefer Makefile-style brevity over YAML, don't need incremental builds, all collaborators are on macOS/Linux (Windows works but needs the `set windows-shell` line and per-OS recipe care).
-- **Trade-off:** no native incremental builds, no `--watch` mode.
+Makefile-style brevity over YAML; recipes look like shell. Add `set windows-shell := [...]` and `set dotenv-load` at the top. Pick `just` when you prefer terseness, don't need incremental builds, and all collaborators are on macOS/Linux. Trade-off: no native incremental builds, no `--watch` mode.
 
 **Settle on one per repo.** Don't mix `Taskfile.yml` and `justfile`.
 

@@ -1,18 +1,12 @@
 ---
 name: docker-architect
 version: 1.0.0
-description: >
-  Enforces strict Docker standards: multi-stage builds, per-language base-image
-  defaults (distroless for Go, debian slim for Python/Node), BuildKit cache mounts,
-  non-root runtime, multi-arch (amd64 + arm64) builds, digest-pinned bases,
-  Trivy scanning, and Compose v2 with `docker-compose.yaml` + override files.
-  Use when writing or reviewing Dockerfiles and Compose files, scaffolding a new
-  service's container layer, or hardening an existing one.
+description: Docker standards — multi-stage builds, per-language base defaults (distroless Go, slim Python/Node), BuildKit cache mounts, non-root, multi-arch amd64+arm64, digest-pinned bases, Trivy scanning, Compose v2. Use when writing or reviewing Dockerfiles or Compose files.
 ---
 
 # Docker Architecture & Container Standards
 
-Targets **Docker Engine 29**, **Compose v2**, **BuildKit** (default). Commands use `docker compose` (v2 plugin, no hyphen). File names use `docker-compose.yaml`. See [STACK.md](STACK.md) for pinned tool versions.
+Targets **Docker Engine 29**, **Compose v2**, **BuildKit** (default). Commands use `docker compose` (v2 plugin, no hyphen). File names use `docker-compose.yaml`. Per-language Dockerfiles and BuildKit/multi-arch/Trivy commands in [RECIPES.md](RECIPES.md); pinned tool versions in [STACK.md](STACK.md).
 
 ## 1. Dockerfile fundamentals
 
@@ -37,30 +31,7 @@ Per-language defaults:
 
 ## 3. BuildKit features
 
-BuildKit is the default builder in Docker 29 — use its features deliberately.
-
-- **Cache mounts** for package managers — they survive layer invalidation:
-  ```dockerfile
-  RUN --mount=type=cache,target=/root/.cache/uv \
-      uv sync --frozen
-  ```
-- **Secret mounts** — never `COPY` secrets into layers:
-  ```dockerfile
-  RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
-      npm ci
-  ```
-- **Bind mounts** to read source without `COPY` when the artifact alone is needed:
-  ```dockerfile
-  RUN --mount=type=bind,source=.,target=/src go build -o /out/app ./cmd/app
-  ```
-- **Here-docs** for multi-line scripts:
-  ```dockerfile
-  RUN <<EOF
-  apt-get update
-  apt-get install -y --no-install-recommends ca-certificates
-  rm -rf /var/lib/apt/lists/*
-  EOF
-  ```
+BuildKit is the default builder in Docker 29 — use **cache mounts** (survive layer invalidation), **secret mounts** (never `COPY` secrets into layers), **bind mounts** (read source without `COPY`), and **here-docs** (multi-line scripts) deliberately. Snippets in [RECIPES.md](RECIPES.md).
 
 ## 4. Image security
 
@@ -74,18 +45,7 @@ BuildKit is the default builder in Docker 29 — use its features deliberately.
 
 ## 5. Multi-arch builds
 
-Always build `linux/amd64` + `linux/arm64`. Cloud is largely arm64-friendly now (Graviton, Ampere); local dev on Apple Silicon is arm64-native.
-
-```bash
-docker buildx create --use --name multiarch
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  --tag ghcr.io/org/app:1.2.3 \
-  --push \
-  .
-```
-
-Cache the build via `--cache-to type=gha` (GitHub Actions) or `type=registry,ref=ghcr.io/org/app:buildcache` for cross-runner reuse.
+Always build `linux/amd64` + `linux/arm64`. Cloud is largely arm64-friendly now (Graviton, Ampere); local dev on Apple Silicon is arm64-native. `docker buildx build --platform linux/amd64,linux/arm64 ...` — full command + cache options in [RECIPES.md](RECIPES.md).
 
 ## 6. Compose patterns (v2)
 
@@ -130,73 +90,10 @@ Cache the build via `--cache-to type=gha` (GitHub Actions) or `type=registry,ref
 ## 10. Vulnerability scanning — Trivy
 
 - **Default scanner: `aquasecurity/trivy`.** Open-source, fast, scans images + filesystems + IaC.
-- **CI step on every push:**
-  ```bash
-  trivy image --severity HIGH,CRITICAL --exit-code 1 ghcr.io/org/app:${SHA}
-  ```
+- **CI step on every push** (`trivy image --severity HIGH,CRITICAL --exit-code 1 ...`) — full command in [RECIPES.md](RECIPES.md).
 - **Ignore file** (`.trivyignore`) for documented, accepted exceptions — never silent allowlists.
 - **SBOM:** `trivy image --format spdx-json --output sbom.json ...` — attach to releases. Required for supply-chain compliance.
 
 ## 11. Language-specific recipes
 
-### Go (multi-stage, distroless)
-
-```dockerfile
-# syntax=docker/dockerfile:1.10
-FROM golang:1.26-alpine AS build
-WORKDIR /src
-COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod go mod download
-COPY . .
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/app ./cmd/app
-
-FROM gcr.io/distroless/static-debian12:nonroot
-COPY --from=build /out/app /app
-USER nonroot:nonroot
-ENTRYPOINT ["/app"]
-```
-
-### Python (multi-stage, uv, debian slim)
-
-```dockerfile
-# syntax=docker/dockerfile:1.10
-FROM python:3.14-slim AS build
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-WORKDIR /app
-ENV UV_LINK_MODE=copy
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project --no-dev
-COPY . .
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev
-
-FROM python:3.14-slim
-RUN useradd -u 10001 -r app
-COPY --from=build --chown=app:app /app /app
-WORKDIR /app
-USER 10001
-ENV PATH="/app/.venv/bin:$PATH"
-ENTRYPOINT ["python", "-m", "myapp"]
-```
-
-### Node (multi-stage, debian slim, npm ci)
-
-```dockerfile
-# syntax=docker/dockerfile:1.10
-FROM node:22-slim AS build
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
-COPY . .
-RUN npm run build
-
-FROM node:22-slim
-RUN useradd -u 10001 -r app
-WORKDIR /app
-COPY --from=build --chown=app:app /app/dist /app/dist
-COPY --from=build --chown=app:app /app/node_modules /app/node_modules
-USER 10001
-ENTRYPOINT ["node", "dist/index.js"]
-```
+Reference Dockerfiles for **Go (distroless)**, **Python (uv, debian slim)**, and **Node (debian slim)** live in [RECIPES.md](RECIPES.md).

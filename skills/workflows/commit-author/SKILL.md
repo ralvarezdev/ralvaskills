@@ -1,12 +1,7 @@
 ---
 name: commit-author
 version: 1.0.0
-description: >
-  Generate concise Conventional Commits messages from a staged diff.
-  Use when the user wants to commit changes, asks for a commit message,
-  mentions "commit", or invokes /commit. Enforces structure, the full
-  Conventional Commits type set, imperative subject lines, and forbids
-  AI co-author attribution.
+description: Generate concise Conventional Commits messages from a staged diff. Enforces full type set, imperative subject lines, no AI co-author attribution. Use when user wants to commit, asks for a commit message, mentions "commit", or invokes /commit.
 ---
 
 # Git Commit Standards
@@ -47,5 +42,8 @@ Full Conventional Commits v1.0.0 type set (Angular convention):
 * **Do not add AI co-authorship.** Never include `Co-Authored-By: Claude` or any other AI-attribution footer. Commits belong to the human author who reviewed and approved the change.
 
 ## 7. Execution Protocol
-* **Consent:** Ask if the user will commit manually or delegate to you. **Never commit without explicit permission.**
+
+* **User-initiated only.** This skill activates *only* when the user explicitly asks to commit — phrases like "commit this", "write the commit message", "let's commit", or invoking `/commit`. **Never volunteer to commit unprompted.** Don't propose commits at the end of a task, don't pre-emptively stage files, and don't run `git add` / `git commit` as cleanup after other work.
+* **Consent to execute.** When asked to draft a commit message: ask whether the user will run the commit themselves or wants you to. **Never run `git commit` without explicit go-ahead** for the specific commit being created.
+* **Scope per ask.** Permission to commit one set of changes is not blanket permission for future commits in the same session. Each commit needs its own confirmation.
 * **Signing:** Delegated commits must be GPG signed if configured, unless the user explicitly opts out.

@@ -1,43 +1,16 @@
 ---
 name: fastapi-architect
 version: 1.0.0
-description: >
-  Enforces strict FastAPI standards: feature-based project structure, Pydantic v2
-  request/response separation, async dependency injection with lifespan, URL-prefix
-  versioning (`/v1/...`), RFC 7807 problem-details errors, and clear guidance on
-  in-house OAuth2+JWT vs external IdP. Targets FastAPI 0.136 on Python 3.14.
-  Use when scaffolding a FastAPI service, writing or reviewing routers/schemas,
-  designing the auth layer, or auditing an existing FastAPI codebase.
+description: Strict FastAPI standards — feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 7807 errors, in-house OAuth2+JWT or external IdP. FastAPI 0.136 on Python 3.14. Use when scaffolding or reviewing a FastAPI service.
 ---
 
 # FastAPI Architecture
 
-Targets **FastAPI 0.136** on **Python 3.14**. Companion to [python-architect](../../languages/python-architect/SKILL.md) (language idioms) and [sql-architect](../../databases/sql-architect/SKILL.md) (data access via `psycopg + .sql files`). See [STACK.md](STACK.md) for pinned dependencies.
+Targets **FastAPI 0.136** on **Python 3.14**. Companion to [python-architect](../../languages/python-architect/SKILL.md) and [sql-architect](../../databases/sql-architect/SKILL.md) (data access via `psycopg + .sql files`). Implementation skeletons in [RECIPES.md](RECIPES.md); pinned deps in [STACK.md](STACK.md).
 
 ## 1. Project structure — feature-based
 
-One folder per bounded context. Each feature owns its router, service, repo, schemas, and SQL files. Keeps cohesion high and lets a feature move independently.
-
-```
-src/myapp/
-├── main.py                  # FastAPI instance, router includes, lifespan
-├── config.py                # Settings via pydantic-settings
-├── deps.py                  # shared dependencies (DB pool, auth, etc.)
-├── errors.py                # RFC 7807 problem-details exception handlers
-├── users/
-│   ├── __init__.py
-│   ├── router.py            # APIRouter, endpoints, response models
-│   ├── service.py           # business logic (no HTTP, no SQL)
-│   ├── repo.py              # data access (psycopg + queries/*.sql)
-│   ├── schemas.py           # Pydantic request / response models
-│   └── queries/
-│       ├── get_user_by_id.sql
-│       └── insert_user.sql
-├── orders/
-│   └── ...
-└── tests/
-    └── ...
-```
+One folder per bounded context. Each feature owns its router, service, repo, schemas, and SQL files. Full tree in [RECIPES.md](RECIPES.md).
 
 - **`router.py`** depends on `service.py`; never reaches into `repo.py` directly.
 - **`service.py`** is pure Python — no FastAPI imports. Easy to unit-test.
@@ -54,24 +27,7 @@ src/myapp/
 
 ## 3. Pydantic schemas — separate request and response
 
-Three model shapes per resource, often:
-
-```python
-class UserCreate(BaseModel):          # request body for POST
-    model_config = ConfigDict(extra="forbid")
-    email: EmailStr
-    password: SecretStr
-
-class UserUpdate(BaseModel):          # request body for PATCH (partial)
-    model_config = ConfigDict(extra="forbid")
-    email: EmailStr | None = None
-
-class UserResponse(BaseModel):        # response body
-    model_config = ConfigDict(from_attributes=True)
-    id: UUID
-    email: EmailStr
-    created_at: datetime
-```
+Three shapes per resource: `<Resource>Create` (POST body), `<Resource>Update` (PATCH partial), `<Resource>Response` (response body). Example in [RECIPES.md](RECIPES.md).
 
 - **`extra="forbid"`** on every request model. Unknown fields are an error, not silent acceptance.
 - **`SecretStr` / `SecretBytes`** for passwords, tokens. Stops accidental logging.
@@ -84,109 +40,23 @@ class UserResponse(BaseModel):        # response body
 - **Single source of shared state via `Depends`.** DB connections, HTTP clients, auth subjects — all injected, never imported as module-level globals.
 - **Async dependencies** for anything I/O-bound: `async def get_db() -> AsyncIterator[AsyncConnection]: ...`.
 - **Sub-dependencies** for layered composition: `get_current_user` depends on `decode_token` depends on `get_settings`. FastAPI resolves the graph and caches per-request.
-- **Use type aliases** to keep route signatures clean:
-  ```python
-  DB = Annotated[AsyncConnection, Depends(get_db)]
-  CurrentUser = Annotated[User, Depends(get_current_user)]
-
-  @router.get("/me")
-  async def me(user: CurrentUser) -> UserResponse: ...
-  ```
+- **Use type aliases** to keep route signatures clean (see [RECIPES.md](RECIPES.md)).
 
 ## 5. Lifespan & startup
 
-- **Lifespan context** is the only place to open/close shared resources (DB pool, HTTP client, cache, message bus). Never in module-level code or `@app.on_event` (deprecated).
+Lifespan context is the only place to open/close shared resources (DB pool, HTTP client, cache, message bus). Never in module-level code or `@app.on_event` (deprecated). Settings loaded at startup, validated once via `pydantic-settings`. Skeleton in [RECIPES.md](RECIPES.md).
 
-```python
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    async with psycopg_pool.AsyncConnectionPool(settings.db_dsn) as pool:
-        app.state.db_pool = pool
-        async with httpx.AsyncClient(timeout=10) as client:
-            app.state.http = client
-            yield
+## 6. Authentication & authorization
 
-app = FastAPI(lifespan=lifespan)
-```
+**Patterns** (in-house JWT vs external IdP, Argon2id, JWT lifetimes, JWKS verification, switching criterion) live in [rest-api-architect §11](../../protocols/rest-api-architect/SKILL.md#11-authentication-patterns). FastAPI-specific implementation:
 
-- **Settings loaded at startup**, validated once via `pydantic-settings`:
-  ```python
-  class Settings(BaseSettings):
-      model_config = SettingsConfigDict(env_file=".env", env_prefix="MYAPP_")
-      db_dsn: PostgresDsn
-      jwt_secret: SecretStr
-      jwt_alg: Literal["HS256", "RS256"] = "HS256"
-
-  @lru_cache
-  def get_settings() -> Settings: return Settings()
-  ```
-
-## 6. Authentication & authorization — FastAPI implementation
-
-**Patterns and discipline** (in-house JWT vs external IdP, Argon2id, JWT lifetimes, JWKS verification, switching criterion) are defined in [rest-api-architect §11](../../protocols/rest-api-architect/SKILL.md#11-authentication-patterns). This section is the FastAPI-specific implementation.
-
-**Pattern A — in-house OAuth2 + JWT** uses FastAPI's `OAuth2PasswordBearer` + `pyjwt` + `argon2-cffi`:
-
-```python
-oauth2 = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
-
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2)],
-    settings: Annotated[Settings, Depends(get_settings)],
-    db: DB,
-) -> User:
-    try:
-        payload = jwt.decode(
-            token,
-            settings.jwt_secret.get_secret_value(),
-            algorithms=[settings.jwt_alg],
-        )
-    except jwt.PyJWTError:
-        raise HTTPException(401, "Invalid token")
-    return await load_user(db, payload["sub"])
-
-CurrentUser = Annotated[User, Depends(get_current_user)]
-```
-
-**Pattern B — external IdP** uses `pyjwt`'s `PyJWKClient` for JWKS verification; cache the client (`@lru_cache`) so JWKS isn't fetched per request. Always verify `aud` and `iss` explicitly.
-
-**Authorization is route-level via dependencies, not middleware:**
-
-```python
-def require_scope(scope: str):
-    async def _checker(user: CurrentUser):
-        if scope not in user.scopes:
-            raise HTTPException(403)
-    return _checker
-
-@router.delete("/users/{id}", dependencies=[Depends(require_scope("users:delete"))])
-async def delete_user(...): ...
-```
+- **Pattern A — in-house OAuth2 + JWT** uses FastAPI's `OAuth2PasswordBearer` + `pyjwt` + `argon2-cffi`. Dependency skeleton in [RECIPES.md](RECIPES.md).
+- **Pattern B — external IdP** uses `pyjwt`'s `PyJWKClient` for JWKS verification; cache via `@lru_cache`. Verify `aud` and `iss` explicitly.
+- **Authorization is route-level via dependencies, not middleware** — `dependencies=[Depends(require_scope("users:delete"))]` on the route. Skeleton in [RECIPES.md](RECIPES.md).
 
 ## 7. Error handling — RFC 7807 Problem Details
 
-Every error returns `application/problem+json` with a standardised shape. Clients downstream parse one format.
-
-```python
-class Problem(BaseModel):
-    type: str = "about:blank"
-    title: str
-    status: int
-    detail: str | None = None
-    instance: str | None = None
-
-@app.exception_handler(DomainError)
-async def domain_error_handler(req: Request, exc: DomainError):
-    return JSONResponse(
-        status_code=exc.status,
-        content=Problem(
-            type=f"https://errors.myapp.io/{exc.code}",
-            title=exc.title, status=exc.status, detail=str(exc),
-            instance=str(req.url),
-        ).model_dump(),
-        media_type="application/problem+json",
-    )
-```
+Every error returns `application/problem+json` with a standardised shape (per [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-7807-problem-details)). Handler skeleton in [RECIPES.md](RECIPES.md).
 
 - **One handler per domain-exception family.** Never let `HTTPException` and your custom exceptions return different shapes.
 - **Validation errors** (`RequestValidationError`) get their own handler that maps Pydantic's error list into `Problem.detail`.

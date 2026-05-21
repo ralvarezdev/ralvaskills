@@ -1,12 +1,7 @@
 ---
 name: go-architect
 version: 1.0.0
-description: >
-  Enforces strict architectural standards for Go 1.26 — memory-aligned structs,
-  typed enums, interface design philosophy, goroutine safety, iterator patterns,
-  idiomatic error handling, and the sqlx + `//go:embed` SQL pattern. Use when
-  writing, reviewing, or refactoring Go code, scaffolding a new Go service,
-  or auditing an existing codebase against modern idioms.
+description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern. Use when writing, reviewing, or scaffolding Go code.
 ---
 
 # Go Architecture & Domain Modeling

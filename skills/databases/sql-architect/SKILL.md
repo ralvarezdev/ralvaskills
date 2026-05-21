@@ -1,13 +1,7 @@
 ---
 name: sql-architect
 version: 1.0.0
-description: >
-  Enforces strict SQL standards: surrogate UUID v7 primary keys, snake_case
-  naming, soft delete by default, forward-only migrations, parameter binding,
-  N+1 prevention, and EXPLAIN-driven indexing. Primary target PostgreSQL 18;
-  MySQL 9 and SQLite 3.53 notes inline. Use when designing schemas, writing
-  queries, reviewing DDL, planning migrations, debugging slow queries, or
-  auditing a database layer.
+description: SQL standards — UUID v7 PKs, snake_case, soft delete, forward-only migrations, parameter binding, N+1 prevention, EXPLAIN-driven indexing. PostgreSQL 18 primary; MySQL 9 and SQLite 3.53 noted. Use when designing schemas, writing queries, or auditing a database layer.
 ---
 
 # SQL Architecture & Database Standards

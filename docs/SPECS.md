@@ -102,13 +102,13 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   ├── messaging/                    # 📋 new category
 │   │   └── event-driven-architect/   # 📋 planned
 │   ├── tooling/
-│   │   ├── cli-tool-architect/       # 📋 planned
+│   │   ├── cli-tool-architect/       # ✅ exists (v1.0.0 — Go cobra+pflag+viper, Python typer; TOML/XDG config, --output, exit codes, NO_COLOR)
 │   │   ├── repo-tooling-architect/   # ✅ exists (v1.0.0 — .editorconfig/.gitignore, mise|proto, Task|just, pre-commit, Renovate)
 │   │   ├── rsk-guide/                # ✅ exists (v0.1.0 — tracks the planned rsk CLI)
-│   │   └── skill-builder/            # 📋 planned — meta-skill: scaffolds new skills following ralvaskills standards (no STACK.md — has no library stack)
+│   │   └── skill-builder/            # ✅ exists (v1.0.0 — meta-skill: scaffolds new skills following ralvaskills standards; no STACK.md)
 │   ├── design/
-│   │   ├── ddd-architect/            # 📋 planned
-│   │   └── hexagonal-arch/           # 📋 planned
+│   │   ├── ddd-architect/            # ✅ exists (v1.0.0 — strategic-first DDD, bounded contexts, aggregates; event sourcing OOS)
+│   │   └── hexagonal-arch/           # ✅ exists (v1.0.0 — ports & adapters; dependency direction inward; no folder rule)
 │   ├── ai-ml/
 │   │   ├── llm-app-architect/        # 📋 planned
 │   │   ├── agent-architect/          # 📋 planned
@@ -131,10 +131,10 @@ ralvaskills/                          # current state — (📋) marks planned a
 │       ├── grill-with-docs/          # ✅ exists (formerly grill-me; absorbed ubiquitous-language)
 │       ├── caveman/                  # ✅ exists
 │       ├── logic-cleaner/            # ✅ exists
-│       ├── code-design-refactor/     # 📋 planned
-│       ├── feature-planner/          # 📋 planned
+│       ├── code-design-refactor/     # ✅ exists (v1.0.0 — design-level refactor; sits between logic-cleaner and improve-codebase-architecture)
+│       ├── feature-planner/          # ✅ exists (v1.0.0 — requirement → constraints → design → vertical-slice tasks)
 │       ├── improve-codebase-architecture/  # ✅ exists
-│       └── design-patterns/          # 📋 planned — pattern catalog (workflow reference)
+│       └── design-patterns/          # ✅ exists (v1.0.0 — skeptical catalog; modern Go/Python; defers to ddd-architect & hexagonal-arch)
 │
 │   └── personal/                     # 📋 new category — personal skills, never auto-bundled
 │       └── demo-script-architect/    # ✅ exists (moved from workflows/)
@@ -201,28 +201,35 @@ Every skill is a folder containing a required `SKILL.md` and optional supporting
 skill-name/
 ├── SKILL.md          # required — frontmatter + instructions
 ├── STACK.md          # required for version-sensitive skills — dependency version registry
+├── RECIPES.md        # optional — extracted code blocks / reference implementations (keeps SKILL.md lean)
 ├── scripts/          # optional — executable scripts (bash, python)
 ├── references/       # optional — docs loaded into context on demand
 └── assets/           # optional — templates, examples
 ```
 
+`RECIPES.md` is an optional side file used by code-heavy skills. The SKILL.md body keeps the rules, decisions, and one- or two-line snippets; long reference implementations (full Dockerfiles, middleware skeletons, test scaffolds, multi-file project trees) move to `RECIPES.md` and are linked from the relevant SKILL.md section. Goal: SKILL.md stays loadable and skim-friendly; the recipes load on demand when the user actually needs an implementation. Skip `RECIPES.md` for skills that are mostly conceptual prose — adding it just to split prose loses value.
+
 ### SKILL.md Format
 
-The `SKILL.md` stays clean and focused on instructions. Stack version metadata lives in `STACK.md` — never in the skill body.
+The `SKILL.md` stays clean and focused on instructions. Stack version metadata lives in `STACK.md` — never in the skill body. Long reference implementations live in `RECIPES.md` — never inlined when they exceed a small snippet.
 
 ```markdown
 ---
 name: skill-name
 version: 1.0.0
-description: >
-  One or two sentences. This is what Claude reads to decide whether
-  to load this skill. Be specific about WHEN to use it, not just what it does.
+description: One line. WHAT the skill enforces + WHEN to invoke (trigger phrases). This sits in Claude's always-loaded skill index, so length costs every turn.
 ---
 
 # Skill Name
 
 [Instructions Claude will follow when this skill is active.]
 ```
+
+**Body discipline:**
+
+- **Rules first, code second.** Each section explains the rule and the *why*; code is illustrative, not exhaustive. If a code block grows past ~15 lines or appears as a full reference implementation (a Dockerfile, an auth middleware, a project tree, a test scaffold), move it to `RECIPES.md` and replace it in `SKILL.md` with a one-line pointer like *"Skeleton in [RECIPES.md](RECIPES.md)."*
+- **No duplicated cross-skill content.** If a pattern is canonically explained in another skill (auth in `rest-api-architect §11`, status codes in `rest-api-architect/STATUS_CODES.md`), link to it instead of restating. The link is the contract; restatement drifts.
+- **Body target:** keep the SKILL.md body under ~10 KB / ~250 lines where the topic allows. Foundational skills (`go-architect`, `rest-api-architect`) may run longer because the conventions themselves are dense; that's fine. Framework / infra / encoding skills should almost always factor recipes out.
 
 ### STACK.md Format
 
@@ -327,30 +334,43 @@ Every `SKILL.md` must include a `version` field in semver format:
 
 ### Description Quality
 
-The `description` field is the most critical part of `SKILL.md`. Claude reads **only** this (plus the name) at startup and decides whether to load the full skill body based solely on it.
+The `description` field is the most critical part of `SKILL.md`. Claude reads **only** this (plus the name) at startup and decides whether to load the full skill body based solely on it. **It is loaded into every turn's context** — verbose descriptions cost tokens *forever*, not just when the skill is invoked.
+
+**Rules:**
+
+- **One line.** Use the YAML scalar form (no `>`/`|`). The line can be long; line breaks aren't necessary.
+- **WHAT then WHEN.** Lead with what the skill enforces; close with trigger phrases the user might say or commands they might invoke.
+- **Mention version for version-sensitive skills.** "Go 1.26", "Python 3.14", "Gin 1.12 on Go 1.26" — signals upgrade-sensitivity to both Claude and you.
+- **Drop marketing copy.** "Enforces strict X standards" is the same as "X standards". "Comprehensive guide to" is filler.
 
 **Bad:**
 ```yaml
 description: Go best practices skill.
 ```
 
-**Good:**
+**Bad (verbose):**
 ```yaml
 description: >
-  Use when writing, reviewing, or refactoring Go code. Enforces memory-aligned
-  structs, typed enums (no raw strings), interface design philosophy, goroutine
-  safety, and idiomatic error handling. Based on Go 1.24 standards.
+  Enforces strict architectural standards for Go 1.26 — memory-aligned structs,
+  typed enums, interface design philosophy, goroutine safety, iterator patterns,
+  idiomatic error handling, and the sqlx + `//go:embed` SQL pattern. Use when
+  writing, reviewing, or refactoring Go code, scaffolding a new Go service,
+  or auditing an existing codebase against modern idioms.
 ```
 
-For version-sensitive skills, always mention the primary version in the description — it signals to Claude (and to you) that the skill may need updating when the version changes.
+**Good:**
+```yaml
+description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern. Use when writing, reviewing, or scaffolding Go code.
+```
 
 ### Supporting Files
 
+- `RECIPES.md` — extracted code blocks / reference implementations referenced from `SKILL.md`. Loaded on demand by the user / Claude when an implementation is needed; never auto-loaded. See [Body discipline](#skillmd-format) above for when to factor recipes out.
 - `scripts/` — scripts Claude can execute via bash. Only their **output** enters context, not the source.
 - `references/` — markdown docs Claude loads on demand when the task requires deeper context.
 - `assets/` — templates or boilerplate Claude uses to generate output.
 
-All `.md` files inside a skill folder **must** use `UPPER_SNAKE_CASE` (e.g. `DEEP_MODULES.md`, `ADR_FORMAT.md`). `README.md` at the repo root is the only exception — it follows the universal tool convention.
+All `.md` files inside a skill folder **must** use `UPPER_SNAKE_CASE` (e.g. `DEEP_MODULES.md`, `ADR_FORMAT.md`, `RECIPES.md`). `README.md` at the repo root is the only exception — it follows the universal tool convention.
 
 ### Canonical Libraries Reference
 
@@ -847,16 +867,16 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 #### Tooling
 | Skill | Status | Notes |
 |---|---|---|
-| `cli-tool-architect` | 📋 | `cobra`/`pflag` (Go), `typer` (Python), flag/env/config precedence |
+| `cli-tool-architect` | ✅ | v1.0.0 — cross-language CLI conventions. Root + subcommands, **flag > env > config > default** precedence, TOML config in XDG location, stdout/stderr separation, `--output text\|json\|yaml` mandatory, standard exit codes, `NO_COLOR` respect, shell completions, multi-arch distribution. Recipes for Go (cobra+pflag+viper) and Python (typer+rich) |
 | `repo-tooling-architect` | ✅ | v1.0.0 — cross-language repo productivity layer. `.editorconfig` + `.gitignore` always; `mise` (default) / `proto` (alternative) for tool version pinning; `Task` (default) / `just` (alternative) for task running + dotenv; minimal pre-commit hooks; Renovate for dependency updates; explicit "when to skip" guidance |
 | `rsk-guide` | ✅ | v0.1.0 draft — quick-reference for the `rsk` CLI. Tracks the planned CLI design; promote to 1.0 once `rsk` ships. **Exempt from STACK.md** (meta-skill mirroring SPECS.md) |
-| `skill-builder` | 📋 | Knows SKILL.md/STACK.md format, naming convention, description quality rules, and category-to-STACK.md mapping — scaffolds a complete skill folder from a prompt. **Exempt from STACK.md** (meta-skill with no library stack) |
+| `skill-builder` | ✅ | v1.0.0 — interview-first scaffolder. References SPECS.md as source of truth; generates frontmatter, body skeleton, STACK.md if needed, atomic SPECS updates (folder structure + roadmap + bundles + convention table); validation checklist before hand-off. **Exempt from STACK.md** (meta-skill, no library stack) |
 
 #### Design
 | Skill | Status | Notes |
 |---|---|---|
-| `ddd-architect` | 📋 | Builds on the `grill-with-docs` domain glossary — adds aggregate rules, value objects, domain events |
-| `hexagonal-arch` | 📋 | Ports & adapters, dependency direction, test isolation |
+| `ddd-architect` | ✅ | v1.0.0 — strategic-first DDD. Bounded contexts + context mapping (consumes `grill-with-docs`/CONTEXT.md), tactical patterns (aggregates, value objects, domain events, repositories, ACL), small-aggregate discipline, when DDD is overkill. Event sourcing out of scope |
+| `hexagonal-arch` | ✅ | v1.0.0 — ports & adapters. Dependency direction always inward; ports declared by consumer (Go interface-where-used / Python Protocol); primary vs secondary adapters; testing benefits; one-vs-two-adapter rule; Go + Python examples; no folder-layout prescription |
 
 #### AI/ML
 | Skill | Status | Notes |
@@ -897,10 +917,10 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | `grill-with-docs` | ✅ | Stress-tests plans through relentless questioning; absorbed the former `ubiquitous-language` skill (domain glossary extraction into `CONTEXT.md`) |
 | `caveman` | ✅ | |
 | `logic-cleaner` | ✅ | Expression-level only — intentionally narrow |
-| `code-design-refactor` | 📋 | Design-level: extract, decouple, SRP, naming, primitive obsession |
-| `feature-planner` | 📋 | Upstream planning — requirement → design → ordered task breakdown |
+| `code-design-refactor` | ✅ | v1.0.0 — design-level refactoring rules (extract, decouple, SRP, encapsulation, primitive obsession). Sits between `logic-cleaner` (expression) and `improve-codebase-architecture` (system). One move at a time, tests first, commit each move |
+| `feature-planner` | ✅ | v1.0.0 — upstream planning pipeline. Requirement → constraints → design outline → vertical-slice task breakdown ordered by risk (tracer bullet first, riskiest assumption next). Hands off to `grill-with-docs` and `tdd`. When NOT to plan: trivial changes, spikes, bug fixes with reproductions |
 | `improve-codebase-architecture` | ✅ | |
-| `design-patterns` | 📋 | When to apply, anti-patterns, concrete examples in Go & Python |
+| `design-patterns` | ✅ | v1.0.0 — skeptical catalog for modern Go/Python. Keeps the few that still earn their place (Repository, Adapter, Strategy, Decorator, Observer, Builder/options, Factory); names anti-patterns (Singleton, Abstract Factory, Visitor, Chain-of-Responsibility, Template Method); defers depth to `ddd-architect` / `hexagonal-arch`; rule-of-three before introducing |
 
 #### Personal
 | Skill | Status | Notes |

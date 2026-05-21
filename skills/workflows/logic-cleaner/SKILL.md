@@ -1,12 +1,7 @@
 ---
 name: logic-cleaner
 version: 1.0.0
-description: >
-  Expression-level code cleanup — guard clauses, naming, magic values,
-  conditional simplification, duplication. Language-agnostic. Use when
-  the user asks to clean code, simplify expressions, remove magic numbers,
-  flatten nesting, or invokes /logic-cleaner. Out of scope: architecture,
-  module decomposition, class hierarchies — those belong to code-design-refactor.
+description: Expression-level code cleanup — guard clauses, naming, magic values, conditional simplification, duplication. Language-agnostic. Out of scope: architecture, module decomposition. Use when user asks to clean code, simplify expressions, flatten nesting, or invokes /logic-cleaner.
 ---
 # Universal Logic & Code Cleanliness Standards
 
