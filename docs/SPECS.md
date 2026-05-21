@@ -84,8 +84,8 @@ ralvaskills/                          # current state — (📋) marks planned a
 │
 ├── skills/                           # all reusable local skills
 │   ├── languages/
-│   │   ├── go-architect/             # ✅ exists — needs Go 1.24 audit + STACK.md
-│   │   └── python-architect/         # ✅ exists — needs Python 3.13 audit + STACK.md
+│   │   ├── go-architect/             # ✅ exists — Go 1.26 audit complete (v1.0.0); has STACK.md
+│   │   └── python-architect/         # ✅ exists — Python 3.14 audit complete (v1.0.0); has STACK.md
 │   ├── databases/                    # 📋 new category
 │   │   └── sql-architect/            # 📋 planned
 │   ├── frameworks/
@@ -365,10 +365,11 @@ Language and framework architect skills must explicitly reference the canonical 
 | ORM / query builder | `jmoiron/sqlx`, `uptrace/bun`, or `go-gorm/gorm` |
 | gRPC | `google.golang.org/grpc` |
 | Protobuf | `google.golang.org/protobuf`, `buf` toolchain |
-| Logging | `uber-go/zap` or `rs/zerolog` |
+| Logging | `log/slog` (stdlib, **default**); `uber-go/zap` or `rs/zerolog` only when slog's allocator perf is provably insufficient |
 | Testing | `testify/suite`, `testify/mock` |
 | DI | `uber-go/fx` or `google/wire` |
 | Migrations | `golang-migrate/migrate` |
+| Linting | `golangci-lint` v2 (aggregates staticcheck, govet, revive, goimports, etc.) |
 
 #### Python canonical libraries
 
@@ -377,15 +378,16 @@ Language and framework architect skills must explicitly reference the canonical 
 | Data validation & settings | `pydantic` v2, `pydantic-settings` |
 | Web framework | `fastapi` |
 | ASGI server | `uvicorn` |
-| ORM | `sqlalchemy` 2.x (async) |
-| Migrations | `alembic` |
+| DB driver (recommended) | `psycopg` 3 — sync + async, used with `.sql` files via `importlib.resources` (no ORM by default) |
+| ORM (when justified) | `sqlalchemy` 2.x (Core or ORM); record the choice in an ADR |
+| Migrations | `alembic` (works with raw SQL — no ORM required) |
 | HTTP client | `httpx` |
-| Testing | `pytest`, `pytest-asyncio` |
-| Type checking | `mypy` (strict mode) |
-| Linting / formatting | `ruff` |
-| Dependency management | `uv` |
+| Testing | `pytest` 9, `pytest-asyncio` |
+| Type checking | `mypy` 2 (`--strict` baseline) |
+| Linting / formatting | `ruff` (replaces black / isort / flake8 / pyupgrade) |
+| Environment + packaging | `uv` (replaces pip / virtualenv / pyenv) |
 | CLI | `typer` |
-| Task queue | `celery`, `arq` |
+| Task queue (situational) | `arq` (asyncio-native, Redis) or `celery` (mature, broker-agnostic) — add when a real use case appears |
 
 ---
 
@@ -792,8 +794,8 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 #### Languages
 | Skill | Status | Notes |
 |---|---|---|
-| `go-architect` | ✅ | Audit against Go 1.24 — add `slices`/`maps`/`cmp`, `viper`, `validator`, `zap`, `fx`; add `STACK.md` |
-| `python-architect` | ✅ | Audit against Python 3.13 — add `pydantic` v2, `ruff`, `uv`, `mypy` strict, `@override`; add `STACK.md` |
+| `go-architect` | ✅ | v1.0.0 — Go 1.26 audit complete; `STACK.md` pinned (viper, validator, cobra, gin, sqlx, grpc, protobuf-go, testify, fx, migrate, buf); enforces `sqlx + //go:embed` over ORM, `log/slog` over zap |
+| `python-architect` | ✅ | v1.0.0 — Python 3.14 audit complete; `STACK.md` pinned (pydantic, fastapi, uvicorn, httpx, pytest 9, mypy 2, ruff, uv, typer, psycopg 3, alembic); enforces `psycopg + .sql files via importlib.resources` over ORM, `mypy --strict` baseline |
 
 #### Databases
 | Skill | Status | Notes |
@@ -907,24 +909,30 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 
 ### Existing Skills to Audit
 
-Both `go-architect` and `python-architect` need a review pass before new skills are authored — they set the standard everything else references.
+Both `go-architect` and `python-architect` audits are complete.
 
-#### `go-architect` → target Go 1.24
-- Add `slices`, `maps`, `cmp` stdlib package conventions
-- Add `spf13/viper` for config management
-- Add `go-playground/validator` struct tag rules
-- Add `uber-go/zap` or `rs/zerolog` for structured logging
-- Add `uber-go/fx` or `google/wire` for dependency injection
-- Review range-over-func iterator patterns
-- Add `STACK.md` with all pinned library versions
+#### `go-architect` → target Go 1.26 — ✅ complete (v1.0.0, 2026-05-20)
 
-#### `python-architect` → target Python 3.13
-- Add `pydantic` v2 model conventions (no v1 compatibility shims)
-- Add `pydantic-settings` for config/env loading
-- Add `ruff` as the single linter + formatter (replaces `black`/`isort`/`flake8`)
-- Add `uv` as the package and environment manager
-- Add `mypy` strict mode requirements
-- Add `@override` decorator usage
-- Add free-threaded mode awareness (GIL-optional builds)
-- Add `httpx` over `requests` for async-compatible HTTP
-- Add `STACK.md` with all pinned library versions
+Completed in this audit:
+- `slices`, `maps`, `cmp`, `iter`, `log/slog` stdlib conventions
+- `errors.Join`, `sync.WaitGroup.Go`, container-aware GOMAXPROCS (Go 1.25), `signal.NotifyContext` cause (Go 1.26)
+- `testing/synctest` for deterministic concurrent tests
+- Range-over-func iterator patterns + when to return `iter.Seq[T]` vs `[]T`
+- Self-referential generics (Go 1.26), type-aliased generics (Go 1.24)
+- `go fix` modernizers as ongoing hygiene
+- Canonical libraries: viper, validator, cobra/pflag, gin, sqlx, grpc, protobuf-go, testify, fx, migrate, buf
+- Architectural opinion: `sqlx + //go:embed` over any ORM; `log/slog` over zap/zerolog as default
+- `STACK.md` created with all pinned library versions
+
+#### `python-architect` → target Python 3.14 — ✅ complete (v1.0.0, 2026-05-20)
+
+Completed in this audit:
+- PEP 649 deferred annotations (3.14) — no more quoted forward refs; use `annotationlib.get_annotations()`
+- PEP 758 bracketless `except`, PEP 765 SyntaxWarning for `finally` control flow (3.14)
+- PEP 734 `concurrent.interpreters` for CPU-bound parallelism (3.14)
+- PEP 703 free-threaded build awareness; asyncio introspection (`python -m asyncio ps/pstree`, 3.14)
+- `map(strict=True)`, `compression.zstd`, `Path.copy/move` (3.14)
+- `typing.override` (3.12+), `TypedDict` over `dict[str, Any]`
+- Tooling: `uv` (env+packaging), `ruff` (lint+format), `mypy 2 --strict`, `pytest 9`
+- Architectural opinion: `psycopg 3 + .sql files via importlib.resources` over any ORM; SQLAlchemy 2.x only when justified by ADR
+- `STACK.md` created with all pinned library versions

@@ -13,9 +13,24 @@ description: >
 
 > **Draft (v0.1.0).** The `rsk` CLI is in the roadmap. Verify against `rsk --help` once shipped. For creating *new* skills (vs managing existing ones), use `skill-builder`.
 
+## Always ask the user before taking action
+
+Installing, updating, or uninstalling skills changes what tools and standards future agents will load in this and other projects. These are **architectural decisions**, not housekeeping. **Never run `rsk install`, `rsk update`, `rsk uninstall`, or any state-changing command without explicit user confirmation.**
+
+For every proposed action:
+
+1. **State the action plainly** — which skills/bundles, target scope (`--global` / `--for` / project-local), and what changes on disk
+2. **Quote the exact command** you'd run
+3. **Wait for the user to confirm**, redirect, or decline
+4. **Use `--dry-run`** when available if the user wants to see the effect first
+
+Read-only commands (`rsk list`, `rsk status` without `--stack`) are safe to run without asking — they only display state. But anything that touches symlinks, fetches official caches, or makes network calls (`rsk status --stack`) needs an explicit go.
+
+If the user gives a blanket "yes" up front (e.g. "set everything up for this project"), still pause and confirm before each *bundle* — a slip from `go-grpc` to `go-rest` or installing globally when they meant locally is hard to undo silently.
+
 ## Quick reference
 
-### Discover
+### Discover (read-only — safe)
 
 | Command | Purpose |
 |---|---|
@@ -24,8 +39,9 @@ description: >
 | `rsk list --installed` | Currently installed |
 | `rsk list --source local\|official` | Filter by source |
 | `rsk list --personal` | Include personal skills |
+| `rsk status` | What's installed; version drift (no network) |
 
-### Install
+### Install (state-changing — ask first)
 
 ```bash
 rsk install <bundle...> [--global] [--for claude-code|opencode] [--skill <name>] [--version <v>] [--personal] [--dry-run]
@@ -36,7 +52,7 @@ rsk install <bundle...> [--global] [--for claude-code|opencode] [--skill <name>]
 - Planned bundle skills are skipped with a warning and installed automatically when they ship.
 - Personal skills require `--personal` (opt-in).
 
-### Update
+### Update (state-changing — ask first)
 
 ```bash
 rsk update [bundle|skill] [--global] [--for <tool>] [--official] [--personal] [--dry-run]
@@ -44,7 +60,7 @@ rsk update [bundle|skill] [--global] [--for <tool>] [--official] [--personal] [-
 
 `rsk update` alone = `git pull` on the repo + re-symlink everything. `--official` also re-fetches the Anthropic skills cache.
 
-### Status
+### Status with live fetch (network — ask first)
 
 ```bash
 rsk status [--global] [--for <tool>] [--project] [--stack] [--refresh] [--personal]
@@ -52,7 +68,7 @@ rsk status [--global] [--for <tool>] [--project] [--stack] [--refresh] [--person
 
 `--stack` fetches latest versions live from `proxy.golang.org` and `pypi.org` (opt-in network call, 24h cache; `--refresh` bypasses). Without `--stack`, no network calls.
 
-### Uninstall
+### Uninstall (state-changing — ask first)
 
 ```bash
 rsk uninstall <bundle|skill> [--global] [--for <tool>] [--personal]
@@ -60,7 +76,7 @@ rsk uninstall <bundle|skill> [--global] [--for <tool>] [--personal]
 
 ## Common workflows
 
-**First-time setup**
+**First-time setup** (confirm each step with the user)
 1. `rsk init` (once per machine — writes `~/.config/rsk/config.json`)
 2. `rsk install global --global` — universal skills, machine-wide
 3. In a project: `rsk install <stack-bundle>` — e.g. `rsk install go-grpc`
