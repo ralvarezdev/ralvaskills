@@ -92,15 +92,15 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── fastapi-architect/        # ✅ exists (v1.0.0 — FastAPI 0.136, feature-based, RFC 7807)
 │   │   ├── gin-architect/            # ✅ exists (v1.0.0 — Gin 1.12 on Go 1.26)
 │   │   ├── nethttp-architect/        # ✅ exists (v1.0.0 — stdlib net/http + Go 1.22+ enhanced ServeMux)
-│   │   ├── react-architect/          # 📋 planned
-│   │   └── nextjs-architect/         # 📋 planned
+│   │   ├── react-architect/          # ✅ exists (v1.0.0 — React 19, TS strict, TanStack Query for server state, zustand when justified)
+│   │   └── nextjs-architect/         # ✅ exists (v1.0.0 — Next 16, App Router only, RSC defaults, server actions, hybrid data access)
 │   ├── protocols/
 │   │   ├── rest-api-architect/       # ✅ exists (v1.0.0 — snake_case JSON, ISO 8601, RFC 7807 errors, mandatory Idempotency-Key & ETag)
 │   │   └── grpc-architect/           # ✅ exists (v1.0.0 — vanilla gRPC, status codes, interceptor chain, deadlines, bufconn testing)
 │   ├── encoding/
 │   │   └── protobuf-architect/       # ✅ exists (v1.0.0 — proto3, Buf-style packages, protovalidate, breaking-change discipline)
-│   ├── messaging/                    # 📋 new category
-│   │   └── event-driven-architect/   # 📋 planned
+│   ├── messaging/
+│   │   └── event-driven-architect/   # ✅ exists (v1.0.0 — Protobuf schemas, outbox mandatory, broker-agnostic; NATS/Kafka/RabbitMQ)
 │   ├── tooling/
 │   │   ├── cli-tool-architect/       # ✅ exists (v1.0.0 — Go cobra+pflag+viper, Python typer; TOML/XDG config, --output, exit codes, NO_COLOR)
 │   │   ├── repo-tooling-architect/   # ✅ exists (v1.0.0 — .editorconfig/.gitignore, mise|proto, Task|just, pre-commit, Renovate)
@@ -116,15 +116,16 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   ├── infra/
 │   │   ├── docker-architect/         # ✅ exists (v1.0.0 — Docker 29, Compose v2, distroless/slim defaults, multi-arch, Trivy)
 │   │   ├── ci-cd-architect/          # 📋 planned
-│   │   └── observability-architect/  # 📋 planned
+│   │   ├── grafana-architect/        # ✅ exists (v1.0.0 — dashboards-as-code via Grizzly, unified alerting, per-service folders)
+│   │   └── observability-architect/  # ✅ exists (v1.0.0 — Prometheus metrics + OTel logs/traces, RED+USE, head sampling at 10%)
 │   ├── robotics/
-│   │   └── ros2-architect/           # 📋 planned
+│   │   └── ros2-architect/           # ✅ exists (v1.0.0 — Kilted Kaiju, Pixi + RoboStack env, C++/Python equal, lifecycle nodes, explicit QoS)
 │   ├── quality/
-│   │   ├── security-reviewer/        # 📋 planned
-│   │   ├── api-contract-reviewer/    # 📋 planned
-│   │   └── performance-reviewer/     # 📋 planned
+│   │   ├── security-reviewer/        # ✅ exists (v1.0.0 — injection, auth, secrets, insecure defaults, OWASP-flavored)
+│   │   ├── api-contract-reviewer/    # ✅ exists (v1.0.0 — REST + gRPC contract stability, buf breaking + openapi-diff)
+│   │   └── performance-reviewer/     # ✅ exists (v1.0.0 — N+1, blocking I/O, allocation hot paths; measurement-grounded)
 │   ├── frontend/
-│   │   └── ui-ux-architect/          # 📋 planned
+│   │   └── ui-ux-architect/          # ✅ exists (v1.0.0 — WCAG 2.2 AA, Radix + Tailwind 4, design tokens, four-state UI discipline)
 │   └── workflows/
 │       ├── commit-author/            # ✅ exists
 │       ├── tdd/                      # ✅ exists
@@ -845,8 +846,8 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | `fastapi-architect` | ✅ | v1.0.0 — FastAPI 0.136 on Python 3.14. Feature-based structure, Pydantic v2 request/response separation, URL-prefix versioning (`/v1/...`), async DI with lifespan, RFC 7807 problem-details errors, in-house OAuth2+JWT (pyjwt+argon2-cffi) or external IdP with switching criterion |
 | `gin-architect` | ✅ | v1.0.0 — Gin 1.12 on Go 1.26. Feature-based structure, struct-tag validation, RFC 7807 middleware, in-house JWT (golang-jwt+argon2) or external IdP, route groups for URL versioning, OpenAPI via swaggo/swag or kin-openapi |
 | `nethttp-architect` | ✅ | v1.0.0 — stdlib `net/http` on Go 1.26 (no router framework). Enhanced ServeMux method patterns, middleware function-wrap chain, RFC 7807, mandatory production timeouts, kin-openapi for spec |
-| `react-architect` | 📋 | Component structure, custom hooks, `zustand`/`jotai`, `memo`/`lazy`/`suspense` |
-| `nextjs-architect` | 📋 | App router, server/client boundaries, server actions, data fetching patterns |
+| `react-architect` | ✅ | v1.0.0 — React 19 with TS strict. Feature-based folders, hooks-first composition, TanStack Query for server state, local state + Context default + zustand when justified, Suspense + ErrorBoundary at every async boundary, Vitest + RTL + Playwright + axe-core. Pairs with `nextjs-architect` for server-side concerns |
+| `nextjs-architect` | ✅ | v1.0.0 — Next.js 16, App Router only. Server components default + explicit `"use client"` boundaries, server actions for mutations, hybrid data access (RSC direct for reads, API routes for writes), streaming Suspense, edge vs node runtime, `next/image`/`next/font`/Metadata APIs, `output: "standalone"` Docker deploys |
 
 #### Protocols
 | Skill | Status | Notes |
@@ -862,7 +863,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 #### Messaging
 | Skill | Status | Notes |
 |---|---|---|
-| `event-driven-architect` | 📋 | Producer/consumer patterns, message schemas, idempotency, DLQs (Kafka/RabbitMQ) |
+| `event-driven-architect` | ✅ | v1.0.0 — event/command/message taxonomy, Protobuf schemas with `buf breaking`, hierarchical topic naming, **mandatory outbox pattern**, per-key partitioning for ordering, idempotent consumers with dedupe, DLQs with retry policy, schema evolution, saga choreography vs orchestration. Broker-agnostic; NATS lightweight default, Kafka log-based, RabbitMQ command queues |
 
 #### Tooling
 | Skill | Status | Notes |
@@ -890,24 +891,25 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 |---|---|---|
 | `docker-architect` | ✅ | v1.0.0 — Docker 29, Compose v2 (`docker compose` + `docker-compose.yaml`), per-language base defaults (distroless Go, debian-slim Python/Node), BuildKit cache+secret mounts, multi-arch (amd64+arm64), Trivy scanning, language-specific recipes |
 | `ci-cd-architect` | 📋 | GitHub Actions structure, test gates, deployment strategies |
-| `observability-architect` | 📋 | Structured logging (`zap`/`zerolog`), metrics naming, OpenTelemetry tracing |
+| `observability-architect` | ✅ | v1.0.0 — application-side signal production. Prometheus for metrics (naming convention, cardinality cap), OTLP for logs+traces, `log/slog` (Go) + `structlog` (Python), trace_id correlation across all three pillars, head sampling at 10% + 100% on errors, PII/secret redaction at SDK, RED + USE golden signals, SLOs per critical user journey |
+| `grafana-architect` | ✅ | v1.0.0 — dashboard + alert consumption layer. Dashboards-as-code via Grizzly (`grr`), one-folder-per-service ownership, one-question-per-panel design, unified alerting with multi-window/multi-burn-rate SLOs, mandatory `runbook_url` annotations, drift detection on UI edits. Pairs with `observability-architect` |
 
 #### Robotics
 | Skill | Status | Notes |
 |---|---|---|
-| `ros2-architect` | 📋 | Node/topic/service/action structure, launch files, workspace & package layout |
+| `ros2-architect` | ✅ | v1.0.0 — ROS2 Kilted Kaiju standards. Workspace layout, `ament_cmake` / `ament_python` packages, lifecycle nodes, explicit QoS profiles, services vs actions, parameter discipline, Python launch DSL. **Pixi + RoboStack** for cross-platform reproducible env (replaces `apt install ros-*`). Both C++ (`rclcpp`) and Python (`rclpy`) first-class |
 
 #### Quality
 | Skill | Status | Notes |
 |---|---|---|
-| `security-reviewer` | 📋 | Injection, auth issues, secret leakage, insecure defaults |
-| `api-contract-reviewer` | 📋 | Stability, versioning, documentation completeness |
-| `performance-reviewer` | 📋 | N+1 queries, missing indexes, blocking I/O in async code |
+| `security-reviewer` | ✅ | v1.0.0 — cross-language code-level security review. Critical/High/Medium/Low findings on injection, auth, secrets, insecure defaults, deserialization, CSRF/SSRF/IDOR, rate limiting, dependency hygiene. Tool pass (gitleaks, semgrep, gosec, bandit, Trivy) + read pass. Penetration testing & threat modeling explicitly out of scope |
+| `api-contract-reviewer` | ✅ | v1.0.0 — REST + gRPC contract stability. Versioning (URL prefix, package path), field/method hygiene (no reuse, no type changes), error shape (RFC 7807, gRPC codes), idempotency, ETag, OpenAPI completeness. Mechanical pass via `buf breaking` + `openapi-diff`, then conventions vs `rest-api-architect` / `protobuf-architect` / `grpc-architect` |
+| `performance-reviewer` | ✅ | v1.0.0 — measurement-grounded perf review. N+1, missing indexes, blocking I/O in async, allocation hot paths, unbounded memory, missing timeouts, high-cardinality labels. Every finding cites `EXPLAIN ANALYZE` / `pprof` / `py-spy` / `hyperfine` / dashboard signal. Load testing & capacity planning out of scope |
 
 #### Frontend
 | Skill | Status | Notes |
 |---|---|---|
-| `ui-ux-architect` | 📋 | Accessibility (ARIA, contrast), responsive layout, loading/error/empty states |
+| `ui-ux-architect` | ✅ | v1.0.0 — WCAG 2.2 AA mandatory, Radix primitives + Tailwind 4 + shadcn/ui recipes, OKLCH-based design tokens with semantic naming + dark mode, mobile-first + container queries, **four required states** (loading/error/empty/success) on every async surface, `prefers-reduced-motion` respected, `axe-core` + Lighthouse a11y ≥ 95 in CI |
 
 #### Workflows
 | Skill | Status | Notes |
