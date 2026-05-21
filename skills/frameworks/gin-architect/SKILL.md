@@ -59,7 +59,7 @@ Open shared resources in `main.go`, never per-request. Close them on shutdown si
 
 ## 7. Authentication & authorization
 
-**Patterns** (in-house JWT vs external IdP, Argon2id, JWT lifetimes, JWKS verification, switching criterion) live in [rest-api-architect §11](../../protocols/rest-api-architect/SKILL.md#11-authentication-patterns). Gin specifics:
+**Patterns** (in-house JWT vs external IdP, Argon2id, JWT lifetimes, JWKS verification, switching criterion) live in [rest-api-architect/AUTH_PATTERNS.md](../../protocols/rest-api-architect/AUTH_PATTERNS.md). Gin specifics:
 
 - **Pattern A — in-house JWT** via `golang-jwt/jwt/v5` + `argon2` from `golang.org/x/crypto`. Middleware skeleton in [RECIPES.md](RECIPES.md).
 - **Pattern B — external IdP**: `jwt.ParseWithClaims` with a `Keyfunc` that resolves keys via a JWKS client. Cache JWKS in-process with TTL.

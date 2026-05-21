@@ -77,7 +77,7 @@ stdlib has no middleware abstraction. The standard pattern: a function that take
 
 ## 8. Authentication & authorization
 
-**Patterns** live in [rest-api-architect §11](../../protocols/rest-api-architect/SKILL.md#11-authentication-patterns). stdlib specifics:
+**Patterns** live in [rest-api-architect/AUTH_PATTERNS.md](../../protocols/rest-api-architect/AUTH_PATTERNS.md). stdlib specifics:
 
 - **Pattern A — in-house JWT** via `golang-jwt/jwt/v5` + `argon2`. Middleware skeleton in [RECIPES.md](RECIPES.md).
 - **Pattern B — external IdP**: `jwt.ParseWithClaims` with a `Keyfunc` that resolves keys via cached JWKS. Verify `aud` and `iss` explicitly.

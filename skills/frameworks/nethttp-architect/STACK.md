@@ -13,7 +13,7 @@
 
 - **No router framework.** The Go 1.22+ enhanced `http.ServeMux` (method matching, `{path}` variables) is enough. Adding `chi`/`mux`/`gorilla` is rarely justified now.
 - **Inherits the `go-architect` stack.** Shared canonical libraries (viper, sqlx, slog, golangci-lint, etc.) live in [go-architect/STACK.md](../../languages/go-architect/STACK.md).
-- **Authentication library by pattern** (see [rest-api-architect §11](../../protocols/rest-api-architect/SKILL.md#11-authentication-patterns)):
+- **Authentication library by pattern** (see [rest-api-architect/AUTH_PATTERNS.md](../../protocols/rest-api-architect/AUTH_PATTERNS.md)):
   - Pattern A (in-house JWT): `golang-jwt/jwt/v5` + `golang.org/x/crypto/argon2`
   - Pattern B (external IdP): `golang-jwt/jwt/v5` only — keys come from JWKS
 - **OpenAPI library:** `getkin/kin-openapi` is the default — `swaggo/swag` is Gin-coupled and not a fit here.

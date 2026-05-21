@@ -48,7 +48,7 @@ Lifespan context is the only place to open/close shared resources (DB pool, HTTP
 
 ## 6. Authentication & authorization
 
-**Patterns** (in-house JWT vs external IdP, Argon2id, JWT lifetimes, JWKS verification, switching criterion) live in [rest-api-architect §11](../../protocols/rest-api-architect/SKILL.md#11-authentication-patterns). FastAPI-specific implementation:
+**Patterns** (in-house JWT vs external IdP, Argon2id, JWT lifetimes, JWKS verification, switching criterion) live in [rest-api-architect/AUTH_PATTERNS.md](../../protocols/rest-api-architect/AUTH_PATTERNS.md). FastAPI-specific implementation:
 
 - **Pattern A — in-house OAuth2 + JWT** uses FastAPI's `OAuth2PasswordBearer` + `pyjwt` + `argon2-cffi`. Dependency skeleton in [RECIPES.md](RECIPES.md).
 - **Pattern B — external IdP** uses `pyjwt`'s `PyJWKClient` for JWKS verification; cache via `@lru_cache`. Verify `aud` and `iss` explicitly.

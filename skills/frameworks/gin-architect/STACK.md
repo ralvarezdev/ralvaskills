@@ -14,7 +14,7 @@
 ## Notes
 
 - **Inherits the `go-architect` stack.** This file pins what is *specific* or *additionally required* for Gin services. Shared canonical libraries (viper, sqlx, slog, golangci-lint, etc.) live in [go-architect/STACK.md](../../languages/go-architect/STACK.md).
-- **Authentication library by pattern** (see [rest-api-architect §11](../../protocols/rest-api-architect/SKILL.md#11-authentication-patterns)):
+- **Authentication library by pattern** (see [rest-api-architect/AUTH_PATTERNS.md](../../protocols/rest-api-architect/AUTH_PATTERNS.md)):
   - Pattern A (in-house JWT): `golang-jwt/jwt/v5` + `golang.org/x/crypto/argon2`
   - Pattern B (external IdP): `golang-jwt/jwt/v5` only — keys come from JWKS
 - **OpenAPI library choice:** `swaggo/swag` is the default for speed; switch to `getkin/kin-openapi` once you need OpenAPI 3.1 features (oneOf, discriminators, runtime validation).
