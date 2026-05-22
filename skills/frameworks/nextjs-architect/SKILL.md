@@ -1,7 +1,7 @@
 ---
 name: nextjs-architect
 version: 1.0.0
-description: Next.js 16 standards — App Router only, server components by default with explicit `"use client"` boundaries, server actions for mutations, hybrid data access (direct from RSC for reads, API routes for writes — per project), streaming with Suspense, edge vs node runtime per route, Image / Font / Metadata APIs. Pairs with react-architect for client patterns. Use when scaffolding or reviewing a Next.js app, choosing where logic runs, or auditing server/client boundaries.
+description: Next.js 16 standards — App Router only, server components by default with explicit `"use client"` boundaries, server actions for mutations, streaming Suspense, edge vs node runtime, Image/Font/Metadata APIs. Pairs with react-architect. Use when scaffolding or reviewing a Next.js app or auditing server/client boundaries.
 ---
 
 # Next.js Architecture
@@ -62,28 +62,7 @@ Every component is a **server component** unless you opt out with `"use client"`
 
 ### The boundary rule
 
-```tsx
-// app/dashboard/users/page.tsx — server component (default)
-import { db } from "@/lib/db";
-import { UserListClient } from "./UserListClient";
-
-export default async function UsersPage() {
-  const users = await db.query.users.findMany();   // runs on server, no JS shipped for this
-  return <UserListClient users={users} />;
-}
-```
-
-```tsx
-// app/dashboard/users/UserListClient.tsx — client component (opt-in)
-"use client";
-import { useState } from "react";
-
-type Props = { users: User[] };
-export function UserListClient({ users }: Props) {
-  const [filter, setFilter] = useState("");
-  /* ... interactive UI ... */
-}
-```
+Skeleton: [RECIPES.md § Server / client boundary](RECIPES.md#server--client-boundary).
 
 - **Server passes data to client as props** — props must be JSON-serializable. Pass IDs, not class instances; pass plain objects, not Date (use ISO strings).
 - **One `"use client"` directive** at the top of a file makes that *file* and everything imported into it run client-side. Hoist the directive to the smallest leaf.
@@ -93,20 +72,7 @@ export function UserListClient({ users }: Props) {
 
 ### Reads — direct from server components (hybrid default)
 
-Per the project choice: **direct DB access from RSC for reads**, API routes for writes. Cleaner UX (single round-trip), type-safe end-to-end.
-
-```tsx
-// app/dashboard/users/[id]/page.tsx
-import { notFound } from "next/navigation";
-import { getUser } from "@/lib/users";
-
-export default async function UserPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const user = await getUser(id);
-  if (!user) notFound();
-  return <UserDetail user={user} />;
-}
-```
+Per the project choice: **direct DB access from RSC for reads**, API routes for writes. Cleaner UX (single round-trip), type-safe end-to-end. Skeleton: [RECIPES.md § Read directly from a server component](RECIPES.md#read-directly-from-a-server-component).
 
 - **`getUser` lives in a server-only module** (`@/lib/users.server.ts` or marked with the `"server-only"` import). Prevents accidental bundling of DB code into the client.
 - **Use [sql-architect](../../databases/sql-architect/SKILL.md)'s `psycopg + .sql` pattern** when the project's backend convention matches; otherwise use the project's existing data layer.
@@ -120,54 +86,7 @@ export default async function UserPage({ params }: { params: Promise<{ id: strin
 
 ### Writes — server actions
 
-Server actions are the canonical mutation pattern. No client-side fetch, no manual JSON handling.
-
-```tsx
-// app/dashboard/users/actions.ts
-"use server";
-import { revalidatePath } from "next/cache";
-import { z } from "zod";
-import { getCurrentUser } from "@/lib/auth";
-import { db } from "@/lib/db";
-
-const Schema = z.object({
-  name: z.string().min(1).max(100),
-  email: z.string().email(),
-});
-
-export async function createUser(formData: FormData) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
-
-  const parsed = Schema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return { ok: false as const, fieldErrors: parsed.error.flatten().fieldErrors };
-  }
-
-  await db.insert(users).values(parsed.data);
-  revalidatePath("/dashboard/users");
-  return { ok: true as const };
-}
-```
-
-```tsx
-// app/dashboard/users/NewUserForm.tsx
-"use client";
-import { useActionState } from "react";
-import { createUser } from "./actions";
-
-export function NewUserForm() {
-  const [state, formAction, pending] = useActionState(createUser, null);
-  return (
-    <form action={formAction}>
-      <input name="name" required />
-      <input name="email" type="email" required />
-      <button disabled={pending}>Create</button>
-      {state?.fieldErrors && /* render errors */}
-    </form>
-  );
-}
-```
+Server actions are the canonical mutation pattern. No client-side fetch, no manual JSON handling. Skeleton: [RECIPES.md § Server action with Zod validation + form binding](RECIPES.md#server-action-with-zod-validation--form-binding).
 
 - **`"use server"`** at the top of a file marks every export as a server action — accessible from client components via `import`.
 - **Always re-authenticate inside the action.** Don't trust the calling context; verify the session.
@@ -184,26 +103,7 @@ The [react-architect §5](../react-architect/SKILL.md#5-state-management--three-
 
 ## 4. Streaming with Suspense
 
-Next App Router streams the HTML as RSC chunks resolve. Pair with `<Suspense>` for granular per-region loading:
-
-```tsx
-// app/dashboard/page.tsx
-import { Suspense } from "react";
-
-export default function Dashboard() {
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      <Suspense fallback={<AnalyticsSkeleton />}>
-        <Analytics />            {/* slow async server component */}
-      </Suspense>
-      <Suspense fallback={<RecentSkeleton />}>
-        <Recent />               {/* slow async server component */}
-      </Suspense>
-    </div>
-  );
-}
-```
+Next App Router streams the HTML as RSC chunks resolve. Pair with `<Suspense>` for granular per-region loading. Skeleton: [RECIPES.md § Per-region streaming with Suspense](RECIPES.md#per-region-streaming-with-suspense).
 
 - **`loading.tsx` is a route-level Suspense.** Per-region Suspense gives finer-grained streaming.
 - **`error.tsx` is a route-level ErrorBoundary.** Inline `<ErrorBoundary>` (from `next/error-boundary` or a custom one) for finer scoping.

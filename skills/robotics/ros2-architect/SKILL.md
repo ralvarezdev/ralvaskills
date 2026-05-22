@@ -1,12 +1,24 @@
 ---
 name: ros2-architect
 version: 1.0.0
-description: ROS2 Kilted standards — workspace and package layout (colcon + ament_cmake/ament_python), lifecycle nodes, topics with explicit QoS, services, actions, parameters, Python launch DSL. Cross-platform development env via Pixi + RoboStack (replaces Ubuntu-only apt install). Both C++ (rclcpp) and Python (rclpy) first-class. Use when scaffolding or reviewing a ROS2 workspace, designing node/topic structure, or setting up reproducible robotics builds.
+description: ROS2 standards across Jazzy/Kilted/Lyrical — colcon + ament_cmake/ament_python layout, lifecycle nodes, explicit QoS, services/actions, parameters, Python launch DSL. Cross-platform dev env via Pixi + RoboStack. C++ (rclcpp) and Python (rclpy) equal first-class. Use when scaffolding or reviewing a ROS2 workspace.
 ---
 
 # ROS2 Architecture
 
-Targets **ROS2 Kilted Kaiju** (May 2025). C++ (`rclcpp`) and Python (`rclpy`) treated as equal first-class targets. **Development environment via Pixi + RoboStack** — the modern, cross-platform alternative to the `sudo apt install ros-kilted-*` flow. See [STACK.md](STACK.md) for pinned tool versions.
+Covers the three current ROS2 distributions; patterns are consistent across all three with version-specific notes called out where they diverge. C++ (`rclcpp`) and Python (`rclpy`) treated as equal first-class targets. **Development environment via Pixi + RoboStack** — the modern, cross-platform alternative to `sudo apt install ros-*`. See [STACK.md](STACK.md) for distro details and pinned tool versions.
+
+## 0. Distribution selection
+
+| Distro | Type | Released | EOL | When to pick |
+|---|---|---|---|---|
+| **Jazzy Jalisco** | LTS | May 2024 | May 2029 | **Default for new production systems.** Mature, broad community, 3+ years of support left. |
+| **Kilted Kaiju** | non-LTS | May 2025 | Dec 2026 | When you specifically need a feature added in Kilted and can plan a migration before Dec 2026. |
+| **Lyrical Luth** | LTS | May 2026 | May 2031 | **Default for new systems once the ecosystem catches up** (typically 1–3 months post-release as third-party packages migrate). Long support window. |
+
+- **Migrate from Kilted before Dec 2026** — direct target is Lyrical (next LTS) for a 5-year runway.
+- **Jazzy → Lyrical migration** is straightforward; most code ports with minimal changes.
+- **`ros2-architect`'s patterns apply to all three** — the differences are in specific package APIs and tooling. Where this matters, the section calls it out.
 
 ## 1. Workspace layout
 
@@ -50,40 +62,7 @@ my_robot_ws/
 
 ## 2. Pixi for the development environment
 
-Pixi solves the historical ROS2 pain: needing a specific Ubuntu version, conflicting Python installs, broken updates from `apt`. RoboStack channel on conda-forge distributes ROS distros as conda packages, so Pixi can install ROS2 anywhere conda runs — Linux, macOS, Windows.
-
-```toml
-# pixi.toml
-[project]
-name = "my_robot_ws"
-channels = ["https://prefix.dev/conda-forge", "https://prefix.dev/robostack-staging"]
-platforms = ["linux-64", "linux-aarch64", "osx-arm64", "win-64"]
-description = "My robot workspace"
-
-[dependencies]
-python                 = "3.12.*"
-ros-kilted-desktop     = "*"
-ros-kilted-rclcpp      = "*"
-ros-kilted-rclpy       = "*"
-ros-kilted-launch      = "*"
-ros-kilted-launch-ros  = "*"
-colcon-common-extensions = "*"
-compilers              = "*"      # C++ toolchain (gcc / clang / MSVC)
-cmake                  = "*"
-
-[tasks]
-build = "colcon build --symlink-install"
-test  = "colcon test && colcon test-result --verbose"
-clean = "rm -rf build/ install/ log/"
-run   = { cmd = "ros2 launch my_robot_bringup robot.launch.py", depends-on = ["build"] }
-```
-
-```bash
-pixi install                # one-time: install ROS + toolchain into .pixi/
-pixi shell                  # enter the env
-pixi run build              # build everything
-pixi run run                # launch the robot
-```
+Pixi solves the historical ROS2 pain: needing a specific Ubuntu version, conflicting Python installs, broken updates from `apt`. RoboStack channel on conda-forge distributes ROS distros as conda packages, so Pixi can install ROS2 anywhere conda runs — Linux, macOS, Windows. Skeleton: [RECIPES.md § `pixi.toml` — workspace manifest](RECIPES.md#pixitoml--workspace-manifest).
 
 - **`pixi.lock` is committed.** Reproducibility is the whole point.
 - **`platforms = [...]`** declares every OS/arch your team uses. CI uses the same lockfile.
@@ -93,49 +72,7 @@ pixi run run                # launch the robot
 
 ## 3. Package structure — `ament_cmake` vs `ament_python`
 
-The build type is declared in `package.xml`. Use `ament_cmake` for C++ (and for interface-only `_msgs` packages); `ament_python` for pure-Python packages.
-
-```xml
-<!-- ament_cmake — C++ packages and _msgs packages -->
-<package format="3">
-  <name>my_robot_drivers</name>
-  <version>0.1.0</version>
-  <description>Hardware drivers for My Robot</description>
-  <maintainer email="me@example.com">Me</maintainer>
-  <license>Apache-2.0</license>
-
-  <buildtool_depend>ament_cmake</buildtool_depend>
-  <depend>rclcpp</depend>
-  <depend>std_msgs</depend>
-  <depend>my_robot_msgs</depend>
-
-  <test_depend>ament_lint_auto</test_depend>
-  <test_depend>ament_lint_common</test_depend>
-
-  <export><build_type>ament_cmake</build_type></export>
-</package>
-```
-
-```xml
-<!-- ament_python — Python packages -->
-<package format="3">
-  <name>my_robot_navigation</name>
-  <version>0.1.0</version>
-  <description>Navigation logic for My Robot</description>
-  <maintainer email="me@example.com">Me</maintainer>
-  <license>Apache-2.0</license>
-
-  <exec_depend>rclpy</exec_depend>
-  <exec_depend>my_robot_msgs</exec_depend>
-
-  <test_depend>ament_copyright</test_depend>
-  <test_depend>ament_flake8</test_depend>
-  <test_depend>ament_pep257</test_depend>
-  <test_depend>python3-pytest</test_depend>
-
-  <export><build_type>ament_python</build_type></export>
-</package>
-```
+The build type is declared in `package.xml`. Use `ament_cmake` for C++ (and for interface-only `_msgs` packages); `ament_python` for pure-Python packages. Skeletons: [RECIPES.md § `package.xml` — `ament_cmake`](RECIPES.md#packagexml--ament_cmake-c-and-_msgs) and [§ `ament_python`](RECIPES.md#packagexml--ament_python).
 
 - **`format="3"`** for `package.xml`. Older formats still work but lack features.
 - **Every dep declared.** Implicit dependencies (`std_msgs` showing up because something else pulled it) is a latent bug.
@@ -205,39 +142,7 @@ self.pub = self.create_publisher(Image, '/camera/image', qos_profile_sensor_data
 
 ## 8. Launch files — Python DSL
 
-Launch files describe how to bring up a system: which nodes to run, with which parameters, in which order, on which conditions.
-
-```python
-# launch/robot.launch.py
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
-from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node, LifecycleNode
-
-def generate_launch_description():
-    use_sim = LaunchConfiguration('use_sim')
-
-    return LaunchDescription([
-        DeclareLaunchArgument('use_sim', default_value='false'),
-
-        LifecycleNode(
-            package='my_robot_drivers',
-            executable='camera_driver',
-            name='camera_driver',
-            namespace='sensors',
-            parameters=[{'frame_rate': 30}],
-            condition=...,
-        ),
-
-        Node(
-            package='my_robot_navigation',
-            executable='path_planner',
-            name='path_planner',
-            output='screen',
-            parameters=['config/path_planner.yaml'],
-        ),
-    ])
-```
+Launch files describe how to bring up a system: which nodes to run, with which parameters, in which order, on which conditions. Skeleton: [RECIPES.md § Launch file — Python DSL](RECIPES.md#launch-file--python-dsl).
 
 - **Always Python launch (`*.launch.py`)** — XML launch is legacy.
 - **Launch arguments for environment differences** (`use_sim`, `robot_model`). One launch file, many configurations.

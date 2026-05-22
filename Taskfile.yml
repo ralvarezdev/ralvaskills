@@ -1,0 +1,18 @@
+version: '3'
+
+tasks:
+  default:
+    desc: List all available tasks
+    silent: true
+    cmds:
+      - task --list
+
+  tokens:
+    desc: Re-generate docs/TOKEN_COUNTS.md with latest SKILL.md byte/token estimates
+    sources:
+      - skills/**/SKILL.md
+      - scripts/count-tokens/**/*.go
+    generates:
+      - docs/TOKEN_COUNTS.md
+    cmds:
+      - go run ./scripts/count-tokens

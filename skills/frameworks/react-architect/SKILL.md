@@ -1,7 +1,7 @@
 ---
 name: react-architect
 version: 1.0.0
-description: React 19 standards — TypeScript strict, feature-based components, hooks-first composition, server state via TanStack Query, client state via local/Context with zustand for cross-tree mutable global, Suspense + ErrorBoundary at every async boundary, accessibility through Radix primitives. Use when scaffolding or reviewing a React app, writing components or hooks, or auditing client-side state management.
+description: React 19 standards — TypeScript strict, feature-based components, hooks-first composition, TanStack Query for server state, zustand for cross-tree client state, Suspense + ErrorBoundary at every async boundary, Radix for a11y. Use when writing or reviewing React components, hooks, or client-side state.
 ---
 
 # React Architecture
@@ -10,24 +10,7 @@ Targets **React 19** with **TypeScript strict**. Component library defaults to R
 
 ## 1. TypeScript posture — strict, always
 
-`tsconfig.json` minimum:
-
-```jsonc
-{
-  "compilerOptions": {
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true,
-    "module": "preserve",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "target": "ES2024"
-  }
-}
-```
+`tsconfig.json` baseline in [RECIPES.md § `tsconfig.json` — strict baseline](RECIPES.md#tsconfigjson--strict-baseline).
 
 - **No `any`.** Use `unknown` for truly untyped boundaries, then narrow.
 - **No type assertions (`as`)** except at validated I/O boundaries (after a Zod parse, etc.).
@@ -78,30 +61,7 @@ src/
 
 ### Naming + structure
 
-```tsx
-// features/users/components/UserCard.tsx
-import { useUser } from "../hooks/useUser";
-
-type UserCardProps = {
-  userId: string;
-  onEdit?: () => void;
-};
-
-export function UserCard({ userId, onEdit }: UserCardProps) {
-  const { data, isPending, isError, error } = useUser(userId);
-
-  if (isPending) return <UserCardSkeleton />;
-  if (isError) return <UserCardError error={error} retry={refetch} />;
-
-  return (
-    <article aria-label={`User ${data.name}`}>
-      <h3>{data.name}</h3>
-      {/* ... */}
-      {onEdit && <button onClick={onEdit}>Edit</button>}
-    </article>
-  );
-}
-```
+Skeleton: [RECIPES.md § Component skeleton — `Props` type + loading/error guard](RECIPES.md#component-skeleton--props-type--loadingerror-guard).
 
 - **`Props` type colocated**, named `<Component>Props`.
 - **Loading / error / empty states are real components**, not inline ternaries with cryptic JSX. Per [ui-ux-architect](../../frontend/ui-ux-architect/SKILL.md).
@@ -110,28 +70,7 @@ export function UserCard({ userId, onEdit }: UserCardProps) {
 
 ### Composition over configuration
 
-Reach for the composition shape first; a 20-prop `<DataTable>` is a smell.
-
-```tsx
-// Configuration shape — fragile
-<DataTable
-  columns={[...]}
-  rows={[...]}
-  showHeader
-  sortable
-  filterable
-  selectable
-  paginated
-  ...
-/>
-
-// Composition shape — extensible
-<DataTable rows={...}>
-  <DataTable.Header>...</DataTable.Header>
-  <DataTable.Body>...</DataTable.Body>
-  <DataTable.Pagination />
-</DataTable>
-```
+Reach for the composition shape first; a 20-prop `<DataTable>` is a smell. Comparison: [RECIPES.md § Compound vs. configuration component shape](RECIPES.md#compound-vs-configuration-component-shape).
 
 - **Compound components** export sub-components on the main one (`Tabs.List`, `Tabs.Tab`, `Tabs.Panel`).
 - **`children` is the most underused prop.** When in doubt, accept children.
@@ -201,44 +140,11 @@ Reach for the composition shape first; a 20-prop `<DataTable>` is a smell.
 - **When state has a non-trivial reducer shape** with several actions, zustand's set/get is cleaner than `useReducer` + Context.
 - **Don't reach for it preemptively.** Most apps go years without needing it.
 
-```ts
-// example: a focused store for a multi-step form workflow
-import { create } from "zustand";
-
-interface CheckoutStore {
-  step: 1 | 2 | 3;
-  shipping: ShippingInfo | null;
-  payment: PaymentInfo | null;
-  next: () => void;
-  setShipping: (s: ShippingInfo) => void;
-  reset: () => void;
-}
-
-export const useCheckoutStore = create<CheckoutStore>((set) => ({
-  step: 1,
-  shipping: null,
-  payment: null,
-  next: () => set((s) => ({ step: Math.min(s.step + 1, 3) as 1|2|3 })),
-  setShipping: (s) => set({ shipping: s }),
-  reset: () => set({ step: 1, shipping: null, payment: null }),
-}));
-```
+Skeleton: [RECIPES.md § Zustand store — focused, single-purpose](RECIPES.md#zustand-store--focused-single-purpose).
 
 ## 6. Suspense + ErrorBoundary
 
-React 19's recommendation is: **every async boundary has a Suspense + ErrorBoundary above it.**
-
-```tsx
-function UsersRoute() {
-  return (
-    <ErrorBoundary fallback={<RouteError />}>
-      <Suspense fallback={<RouteSkeleton />}>
-        <UserList />
-      </Suspense>
-    </ErrorBoundary>
-  );
-}
-```
+React 19's recommendation is: **every async boundary has a Suspense + ErrorBoundary above it.** Skeleton: [RECIPES.md § Suspense + ErrorBoundary at a route](RECIPES.md#suspense--errorboundary-at-a-route).
 
 - **`<Suspense>` for loading**, `<ErrorBoundary>` for errors. The two together replace per-component `if (isPending) ... if (isError) ...` ladders.
 - **TanStack Query supports Suspense mode** (`useSuspenseQuery`) — pairs cleanly with the boundary pattern.

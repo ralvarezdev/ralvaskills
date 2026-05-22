@@ -119,7 +119,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── grafana-architect/        # ✅ exists (v1.0.0 — dashboards-as-code via Grizzly, unified alerting, per-service folders)
 │   │   └── observability-architect/  # ✅ exists (v1.0.0 — Prometheus metrics + OTel logs/traces, RED+USE, head sampling at 10%)
 │   ├── robotics/
-│   │   └── ros2-architect/           # ✅ exists (v1.0.0 — Kilted Kaiju, Pixi + RoboStack env, C++/Python equal, lifecycle nodes, explicit QoS)
+│   │   └── ros2-architect/           # ✅ exists (v1.0.0 — Jazzy/Kilted/Lyrical, Pixi + RoboStack env, C++/Python equal, lifecycle nodes, explicit QoS)
 │   ├── quality/
 │   │   ├── security-reviewer/        # ✅ exists (v1.0.0 — injection, auth, secrets, insecure defaults, OWASP-flavored)
 │   │   ├── api-contract-reviewer/    # ✅ exists (v1.0.0 — REST + gRPC contract stability, buf breaking + openapi-diff)
@@ -487,9 +487,9 @@ rsk install --skill demo-script-architect --personal   # personal skill, explici
 **Behavior when a bundled skill is not yet created:**
 Skills marked as planned in a bundle are silently skipped with a warning — the install continues for all available skills:
 ```
-⚠ react-architect is not yet available (planned). Skipping — it will be included automatically once released.
-✓ frontend-design installed (official)
-✓ nextjs-architect skipped — not yet available (planned)
+⚠ llm-app-architect is not yet available (planned). Skipping — it will be included automatically once released.
+✓ python-architect installed
+✓ agent-architect skipped — not yet available (planned)
 ```
 
 **Behavior of `--version` with official skills:**
@@ -897,7 +897,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 #### Robotics
 | Skill | Status | Notes |
 |---|---|---|
-| `ros2-architect` | ✅ | v1.0.0 — ROS2 Kilted Kaiju standards. Workspace layout, `ament_cmake` / `ament_python` packages, lifecycle nodes, explicit QoS profiles, services vs actions, parameter discipline, Python launch DSL. **Pixi + RoboStack** for cross-platform reproducible env (replaces `apt install ros-*`). Both C++ (`rclcpp`) and Python (`rclpy`) first-class |
+| `ros2-architect` | ✅ | v1.0.0 — covers **Jazzy** (current LTS, EOL 2029), **Kilted** (latest non-LTS, EOL Dec 2026), and **Lyrical** (next LTS, May 2026, EOL 2031). Workspace layout, `ament_cmake` / `ament_python` packages, lifecycle nodes, explicit QoS profiles, services vs actions, parameter discipline, Python launch DSL. **Pixi + RoboStack** for cross-platform reproducible env (replaces `apt install ros-*`). Both C++ (`rclcpp`) and Python (`rclpy`) first-class |
 
 #### Quality
 | Skill | Status | Notes |

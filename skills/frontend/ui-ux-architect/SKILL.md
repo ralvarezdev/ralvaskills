@@ -1,7 +1,7 @@
 ---
 name: ui-ux-architect
 version: 1.0.0
-description: UI/UX standards — WCAG 2.2 AA mandatory, Radix primitives + Tailwind 4 + shadcn/ui recipes, design-token-driven theming, mandatory loading/error/empty/success states for every async surface, responsive mobile-first, keyboard-navigation parity, color contrast checked in CI. Use when designing or reviewing UI components, building a design system, auditing accessibility, or scaffolding the visual layer of a frontend.
+description: UI/UX standards — WCAG 2.2 AA, Radix + Tailwind 4 + shadcn/ui, design-token theming, mandatory loading/error/empty/success states on every async surface, mobile-first responsive, keyboard parity, contrast checked in CI. Use when designing UI components, building a design system, or auditing accessibility.
 ---
 
 # UI / UX Architecture

@@ -1,7 +1,7 @@
 ---
 name: event-driven-architect
 version: 1.0.0
-description: Event-driven architecture standards — event vs message vs command, Protobuf schemas with `buf breaking` discipline, topic naming, idempotency keys, mandatory outbox pattern, ordered partitioning, dead-letter queues, schema evolution, replay. Broker-agnostic patterns; NATS for lightweight, Kafka for log-based, RabbitMQ for command queues. Use when designing event flows between services, reviewing producer/consumer code, or auditing eventual-consistency boundaries.
+description: Event-driven architecture — event/command/message taxonomy, Protobuf schemas + `buf breaking`, topic naming, idempotency, mandatory outbox pattern, partitioning, DLQs, schema evolution. Broker-agnostic; NATS lightweight, Kafka log-based, RabbitMQ command queues. Use when designing event flows or auditing eventual-consistency boundaries.
 ---
 
 # Event-Driven Architecture

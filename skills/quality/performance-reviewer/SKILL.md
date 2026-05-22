@@ -1,7 +1,7 @@
 ---
 name: performance-reviewer
 version: 1.0.0
-description: Cross-language performance review — N+1 queries, missing indexes, blocking I/O in async code, allocation hot paths, unbounded memory growth, sync calls in goroutines, slow algorithms. Reviews against EXPLAIN plans, profiler output (pprof / py-spy), and the metrics defined in observability-architect. Produces Critical/High/Medium/Low findings with measurement-grounded fixes. Use when reviewing a PR for perf, investigating a slow endpoint, or before a load test.
+description: Cross-language performance review — N+1, missing indexes, blocking I/O in async, allocation hot paths, unbounded memory, slow algorithms. Grounds findings in EXPLAIN, pprof, py-spy, or observability metrics. Produces Critical/High/Medium/Low fixes. Use when reviewing a PR for perf or investigating a slow endpoint.
 ---
 
 # Performance Reviewer

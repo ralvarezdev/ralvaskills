@@ -1,9 +1,9 @@
 // count-tokens scans every SKILL.md under skills/, estimates token counts
-// (body + description-only), and writes docs/TOKEN_COUNTS.md.
+// (body + description-only + side files), and writes docs/TOKEN_COUNTS.md.
 //
 // Usage:
 //
-//	go run ./scripts/count-tokens
+//	task tokens
 package main
 
 import (
@@ -17,17 +17,18 @@ import (
 	"time"
 )
 
-// tokensPerByte is a rough estimate for Claude's tokenizer on English markdown.
-// Actual range is 3.5–4.5; use 4 as a safe midpoint.
-const tokensPerByte = 4
+// bytesPerToken is a rough estimate for Claude's tokenizer on English markdown.
+// Actual range is 3.5–4.5 bytes/token; 4 is a safe midpoint.
+const bytesPerToken = 4
 
 type skill struct {
-	name        string
-	category    string
-	bodyBytes   int64
-	descBytes   int64
-	bodyTokens  int64
-	descTokens  int64
+	name          string
+	category      string
+	bodyBytes     int64
+	bodyTokens    int64
+	descTokens    int64
+	stackTokens   int64
+	recipesTokens int64
 }
 
 func main() {
@@ -75,7 +76,8 @@ func findRoot() (string, error) {
 	}
 }
 
-// scan walks skillsDir and collects a skill entry for each SKILL.md found.
+// scan walks skillsDir and collects a skill entry for each SKILL.md found,
+// also picking up sibling STACK.md and RECIPES.md when present.
 func scan(skillsDir string) ([]skill, error) {
 	var skills []skill
 	err := filepath.WalkDir(skillsDir, func(path string, d fs.DirEntry, err error) error {
@@ -93,24 +95,28 @@ func scan(skillsDir string) ([]skill, error) {
 			return nil
 		}
 
-		// derive skill name and category from directory structure:
-		// skills/<category>/<skill-name>/SKILL.md
 		skillDir := filepath.Dir(path)
 		name := filepath.Base(skillDir)
 		category := filepath.Base(filepath.Dir(skillDir))
 
 		desc := extractDescription(data)
-		descBytes := int64(len(desc))
-		bodyBytes := info.Size()
 
-		skills = append(skills, skill{
+		s := skill{
 			name:       name,
 			category:   category,
-			bodyBytes:  bodyBytes,
-			descBytes:  descBytes,
-			bodyTokens: bodyBytes / tokensPerByte,
-			descTokens: descBytes / tokensPerByte,
-		})
+			bodyBytes:  info.Size(),
+			bodyTokens: info.Size() / bytesPerToken,
+			descTokens: int64(len(desc)) / bytesPerToken,
+		}
+
+		if si, err := os.Stat(filepath.Join(skillDir, "STACK.md")); err == nil {
+			s.stackTokens = si.Size() / bytesPerToken
+		}
+		if ri, err := os.Stat(filepath.Join(skillDir, "RECIPES.md")); err == nil {
+			s.recipesTokens = ri.Size() / bytesPerToken
+		}
+
+		skills = append(skills, s)
 		return nil
 	})
 	return skills, err
@@ -125,7 +131,6 @@ func extractDescription(data []byte) string {
 		return ""
 	}
 
-	// find closing ---
 	rest := content[3:]
 	frontmatter, _, ok := strings.Cut(rest, "\n---")
 	if !ok {
@@ -140,7 +145,6 @@ func extractDescription(data []byte) string {
 		}
 		value := strings.TrimSpace(strings.TrimPrefix(trimmed, "description:"))
 
-		// block scalar (> or |): collect indented continuation lines
 		if value == ">" || value == "|" {
 			var parts []string
 			for _, cont := range lines[i+1:] {
@@ -160,18 +164,21 @@ func extractDescription(data []byte) string {
 func render(skills []skill) string {
 	var buf bytes.Buffer
 
-	var totalBodyBytes, totalBodyTokens, totalDescBytes, totalDescTokens int64
+	var totalBodyBytes, totalBodyTokens, totalDescTokens int64
+	var totalStackTokens, totalRecipesTokens int64
 	for _, s := range skills {
 		totalBodyBytes += s.bodyBytes
 		totalBodyTokens += s.bodyTokens
-		totalDescBytes += s.descBytes
 		totalDescTokens += s.descTokens
+		totalStackTokens += s.stackTokens
+		totalRecipesTokens += s.recipesTokens
 	}
+	totalSideTokens := totalStackTokens + totalRecipesTokens
 
 	buf.WriteString("# SKILL.md Token Estimates\n\n")
-	buf.WriteString("> Auto-generated. **Do not edit by hand.** Run `go run ./scripts/count-tokens` to refresh.\n")
+	buf.WriteString("> Auto-generated. **Do not edit by hand.** Run `task tokens` to refresh.\n")
 	buf.WriteString(">\n")
-	buf.WriteString("> Estimate: ~4 chars/token (Claude tokenizer, English markdown). Actual range ±15%.\n\n")
+	buf.WriteString("> Estimate: ~4 bytes/token (Claude tokenizer, English markdown). Actual range ±15%.\n\n")
 	fmt.Fprintf(&buf, "_Last updated: %s · %d skills_\n\n", time.Now().UTC().Format("2006-01-02 15:04 UTC"), len(skills))
 
 	buf.WriteString("## Load model\n\n")
@@ -179,23 +186,24 @@ func render(skills []skill) string {
 	buf.WriteString("|---|---|---:|\n")
 	fmt.Fprintf(&buf, "| All `description:` fields (skill index) | **Every turn** | ~%d |\n", totalDescTokens)
 	fmt.Fprintf(&buf, "| All `SKILL.md` bodies | Only when skill is invoked | ~%d |\n", totalBodyTokens)
-	fmt.Fprintf(&buf, "| Everything combined | If all skills active at once | ~%d |\n\n", totalBodyTokens)
+	fmt.Fprintf(&buf, "| All side files (`STACK` + `RECIPES`) | On-demand only | ~%d |\n", totalSideTokens)
+	fmt.Fprintf(&buf, "| Everything combined | Absolute maximum | ~%d |\n\n", totalBodyTokens+totalSideTokens)
 
 	buf.WriteString("## Per skill\n\n")
-	buf.WriteString("| # | Skill | Category | Body bytes | ~Body tokens | ~Desc tokens |\n")
-	buf.WriteString("|---|---|---|---:|---:|---:|\n")
+	buf.WriteString("| # | Skill | Category | Body bytes | ~Body tkns | ~Desc tkns | ~Stack tkns | ~Recipes tkns |\n")
+	buf.WriteString("|---|---|---|---:|---:|---:|---:|---:|\n")
 	for i, s := range skills {
-		fmt.Fprintf(&buf, "| %d | `%s` | %s | %d | ~%d | ~%d |\n",
-			i+1, s.name, s.category, s.bodyBytes, s.bodyTokens, s.descTokens)
+		fmt.Fprintf(&buf, "| %d | `%s` | %s | %d | ~%d | ~%d | ~%d | ~%d |\n",
+			i+1, s.name, s.category, s.bodyBytes, s.bodyTokens, s.descTokens, s.stackTokens, s.recipesTokens)
 	}
 
-	fmt.Fprintf(&buf, "\n**Totals:** %d bytes · ~%d body tokens · ~%d description tokens (always-loaded)\n\n",
-		totalBodyBytes, totalBodyTokens, totalDescTokens)
+	fmt.Fprintf(&buf, "\n**Totals:** %d body bytes · ~%d body tokens · ~%d desc tokens · ~%d side tokens\n\n",
+		totalBodyBytes, totalBodyTokens, totalDescTokens, totalSideTokens)
 
 	buf.WriteString("## Notes\n\n")
 	buf.WriteString("- **Body tokens** cost only when the skill is invoked in a session.\n")
 	buf.WriteString("- **Description tokens** cost on every single turn — keep descriptions short.\n")
-	buf.WriteString("- `RECIPES.md` and other side files are never auto-loaded; they cost 0 per turn.\n")
+	buf.WriteString("- `STACK.md` and `RECIPES.md` are never auto-loaded; they cost 0 per turn.\n")
 	buf.WriteString("- For exact counts: run each file through [`tiktoken`](https://github.com/openai/tiktoken) with `cl100k_base`.\n")
 
 	return buf.String()

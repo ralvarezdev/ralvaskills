@@ -1,22 +1,34 @@
 # Stack Versions
 
+## Supported distributions
+
+| Distro | Type | Release | EOL | Pixi prefix | When |
+|---|---|---|---|---|---|
+| **Jazzy Jalisco** | LTS | May 2024 | May 2029 | `ros-jazzy-*` | Default for production today |
+| **Kilted Kaiju** | non-LTS | May 2025 | Dec 2026 | `ros-kilted-*` | Bridge — features added in Kilted, migrate to Lyrical before Dec 2026 |
+| **Lyrical Luth** | LTS | May 2026 | May 2031 | `ros-lyrical-*` | Default for new projects once ecosystem catches up (1–3 months post-release) |
+
+## Tooling (distro-independent)
+
 | Dependency | Pinned version | Purpose |
 |---|---|---|
-| ROS2 distro | Kilted Kaiju (May 2025, non-LTS) | Target distribution; EOL Dec 2026 |
-| rclcpp | bundled with Kilted | C++ client library |
-| rclpy | bundled with Kilted | Python client library |
 | Python | 3.12 | Runtime for `rclpy` packages and launch files |
 | colcon | colcon-common-extensions latest | Build tool — `colcon build`, `colcon test` |
-| ament_cmake | bundled with Kilted | C++ package build type |
-| ament_python | bundled with Kilted | Python package build type |
-| Pixi | 0.69 | Cross-platform environment manager (replaces apt for ROS install) |
-| RoboStack channel | `robostack-staging` on conda-forge | ROS2 packages distributed as conda packages — works on Linux + macOS + Windows |
+| ament_cmake | bundled per distro | C++ package build type |
+| ament_python | bundled per distro | Python package build type |
+| Pixi | 0.69 | Cross-platform environment manager — replaces apt for ROS install |
+| RoboStack channel | `robostack-staging` on conda-forge | ROS2 packages as conda packages — Linux + macOS + Windows |
 
 ## Notes
 
-- **Pixi + RoboStack is the recommended development environment.** No `sudo apt install ros-kilted-*` required; the workspace's `pixi.toml` defines the full ROS install and a `pixi.lock` makes it reproducible across team members and CI. Linux, macOS, and Windows are all supported.
-- **Kilted Kaiju is non-LTS** (EOL Dec 2026). Plan a migration to the next LTS (after Jazzy: likely a 2026 LTS) before EOL. The codebase should be portable enough that bumping the distro is `pixi.toml` lines plus any deprecation fixes.
-- **C++ and Python are equal first-class.** Don't write everything in one language for uniformity; pick per node based on perf vs iteration speed.
+- **Distribution choice is per-project**, declared in `pixi.toml` and consistent across team + CI via `pixi.lock`. Don't mix distros in one workspace.
+- **Pixi + RoboStack works for all three distros** — change `ros-jazzy-*` to `ros-kilted-*` or `ros-lyrical-*` in your `pixi.toml`; everything else stays the same.
+- **Migration paths:**
+  - Jazzy → Lyrical: straightforward when Lyrical's ecosystem catches up; both are LTS.
+  - Kilted → Lyrical: mandatory before Dec 2026; direct upgrade target.
+  - Humble → Jazzy / Lyrical: viable but plan effort proportional to package count; many breaking changes accumulated since 2022.
+- **Don't pick Rolling** for anything but contributor development against ROS2 itself.
+- **C++ and Python are equal first-class** across all three distros. Don't write everything in one language for uniformity; pick per node based on perf vs iteration speed.
 - **Launch files are Python (`*.launch.py`)** — XML launch is legacy.
 - **QoS is always explicit.** Default reliability + KEEP_LAST is rarely what high-rate topics want.
 - **`pixi.lock` is committed** to git. CI uses the same lockfile via `pixi run ...`.
