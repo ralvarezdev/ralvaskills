@@ -1,0 +1,165 @@
+# ralvaskills default bundle catalog
+# This file is embedded in the rsk binary. To customise bundles or add your
+# own, create ~/.config/rsk/catalog.toml — bundles with the same name replace
+# the defaults; new names are appended.
+
+[[bundle]]
+name        = "global"
+description = "Universal skills — install machine-wide; apply to every project"
+skills = [
+  { name = "commit-author",                 source = "local" },
+  { name = "logic-cleaner",                 source = "local" },
+  { name = "code-design-refactor",          source = "local" },
+  { name = "tdd",                           source = "local" },
+  { name = "grill-with-docs",               source = "local" },
+  { name = "caveman",                       source = "local" },
+  { name = "feature-planner",               source = "local" },
+  { name = "security-reviewer",             source = "local" },
+  { name = "ddd-architect",                 source = "local" },
+  { name = "hexagonal-arch",                source = "local" },
+  { name = "design-patterns",               source = "local" },
+  { name = "improve-codebase-architecture", source = "local" },
+  { name = "rsk-guide",                     source = "local" },
+  { name = "repo-tooling-architect",        source = "local" },
+  { name = "skill-builder",                 source = "local" },
+]
+
+[[bundle]]
+name        = "docs"
+description = "Document creation and technical reference skills (official)"
+skills = [
+  { name = "docx",      source = "official" },
+  { name = "xlsx",      source = "official" },
+  { name = "pdf",       source = "official" },
+  { name = "pptx",      source = "official" },
+  { name = "find-docs", source = "official" },
+]
+
+[[bundle]]
+name        = "design"
+description = "Frontend and UI/UX design skills"
+skills = [
+  { name = "frontend-design", source = "official" },
+  { name = "react-architect",  source = "local"    },
+  { name = "nextjs-architect", source = "local"    },
+  { name = "ui-ux-architect",  source = "local"    },
+]
+
+[[bundle]]
+name        = "go-grpc"
+description = "Go service exposing a gRPC API"
+skills = [
+  { name = "go-architect",       source = "local" },
+  { name = "grpc-architect",     source = "local" },
+  { name = "protobuf-architect", source = "local" },
+  { name = "docker-architect",   source = "local" },
+  { name = "sql-architect",      source = "local" },
+]
+
+[[bundle]]
+name        = "gin"
+description = "Go service exposing a REST API via Gin"
+skills = [
+  { name = "go-architect",     source = "local" },
+  { name = "gin-architect",    source = "local" },
+  { name = "rest-api-architect", source = "local" },
+  { name = "docker-architect", source = "local" },
+  { name = "sql-architect",    source = "local" },
+]
+
+[[bundle]]
+name        = "nethttp"
+description = "Go service exposing a REST API via stdlib net/http"
+skills = [
+  { name = "go-architect",       source = "local" },
+  { name = "nethttp-architect",  source = "local" },
+  { name = "rest-api-architect", source = "local" },
+  { name = "docker-architect",   source = "local" },
+  { name = "sql-architect",      source = "local" },
+]
+
+[[bundle]]
+name        = "go-cli"
+description = "Go command-line tool"
+skills = [
+  { name = "go-architect",      source = "local" },
+  { name = "cli-tool-architect", source = "local" },
+  { name = "docker-architect",  source = "local" },
+]
+
+[[bundle]]
+name        = "fastapi"
+description = "Python service exposing a REST API with FastAPI"
+skills = [
+  { name = "python-architect",   source = "local" },
+  { name = "fastapi-architect",  source = "local" },
+  { name = "rest-api-architect", source = "local" },
+  { name = "docker-architect",   source = "local" },
+  { name = "sql-architect",      source = "local" },
+]
+
+[[bundle]]
+name        = "llm-app"
+description = "Python-based LLM application or RAG pipeline"
+skills = [
+  { name = "python-architect",  source = "local" },
+  { name = "fastapi-architect", source = "local" },
+  { name = "llm-app-architect", source = "local" },
+  { name = "agent-architect",   source = "local" },
+  { name = "hexagonal-arch",    source = "local" },
+  { name = "docker-architect",  source = "local" },
+]
+
+[[bundle]]
+name        = "ros2"
+description = "ROS2 robotics application"
+skills = [
+  { name = "python-architect", source = "local" },
+  { name = "ros2-architect",   source = "local" },
+  { name = "docker-architect", source = "local" },
+]
+
+[[bundle]]
+name        = "python-grpc"
+description = "Python service exposing a gRPC API"
+skills = [
+  { name = "python-architect",   source = "local" },
+  { name = "grpc-architect",     source = "local" },
+  { name = "protobuf-architect", source = "local" },
+  { name = "docker-architect",   source = "local" },
+  { name = "sql-architect",      source = "local" },
+]
+
+[[bundle]]
+name        = "python-cli"
+description = "Python command-line tool"
+skills = [
+  { name = "python-architect",   source = "local" },
+  { name = "cli-tool-architect", source = "local" },
+  { name = "docker-architect",   source = "local" },
+]
+
+[[bundle]]
+name        = "event-driven"
+description = "Broker-agnostic event-driven messaging stack (schema-first)"
+skills = [
+  { name = "event-driven-architect", source = "local" },
+  { name = "protobuf-architect",     source = "local" },
+]
+
+[[bundle]]
+name        = "observability"
+description = "Application-side signals + dashboards and alerts"
+skills = [
+  { name = "observability-architect", source = "local" },
+  { name = "grafana-architect",       source = "local" },
+]
+
+[[bundle]]
+name        = "code-review"
+description = "Cross-language reviewers — security, API contracts, performance"
+skills = [
+  { name = "security-reviewer",     source = "local" },
+  { name = "api-contract-reviewer", source = "local" },
+  { name = "performance-reviewer",  source = "local" },
+]

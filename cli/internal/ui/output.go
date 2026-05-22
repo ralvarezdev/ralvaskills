@@ -2,6 +2,7 @@
 package ui
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -101,4 +102,13 @@ func MaxWidth(items []string) int {
 		}
 	}
 	return width
+}
+
+// ConfirmYN prints a [y/N] prompt to w and returns true if the user answers "y" or "yes".
+func ConfirmYN(w io.Writer, prompt string) bool {
+	fmt.Fprintf(w, "%s [y/N] ", prompt)
+	r := bufio.NewReader(os.Stdin)
+	line, _ := r.ReadString('\n')
+	line = strings.ToLower(strings.TrimSpace(strings.TrimRight(line, "\r\n")))
+	return line == "y" || line == "yes"
 }

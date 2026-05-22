@@ -43,5 +43,5 @@ func (l *Local) Find(name string) (skill.Skill, error) {
 			return s, nil
 		}
 	}
-	return skill.Skill{}, fmt.Errorf("skill %q not found in local repo at %s", name, l.repoPath)
+	return skill.Skill{}, fmt.Errorf("%w: %q in local repo at %s", ErrNotFound, name, l.repoPath)
 }

@@ -2,6 +2,7 @@ package source
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
@@ -28,6 +29,12 @@ func (o *Official) All() ([]skill.Skill, error) {
 
 // Find returns the official skill with the given name.
 func (o *Official) Find(name string) (skill.Skill, error) {
+	if _, err := os.Stat(o.cacheDir); os.IsNotExist(err) {
+		return skill.Skill{}, fmt.Errorf(
+			"%w: official skill %q — cache not found; run 'rsk update --official' to fetch it",
+			ErrNotFound, name,
+		)
+	}
 	all, err := o.All()
 	if err != nil {
 		return skill.Skill{}, err
@@ -38,7 +45,7 @@ func (o *Official) Find(name string) (skill.Skill, error) {
 		}
 	}
 	return skill.Skill{}, fmt.Errorf(
-		"official skill %q not found in cache — run 'rsk update --official' to fetch it",
-		name,
+		"%w: official skill %q — run 'rsk update --official' to refresh the cache",
+		ErrNotFound, name,
 	)
 }

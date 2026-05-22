@@ -3,6 +3,7 @@ module github.com/ralvarezdev/ralvaskills/cli
 go 1.26
 
 require (
+	github.com/BurntSushi/toml v1.6.0
 	github.com/adrg/xdg v0.4.0
 	github.com/go-playground/validator/v10 v10.22.1
 	github.com/spf13/cobra v1.8.1

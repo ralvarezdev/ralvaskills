@@ -73,7 +73,7 @@ This is where hexagonal pays back. The cost (defining ports, separating layers) 
 - **Anemic domain.** All "domain" types are bags of getters and setters; all logic lives in services that operate on them. The domain isn't really a domain — it's a DTO layer. Fix: move behavior onto entities and value objects.
 - **Leaky port.** The port exposes infrastructure types: `UserRepo.FindWithJoin(...)` returning a SQL row, or `EmailSender.SendWithMimeType(...)` exposing email library types. Fix: rename the method, change the return type to domain types, add a translation step inside the adapter.
 - **Adapters with business logic.** `PostgresUserRepo.PromoteToPremium(...)` decides what "premium" means. Fix: the rule lives in the domain (`User.PromoteToPremium()`); the adapter just persists the new state.
-- **Single-adapter ports.** A port introduced "for future flexibility" with one implementation and no second adapter justified. Per [improve-codebase-architecture's DEEPENING.md](../../workflows/improve-codebase-architecture/DEEPENING.md): *one adapter = hypothetical seam; two adapters = real seam*. If you only ever need one, the port is indirection without payoff. Inline it.
+- **Single-adapter ports.** A port introduced "for future flexibility" with one implementation and no second adapter justified. Per [improve-codebase-architecture's DEEPENING.md](../../refactoring/improve-codebase-architecture/DEEPENING.md): *one adapter = hypothetical seam; two adapters = real seam*. If you only ever need one, the port is indirection without payoff. Inline it.
 - **Reaching into infrastructure from the domain.** `User.save()` calling the DB. Fix: `User` is the data + behavior; `UserRepo.save(user)` does the persistence. The aggregate doesn't know how it gets persisted.
 - **Treating "hexagonal" as a folder convention.** Renaming packages `domain/`, `application/`, `infrastructure/`, `interfaces/` doesn't make a codebase hexagonal. The dependency direction does. A flat folder structure can be hexagonal if the imports flow correctly; a deeply layered structure can be a mess if they don't.
 
@@ -84,7 +84,7 @@ This is where hexagonal pays back. The cost (defining ports, separating layers) 
 - **Pure transformation services.** ETL, file converters, anything where "the domain" is data shapes and the application is wiring inputs to outputs. Functional decomposition is the right tool.
 - **A facade over a single adapter.** If you'd write `UserRepo` and `PostgresUserRepo` and never have a second implementation (no fake, no test double — because you'll use a real test DB), the port is pointless. Use the concrete repo directly.
 
-The rule from [improve-codebase-architecture](../../workflows/improve-codebase-architecture/SKILL.md): *two adapters justify the seam; one adapter is hypothetical*. The `InMemoryUserRepo` you use in tests usually counts as the second.
+The rule from [improve-codebase-architecture](../../refactoring/improve-codebase-architecture/SKILL.md): *two adapters justify the seam; one adapter is hypothetical*. The `InMemoryUserRepo` you use in tests usually counts as the second.
 
 ## 8. Reference implementations
 
@@ -96,4 +96,4 @@ Go and Python examples — showing the domain core, port interface, application 
 - **[go-architect §4](../../languages/go-architect/SKILL.md#4-interfaces)** / **[python-architect §3](../../languages/python-architect/SKILL.md#3-interfaces--di)** — the language idiom for defining ports.
 - **[sql-architect](../../databases/sql-architect/SKILL.md)** — how secondary DB adapters are typically implemented (raw SQL via psycopg / sqlx).
 - **[tdd](../../workflows/tdd/SKILL.md)** — testing benefits compound when adapters are swappable.
-- **[improve-codebase-architecture](../../workflows/improve-codebase-architecture/SKILL.md)** — uses the same vocabulary (modules, interfaces, seams); the "one adapter = hypothetical, two = real" rule applies to port introduction.
+- **[improve-codebase-architecture](../../refactoring/improve-codebase-architecture/SKILL.md)** — uses the same vocabulary (modules, interfaces, seams); the "one adapter = hypothetical, two = real" rule applies to port introduction.

@@ -108,4 +108,4 @@ Quick picks: **SQL** → `EXPLAIN (ANALYZE, BUFFERS)` + `pg_stat_statements`. **
 - [grafana-architect](../../infra/grafana-architect/SKILL.md) — burn rate / SLO dashboards trigger reviews.
 - [go-architect §7](../../languages/go-architect/SKILL.md#7-concurrency) / [python-architect §4](../../languages/python-architect/SKILL.md#4-concurrency--resources) — concurrency primitives.
 - [rest-api-architect §5](../../protocols/rest-api-architect/SKILL.md#5-pagination--cursor-not-offset) / [§14](../../protocols/rest-api-architect/SKILL.md#14-rate-limiting) — cursor pagination, rate limiting at the API layer.
-- [improve-codebase-architecture](../../workflows/improve-codebase-architecture/SKILL.md) — when a finding requires structural change, promote to architecture review.
+- [improve-codebase-architecture](../../refactoring/improve-codebase-architecture/SKILL.md) — when a finding requires structural change, promote to architecture review.

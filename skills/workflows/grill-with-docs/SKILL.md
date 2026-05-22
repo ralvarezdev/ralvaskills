@@ -1,7 +1,7 @@
 ---
 name: grill-with-docs
-version: 1.0.0
-description: Grilling session that challenges the user's plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when the user wants to stress-test a plan against their project's language and documented decisions.
+version: 1.0.1
+description: Grilling session that challenges an existing plan or design against the project's domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when a plan or design already exists and needs stress-testing; if no plan exists yet, use feature-planner first.
 ---
 
 # Grill With Docs

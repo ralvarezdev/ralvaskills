@@ -137,7 +137,7 @@ These run in CI per [rest-api-architect §15](../../protocols/rest-api-architect
 
 - **Performance review.** Slow queries, blocking I/O — see [performance-reviewer](../performance-reviewer/SKILL.md).
 - **Security review.** Auth, injection, secrets — see [security-reviewer](../security-reviewer/SKILL.md).
-- **Architecture review.** Whether the API surface is shaped right at the boundary level — see [improve-codebase-architecture](../../workflows/improve-codebase-architecture/SKILL.md).
+- **Architecture review.** Whether the API surface is shaped right at the boundary level — see [improve-codebase-architecture](../../refactoring/improve-codebase-architecture/SKILL.md).
 
 This skill is about whether the contract is *stable and complete*, not whether the underlying implementation is fast or safe.
 

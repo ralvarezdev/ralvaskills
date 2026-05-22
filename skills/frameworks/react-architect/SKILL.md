@@ -160,4 +160,4 @@ Route components live in `src/routes/` (or framework-specific path); they orches
 - [rest-api-architect](../../protocols/rest-api-architect/SKILL.md) — API contracts the frontend consumes. `snake_case` ↔ `camelCase` translation happens at the boundary if needed.
 - [fastapi-architect](../fastapi-architect/SKILL.md) / [gin-architect](../gin-architect/SKILL.md) / [nethttp-architect](../nethttp-architect/SKILL.md) — backend counterparts; feature-folder structure mirrors them.
 - [tdd](../../workflows/tdd/SKILL.md) — RTL "test through public interface" maps to TDD's "interface is the test surface".
-- [logic-cleaner](../../workflows/logic-cleaner/SKILL.md) / [code-design-refactor](../../workflows/code-design-refactor/SKILL.md) — apply to React the same way as any other code; React's structure doesn't exempt it.
+- [logic-cleaner](../../refactoring/logic-cleaner/SKILL.md) / [code-design-refactor](../../refactoring/code-design-refactor/SKILL.md) — apply to React the same way as any other code; React's structure doesn't exempt it.

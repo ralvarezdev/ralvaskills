@@ -27,7 +27,7 @@ Key principles (see [LANGUAGE.md](LANGUAGE.md) for the full list):
 - **The interface is the test surface.**
 - **One adapter = hypothetical seam. Two adapters = real seam.**
 
-This skill is _informed_ by the project's domain model — `CONTEXT.md` and any `docs/adr/`, which are authored and maintained by the [grill-with-docs](../grill-with-docs/SKILL.md) skill. The domain language gives names to good seams; ADRs record decisions the skill should not re-litigate. See [CONTEXT_FORMAT.md](../grill-with-docs/CONTEXT_FORMAT.md) and [ADR_FORMAT.md](../grill-with-docs/ADR_FORMAT.md).
+This skill is _informed_ by the project's domain model — `CONTEXT.md` and any `docs/adr/`, which are authored and maintained by the [grill-with-docs](../../workflows/grill-with-docs/SKILL.md) skill. The domain language gives names to good seams; ADRs record decisions the skill should not re-litigate. See [CONTEXT_FORMAT.md](../../workflows/grill-with-docs/CONTEXT_FORMAT.md) and [ADR_FORMAT.md](../../workflows/grill-with-docs/ADR_FORMAT.md).
 
 ## Process
 
@@ -81,9 +81,9 @@ Once the user picks a candidate, drop into a grilling conversation. Walk the des
 
 Side effects happen inline as decisions crystallize:
 
-- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md` — same discipline as [grill-with-docs](../grill-with-docs/SKILL.md) (see [CONTEXT_FORMAT.md](../grill-with-docs/CONTEXT_FORMAT.md)). Create the file lazily if it doesn't exist.
+- **Naming a deepened module after a concept not in `CONTEXT.md`?** Add the term to `CONTEXT.md` — same discipline as [grill-with-docs](../../workflows/grill-with-docs/SKILL.md) (see [CONTEXT_FORMAT.md](../../workflows/grill-with-docs/CONTEXT_FORMAT.md)). Create the file lazily if it doesn't exist.
 - **Sharpening a fuzzy term during the conversation?** Update `CONTEXT.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [ADR_FORMAT.md](../grill-with-docs/ADR_FORMAT.md).
+- **User rejects the candidate with a load-bearing reason?** Offer an ADR, framed as: _"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [ADR_FORMAT.md](../../workflows/grill-with-docs/ADR_FORMAT.md).
 - **Want to explore alternative interfaces for the deepened module?** See [INTERFACE_DESIGN.md](INTERFACE_DESIGN.md).
 
 ### 4. Deepen

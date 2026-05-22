@@ -1,7 +1,7 @@
 ---
 name: gin-architect
-version: 1.0.0
-description: Strict Gin standards — feature layout, struct-tag validation, RFC 7807 errors, in-house JWT or external IdP, route groups for URL-prefix versioning, OpenAPI. Gin 1.12 on Go 1.26. Use when scaffolding or reviewing a Gin service.
+version: 1.0.1
+description: Framework-specific delta on rest-api-architect — Gin 1.12 on Go 1.26. Feature layout, struct-tag validation, RFC 7807 errors, in-house JWT or external IdP, route groups for URL-prefix versioning, OpenAPI. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a Gin service.
 ---
 
 # Gin Architecture

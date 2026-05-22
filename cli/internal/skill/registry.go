@@ -64,6 +64,11 @@ func parseSkill(root, dir string, source Source) (Skill, error) {
 	}, nil
 }
 
+// ReadVersion reads the version field from SKILL.md in dir.
+func ReadVersion(dir string) (string, error) {
+	return readVersionFromFrontmatter(filepath.Join(dir, skillFile))
+}
+
 // readVersionFromFrontmatter reads the "version:" value from YAML frontmatter in path.
 func readVersionFromFrontmatter(path string) (string, error) {
 	f, err := os.Open(path)

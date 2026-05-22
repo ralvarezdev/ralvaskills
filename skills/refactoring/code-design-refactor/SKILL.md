@@ -6,7 +6,7 @@ description: Design-level refactoring rules — extraction, decoupling, SRP, enc
 
 # Code Design Refactor
 
-The **design-level** rung of the refactoring ladder. Tighter scope than [improve-codebase-architecture](improve-codebase-architecture/SKILL.md) (which surveys friction across the whole codebase), broader than [logic-cleaner](../logic-cleaner/SKILL.md) (which polishes inside a function). When a class is doing too much, when a function takes a tuple of primitives that ought to be a value object, when two modules know too much about each other — that's this skill's job.
+The **design-level** rung of the refactoring ladder. Tighter scope than [improve-codebase-architecture](../improve-codebase-architecture/SKILL.md) (which surveys friction across the whole codebase), broader than [logic-cleaner](../logic-cleaner/SKILL.md) (which polishes inside a function). When a class is doing too much, when a function takes a tuple of primitives that ought to be a value object, when two modules know too much about each other — that's this skill's job.
 
 ## 1. Scope boundary
 

@@ -69,23 +69,33 @@ Skills are grouped by what they shape. Every folder with a `SKILL.md` is a skill
 - **`performance-reviewer`** — Cross-language perf review: N+1, missing indexes, blocking I/O in async, allocation hot paths, unbounded memory. Findings grounded in EXPLAIN / pprof / py-spy / metrics.
 - **`security-reviewer`** — Cross-language security review: injection, auth/authz, secrets, insecure defaults, deserialization, CSRF/SSRF/IDOR, dep vulns. Critical/High/Medium/Low with file:line + fixes.
 
-### `tooling/` — developer tooling and meta-skills
+### `tooling/` — developer tooling
 
 - **`cli-tool-architect`** — Cross-language CLI standards: subcommand structure, flag/env/config/default precedence, TOML in XDG, stdout-data/stderr-logs split, `--output json|yaml`, exit codes, NO_COLOR, completions.
 - **`repo-tooling-architect`** — Repo-root productivity files: `.editorconfig`, `.gitignore`, version pinning (mise), task runner (Task), minimal pre-commit, dotenv + external secret manager, Renovate.
-- **`skill-builder`** — Meta-skill that scaffolds new ralvaskills skills per SPECS.md (SKILL.md skeleton, optional STACK/RECIPES, folder placement, SPECS updates). Interview-first.
-- **`rsk-guide`** — Quick reference for the `rsk` CLI (planned): discover, install, update, check ralvaskills bundles and skills.
 
-### `workflows/` — process and refactoring
+### `workflows/` — process
 
 - **`feature-planner`** — Upstream feature planning: requirement clarification, constraint discovery, design outline, vertical-slice task breakdown ordered by risk. Hands off to `grill-with-docs` and `tdd`.
 - **`grill-with-docs`** — Stress-tests plans against the project's domain model, sharpens terminology, updates CONTEXT.md and ADRs inline as decisions crystallise.
 - **`tdd`** — Red-green-refactor loop emphasizing behavior verification through public interfaces.
 - **`commit-author`** — Generates concise Conventional Commits messages from a staged diff. Enforces full type set, imperative subject lines, no AI co-author attribution.
+
+### `refactoring/` — code cleanup ladder
+
+Three rungs from expression-level polish to system-level architecture, plus a skeptical pattern catalog. Each rung explicitly defers up or down when scope changes.
+
 - **`logic-cleaner`** — Expression-level cleanup: guard clauses, naming, magic values, conditional simplification, duplication. Language-agnostic.
 - **`code-design-refactor`** — Design-level refactoring: extraction, decoupling, SRP, encapsulation, primitive obsession. Sits between `logic-cleaner` and `improve-codebase-architecture`.
 - **`improve-codebase-architecture`** — System-level architectural friction analysis with deepening opportunities informed by CONTEXT.md and ADRs.
-- **`design-patterns`** — Skeptical catalog for modern Go and Python: keeps repository, adapter, strategy, decorator, observer, builder; flags the rest as anti-patterns.
+- **`design-patterns`** — Skeptical reference catalog for modern Go and Python: keeps repository, adapter, strategy, decorator, observer, builder; flags the rest as anti-patterns. Consult before applying a pattern in the other refactoring skills.
+
+### `meta/` — ralvaskills ecosystem
+
+Skills about authoring/operating the toolkit itself, plus communication modes that aren't really workflows.
+
+- **`skill-builder`** — Meta-skill that scaffolds new ralvaskills skills per SPECS.md (SKILL.md skeleton, optional STACK/RECIPES, folder placement, SPECS updates). Interview-first.
+- **`rsk-guide`** — Quick reference for the `rsk` CLI (in progress): discover, install, update, check ralvaskills bundles and skills.
 - **`caveman`** — Ultra-compressed communication mode that reduces token usage by ~75% while preserving technical accuracy.
 
 ### `personal/` — author-specific, not bundle-installable

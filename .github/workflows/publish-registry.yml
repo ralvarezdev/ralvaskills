@@ -1,0 +1,94 @@
+name: Publish Registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "skills/**"
+      - "scripts/generate-registry/**"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # gh release create + git push index
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history not needed, but we need to push back to main.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: false
+
+      # registry/index.json lives in the repo — no need to fetch from R2.
+      - name: Generate registry
+        run: |
+          mkdir -p registry dist
+          go run ./scripts/generate-registry \
+            --skills-dir skills \
+            --output-dir dist \
+            --existing-index registry/index.json \
+            --github-repo ${{ github.repository }}
+
+      - name: Check for new versions
+        id: check
+        run: |
+          count=$(jq 'length' dist/new-versions.json)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+      # ── Primary: GitHub Releases ─────────────────────────────────────────
+
+      - name: Create GitHub releases
+        if: steps.check.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          jq -c '.[]' dist/new-versions.json | while IFS= read -r entry; do
+            name=$(echo "$entry" | jq -r '.name')
+            ver=$(echo "$entry"  | jq -r '.version')
+            archive=$(echo "$entry" | jq -r '.archive')
+            tag="${name}@v${ver}"
+            echo "→ releasing $tag"
+            gh release create "$tag" \
+              --title "$tag" \
+              --notes "Automated publish of \`$name\` v${ver}." \
+              "dist/$archive" \
+              || echo "Release $tag already exists — skipped."
+          done
+
+      # ── Backup: private R2 ───────────────────────────────────────────────
+
+      - name: Back up tarballs to R2
+        if: steps.check.outputs.count != '0'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+        run: |
+          jq -c '.[]' dist/new-versions.json | while IFS= read -r entry; do
+            name=$(echo "$entry" | jq -r '.name')
+            ver=$(echo "$entry"  | jq -r '.version')
+            archive=$(echo "$entry" | jq -r '.archive')
+            echo "→ backing up $name v$ver to R2"
+            aws s3 cp "dist/$archive" "s3://ralvaskills/$name/v$ver.tar.gz" \
+              --endpoint-url "$R2_ENDPOINT" \
+              --content-type application/gzip
+          done
+
+      # ── Commit updated index back to main ────────────────────────────────
+
+      - name: Commit updated index
+        if: steps.check.outputs.count != '0'
+        run: |
+          cp dist/index.json registry/index.json
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add registry/index.json
+          git diff --staged --quiet \
+            || git commit -m "chore(registry): update index [skip ci]"
+          git push

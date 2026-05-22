@@ -1,5 +1,19 @@
 package config
 
+import (
+	_ "embed"
+	"fmt"
+	"log/slog"
+	"os"
+	"path/filepath"
+
+	"github.com/BurntSushi/toml"
+	"github.com/adrg/xdg"
+)
+
+//go:embed catalog.toml
+var defaultCatalogData []byte
+
 // SourceID identifies where a skill originates.
 type SourceID string
 
@@ -10,145 +24,94 @@ const (
 
 // SkillRef is a reference to a named skill from a specific source.
 type SkillRef struct {
-	Name   string
-	Source SourceID
+	Name   string   `toml:"name"`
+	Source SourceID `toml:"source"`
 }
 
 // Bundle is a named, ordered set of skill references.
 type Bundle struct {
-	Name        string
-	Description string
-	Skills      []SkillRef
+	Name        string     `toml:"name"`
+	Description string     `toml:"description"`
+	Skills      []SkillRef `toml:"skills"`
 }
 
-func local(name string) SkillRef    { return SkillRef{Name: name, Source: SourceLocal} }
-func official(name string) SkillRef { return SkillRef{Name: name, Source: SourceOfficial} }
+// catalogFile is the top-level shape of a catalog TOML file.
+type catalogFile struct {
+	Bundle []Bundle `toml:"bundle"`
+}
 
-// Catalog returns the full bundle catalog in canonical display order.
-func Catalog() []Bundle {
-	return []Bundle{
-		{
-			Name:        "global",
-			Description: "Universal skills — install machine-wide; apply to every project",
-			Skills: []SkillRef{
-				local("commit-author"),
-				local("logic-cleaner"),
-				local("code-design-refactor"),
-				local("tdd"),
-				local("grill-with-docs"),
-				local("caveman"),
-				local("feature-planner"),
-				local("security-reviewer"),
-				local("ddd-architect"),
-				local("hexagonal-arch"),
-				local("design-patterns"),
-				local("improve-codebase-architecture"),
-				local("rsk-guide"),
-				local("repo-tooling-architect"),
-				local("skill-builder"),
-			},
-		},
-		{
-			Name:        "docs",
-			Description: "Document creation and technical reference skills (official)",
-			Skills: []SkillRef{
-				official("docx"),
-				official("xlsx"),
-				official("pdf"),
-				official("pptx"),
-				official("find-docs"),
-			},
-		},
-		{
-			Name:        "design",
-			Description: "Frontend and UI/UX design skills",
-			Skills: []SkillRef{
-				official("frontend-design"),
-				local("react-architect"),
-				local("nextjs-architect"),
-				local("ui-ux-architect"),
-			},
-		},
-		{
-			Name:        "go-grpc",
-			Description: "Go service exposing a gRPC API",
-			Skills: []SkillRef{
-				local("go-architect"),
-				local("grpc-architect"),
-				local("protobuf-architect"),
-				local("docker-architect"),
-				local("sql-architect"),
-			},
-		},
-		{
-			Name:        "gin",
-			Description: "Go service exposing a REST API via Gin",
-			Skills: []SkillRef{
-				local("go-architect"),
-				local("gin-architect"),
-				local("rest-api-architect"),
-				local("docker-architect"),
-				local("sql-architect"),
-			},
-		},
-		{
-			Name:        "nethttp",
-			Description: "Go service exposing a REST API via stdlib net/http",
-			Skills: []SkillRef{
-				local("go-architect"),
-				local("nethttp-architect"),
-				local("rest-api-architect"),
-				local("docker-architect"),
-				local("sql-architect"),
-			},
-		},
-		{
-			Name:        "go-cli",
-			Description: "Go command-line tool",
-			Skills: []SkillRef{
-				local("go-architect"),
-				local("cli-tool-architect"),
-				local("docker-architect"),
-			},
-		},
-		{
-			Name:        "fastapi",
-			Description: "Python service exposing a REST API with FastAPI",
-			Skills: []SkillRef{
-				local("python-architect"),
-				local("fastapi-architect"),
-				local("rest-api-architect"),
-				local("docker-architect"),
-				local("sql-architect"),
-			},
-		},
-		{
-			Name:        "llm-app",
-			Description: "Python-based LLM application or RAG pipeline",
-			Skills: []SkillRef{
-				local("python-architect"),
-				local("fastapi-architect"),
-				local("llm-app-architect"),
-				local("agent-architect"),
-				local("hexagonal-arch"),
-				local("docker-architect"),
-			},
-		},
-		{
-			Name:        "ros2",
-			Description: "ROS2 robotics application",
-			Skills: []SkillRef{
-				local("python-architect"),
-				local("ros2-architect"),
-				local("docker-architect"),
-			},
-		},
+// DefaultCatalogPath returns the canonical path of the user catalog
+// (~/.config/rsk/catalog.toml).
+func DefaultCatalogPath() string {
+	return filepath.Join(xdg.ConfigHome, "rsk", "catalog.toml")
+}
+
+// LoadCatalog returns the merged bundle catalog. It always starts with the
+// embedded defaults and then applies user overrides from userCatalogPath.
+// Pass an empty string to use DefaultCatalogPath.
+//
+// User catalog errors (missing file excluded) are logged as warnings and the
+// defaults are returned unchanged, so a misconfigured user catalog never
+// prevents rsk from running.
+func LoadCatalog(userCatalogPath string) []Bundle {
+	defaults := mustParseEmbedded()
+
+	if userCatalogPath == "" {
+		userCatalogPath = DefaultCatalogPath()
 	}
+
+	raw, err := os.ReadFile(userCatalogPath)
+	if os.IsNotExist(err) {
+		return defaults
+	}
+	if err != nil {
+		slog.Warn("user catalog unreadable; using defaults", "path", userCatalogPath, "err", err)
+		return defaults
+	}
+
+	var user catalogFile
+	if _, err = toml.Decode(string(raw), &user); err != nil {
+		slog.Warn("user catalog parse error; using defaults", "path", userCatalogPath, "err", err)
+		return defaults
+	}
+
+	return merge(defaults, user.Bundle)
 }
 
-// FindBundle returns the bundle with the given name and whether it was found.
-func FindBundle(name string) (Bundle, bool) {
-	for _, b := range Catalog() {
+// mustParseEmbedded parses the embedded catalog.toml and panics on failure.
+// A parse error here is a build-time bug, not a runtime condition.
+func mustParseEmbedded() []Bundle {
+	var cat catalogFile
+	if _, err := toml.Decode(string(defaultCatalogData), &cat); err != nil {
+		panic(fmt.Sprintf("bundles: embedded catalog.toml is malformed: %v", err))
+	}
+	return cat.Bundle
+}
+
+// merge applies user bundles on top of defaults. A user bundle whose name
+// matches an existing default replaces it entirely; bundles with new names
+// are appended in the order they appear in the user catalog.
+func merge(defaults, user []Bundle) []Bundle {
+	index := make(map[string]int, len(defaults))
+	result := make([]Bundle, len(defaults))
+	copy(result, defaults)
+	for i, b := range result {
+		index[b.Name] = i
+	}
+	for _, b := range user {
+		if i, ok := index[b.Name]; ok {
+			result[i] = b
+		} else {
+			result = append(result, b)
+		}
+	}
+	return result
+}
+
+// FindBundle returns the bundle with the given name from bundles and whether it
+// was found.
+func FindBundle(bundles []Bundle, name string) (Bundle, bool) {
+	for _, b := range bundles {
 		if b.Name == name {
 			return b, true
 		}
@@ -157,10 +120,9 @@ func FindBundle(name string) (Bundle, bool) {
 }
 
 // BundleNames returns all bundle names in catalog order.
-func BundleNames() []string {
-	all := Catalog()
-	names := make([]string, len(all))
-	for i, b := range all {
+func BundleNames(bundles []Bundle) []string {
+	names := make([]string, len(bundles))
+	for i, b := range bundles {
 		names[i] = b.Name
 	}
 	return names

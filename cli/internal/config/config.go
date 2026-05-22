@@ -13,11 +13,33 @@ import (
 
 // Config holds rsk's runtime configuration stored at ~/.config/rsk/config.json.
 type Config struct {
-	RepoPath           string            `json:"repo_path"            validate:"required"`
+	// RepoPath is the local clone of ralvaskills used for filesystem-based skill
+	// resolution. When set it takes precedence over RegistryURL.
+	RepoPath string `json:"repo_path"`
+
+	// RegistryURL is the base URL of the hosted skill registry
+	// (e.g. https://skills.ralvarez.dev). Used when RepoPath is not set.
+	RegistryURL string `json:"registry_url"`
+
 	GlobalTargets      map[string]string `json:"global_targets"       validate:"required,min=1"`
 	DefaultTargetScope string            `json:"default_target_scope" validate:"required"`
 	OfficialCache      string            `json:"official_cache"       validate:"required"`
 	VersionsCache      string            `json:"versions_cache"       validate:"required"`
+}
+
+// LocalMode reports whether the config points to a local repo clone rather than
+// the hosted registry.
+func (c Config) LocalMode() bool { return c.RepoPath != "" }
+
+// RegistryCache returns the directory used to cache skill downloads from the
+// hosted registry. Derived from OfficialCache so both caches sit under the
+// same ~/.ralvaskills/cache/ root.
+func (c Config) RegistryCache() string {
+	if c.OfficialCache != "" {
+		return filepath.Join(filepath.Dir(filepath.Clean(c.OfficialCache)), "registry")
+	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".ralvaskills", "cache", "registry")
 }
 
 var validate = validator.New()
@@ -50,6 +72,9 @@ func LoadFrom(path string) (Config, error) {
 	}
 	if err = validate.Struct(cfg); err != nil {
 		return Config{}, fmt.Errorf("invalid config: %w", err)
+	}
+	if cfg.RepoPath == "" && cfg.RegistryURL == "" {
+		return Config{}, fmt.Errorf("invalid config: one of repo_path or registry_url is required")
 	}
 	return cfg, nil
 }

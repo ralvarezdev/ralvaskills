@@ -1,7 +1,7 @@
 ---
 name: feature-planner
-version: 1.0.0
-description: Upstream feature planning — requirement clarification, constraint discovery, design outline, vertical-slice task breakdown ordered by risk. Hands off to grill-with-docs and tdd. Use when starting new feature work or breaking a vague request into ordered, testable steps.
+version: 1.0.1
+description: Upstream feature planning — requirement clarification, constraint discovery, design outline, vertical-slice task breakdown ordered by risk. Hands off to grill-with-docs and tdd. Use when starting new feature work from a vague request and no plan exists yet; if a plan or design already exists, use grill-with-docs to stress-test it instead.
 ---
 
 # Feature Planner
@@ -50,7 +50,7 @@ Ask the user (and check the code):
 - **Compatibility** — clients on old versions, public API stability, backwards-compatible DB migrations.
 - **Security & compliance** — auth requirements, audit trails, PII handling, regulatory rules.
 - **Cost** — anything that bills per call (cloud APIs, LLM tokens, queue messages).
-- **Existing architecture** — what does this feature have to fit into? Read [CONTEXT.md](../grill-with-docs/CONTEXT.md) for the domain language, check `docs/adr/` for prior decisions ([improve-codebase-architecture §1](../improve-codebase-architecture/SKILL.md#1-glossary)).
+- **Existing architecture** — what does this feature have to fit into? Read [CONTEXT.md](../grill-with-docs/CONTEXT.md) for the domain language, check `docs/adr/` for prior decisions ([improve-codebase-architecture §1](../../refactoring/improve-codebase-architecture/SKILL.md#1-glossary)).
 - **Team & timeline** — who owns the work, what's the deadline, what's the cost of being late.
 
 Record constraints in the plan, even if they're "no constraint" — explicit nothing beats implicit nothing.
@@ -64,7 +64,7 @@ A design outline is **not** a design document. It's a short description of:
 - **The risks** — the parts you're least sure about. Name them. The first slice in the breakdown will tackle the highest-risk one.
 - **The alternatives considered** — what other shapes were possible, and why this one wins. Even a one-line "considered X, picked Y because Z" prevents the next person from re-litigating the choice.
 
-Skip patterns reflexively. The design isn't "Repository + Strategy + Decorator"; it's "the order intake module gains a `cancel()` method, which raises an `OrderCancelled` domain event, which the shipping module consumes." Pattern names are reached for *if and when* they earn it ([design-patterns §5](design-patterns/SKILL.md#5-decision-rules)).
+Skip patterns reflexively. The design isn't "Repository + Strategy + Decorator"; it's "the order intake module gains a `cancel()` method, which raises an `OrderCancelled` domain event, which the shipping module consumes." Pattern names are reached for *if and when* they earn it ([design-patterns §5](../../refactoring/design-patterns/SKILL.md#5-decision-rules)).
 
 ## 6. Task breakdown — vertical slices ordered by risk
 
@@ -91,7 +91,7 @@ Slice properties:
 2. **Riskiest assumption:** a single happy-path slice runs the real logic, hits the real DB, returns real data; one test.
 3. **Edge case A** — one more test, the smallest amount of code to make it pass.
 4. **Edge case B** — same.
-5. **N. Refactor the now-duplicated bits** as the third occurrence appears ([logic-cleaner §6](../logic-cleaner/SKILL.md#6-duplication-rule-of-three)).
+5. **N. Refactor the now-duplicated bits** as the third occurrence appears ([logic-cleaner §6](../../refactoring/logic-cleaner/SKILL.md#6-duplication-rule-of-three)).
 
 ## 7. Output — the plan deliverable
 
@@ -141,7 +141,7 @@ Planning earns its place when the work is non-trivial and the shape isn't obviou
 - **Trivial changes** — a typo fix, a one-line config tweak, a bug fix with a known root cause.
 - **Exploratory spikes** — when you're learning whether a thing is possible. Spike, learn, discard, *then* plan the real implementation.
 - **Bug fixes with reproductions** — go straight to a failing test, then fix.
-- **Pure refactors** — those go through [code-design-refactor](code-design-refactor/SKILL.md) or [improve-codebase-architecture](improve-codebase-architecture/SKILL.md).
+- **Pure refactors** — those go through [code-design-refactor](../../refactoring/code-design-refactor/SKILL.md) or [improve-codebase-architecture](../../refactoring/improve-codebase-architecture/SKILL.md).
 
 Forcing a plan onto trivial work makes the planning process feel like ceremony and erodes trust in it. Save plans for when they pay back.
 
@@ -151,5 +151,5 @@ Forcing a plan onto trivial work makes the planning process feel like ceremony a
 - [ddd-architect](../../design/ddd-architect/SKILL.md) — domain-shaping decisions belong here, not in the requirement.
 - [hexagonal-arch](../../design/hexagonal-arch/SKILL.md) — seam decisions in the design outline.
 - [tdd](../tdd/SKILL.md) — vertical-slice principle inherited from here; implementation follows.
-- [improve-codebase-architecture](../improve-codebase-architecture/SKILL.md) — alternative entry point for *refactor* work (not new features); reads the codebase first.
-- [logic-cleaner](../logic-cleaner/SKILL.md) — rule-of-three justifies waiting on the refactor slice until duplication is real.
+- [improve-codebase-architecture](../../refactoring/improve-codebase-architecture/SKILL.md) — alternative entry point for *refactor* work (not new features); reads the codebase first.
+- [logic-cleaner](../../refactoring/logic-cleaner/SKILL.md) — rule-of-three justifies waiting on the refactor slice until duplication is real.

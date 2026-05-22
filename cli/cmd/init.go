@@ -56,20 +56,36 @@ func runInit(cmd *cobra.Command, _ []string) error {
 	ui.Header(out, "rsk init")
 	fmt.Fprintln(out)
 
-	// 1. Repo path
-	repoPath, err := prompt(r, out, "Path to your local ralvaskills repo clone", "")
+	// 1. Skill source: local clone or hosted registry.
+	fmt.Fprintln(out, "How do you want to fetch local skills?")
+	fmt.Fprintln(out, "  [1] Local clone  (repo already on disk)")
+	fmt.Fprintln(out, "  [2] Registry     (download from skills.ralvarez.dev)")
+	modeStr, err := prompt(r, out, "Select", "1")
 	if err != nil {
 		return err
 	}
-	repoPath, err = expandPath(repoPath)
-	if err != nil {
-		return fmt.Errorf("invalid repo path: %w", err)
-	}
-	if _, statErr := os.Stat(repoPath); os.IsNotExist(statErr) {
-		ui.Warn(out, fmt.Sprintf(
-			"path does not exist: %s (saved anyway — create it before running rsk install)",
-			repoPath,
-		))
+
+	var repoPath, registryURL string
+	if parseIntOrDefault(modeStr, 1) == 2 {
+		registryURL, err = prompt(r, out, "Registry URL", "https://skills.ralvarez.dev")
+		if err != nil {
+			return err
+		}
+	} else {
+		repoPath, err = prompt(r, out, "Path to your local ralvaskills repo clone", "")
+		if err != nil {
+			return err
+		}
+		repoPath, err = expandPath(repoPath)
+		if err != nil {
+			return fmt.Errorf("invalid repo path: %w", err)
+		}
+		if _, statErr := os.Stat(repoPath); os.IsNotExist(statErr) {
+			ui.Warn(out, fmt.Sprintf(
+				"path does not exist: %s (saved anyway — create it before running rsk install)",
+				repoPath,
+			))
+		}
 	}
 
 	// 2. AI tool selection
@@ -141,6 +157,7 @@ func runInit(cmd *cobra.Command, _ []string) error {
 	}
 	cfg := config.Config{
 		RepoPath:           repoPath,
+		RegistryURL:        registryURL,
 		GlobalTargets:      globalTargets,
 		DefaultTargetScope: defaultScope,
 		OfficialCache:      filepath.Join(home, ".ralvaskills", "cache", "anthropic"),

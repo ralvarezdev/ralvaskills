@@ -1,7 +1,7 @@
 ---
 name: design-patterns
-version: 1.0.0
-description: Skeptical design-patterns catalog for modern Go and Python — keeps repository, adapter, strategy, decorator, observer, builder; flags the rest as anti-patterns. Use when introducing a pattern or pushing back on cargo-cult ones.
+version: 1.0.1
+description: Skeptical design-patterns reference catalog for modern Go and Python — keeps repository, adapter, strategy, decorator, observer, builder; flags the rest as anti-patterns. Consultative, not active: consult before introducing a pattern in code-design-refactor or improve-codebase-architecture, or when pushing back on a cargo-cult one. Not a refactoring rung itself.
 ---
 
 # Design Patterns — Skeptical, Pragmatic Catalog

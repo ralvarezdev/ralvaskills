@@ -8,6 +8,8 @@ description: ROS2 standards across Jazzy/Kilted/Lyrical — colcon + ament_cmake
 
 Covers the three current ROS2 distributions; patterns are consistent across all three with version-specific notes called out where they diverge. C++ (`rclcpp`) and Python (`rclpy`) treated as equal first-class targets. **Development environment via Pixi + RoboStack** — the modern, cross-platform alternative to `sudo apt install ros-*`. See [STACK.md](STACK.md) for distro details and pinned tool versions.
 
+Python-side `rclpy` nodes inherit the typing, dataclass, asyncio, and testing rules from [python-architect](../../languages/python-architect/SKILL.md) — this skill adds the ROS2-specific layer on top.
+
 ## 0. Distribution selection
 
 | Distro | Type | Released | EOL | When to pick |

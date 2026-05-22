@@ -1,12 +1,12 @@
 ---
 name: rsk-guide
-version: 0.1.0
-description: Quick reference for the rsk CLI — discover, install, update, check ralvaskills bundles and skills. Use when user mentions rsk, asks how to install/list/update skills, or wants to set up ralvaskills. (CLI is planned; commands match SPECS.)
+version: 0.1.1
+description: Operator's guide for the rsk CLI — discover, install, update, check ralvaskills bundles and skills. Use when the user mentions rsk, asks how to install/list/update skills, or wants to set up ralvaskills. Companion to cli-tool-architect (which defines how to design any CLI) and skill-builder (which authors new skills). CLI is in progress; commands track SPECS.
 ---
 
 # RSK Guide
 
-> **Draft (v0.1.0).** The `rsk` CLI is in the roadmap. Verify against `rsk --help` once shipped. For creating *new* skills (vs managing existing ones), use `skill-builder`.
+> **Draft (v0.1.1).** The `rsk` CLI is in progress. Verify against `rsk --help` once shipped. For creating *new* skills (vs managing existing ones), use [`skill-builder`](../skill-builder/SKILL.md). For designing CLIs in general, see [`cli-tool-architect`](../../tooling/cli-tool-architect/SKILL.md).
 
 ## Always ask the user before taking action
 
@@ -90,11 +90,17 @@ rsk uninstall <bundle|skill> [--global] [--for <tool>] [--personal]
 | `docs` | official | Document creation (docx/xlsx/pdf/pptx/find-docs) |
 | `design` | mixed | Frontend / UI projects |
 | `go-grpc` | local | Go gRPC services |
-| `go-rest` | local | Go REST services (Gin) |
+| `gin` | local | Go REST services (Gin) |
+| `nethttp` | local | Go REST services (stdlib net/http) |
 | `go-cli` | local | Go command-line tools |
 | `fastapi` | local | Python REST services (FastAPI) |
+| `python-grpc` | local | Python gRPC services |
+| `python-cli` | local | Python command-line tools |
 | `llm-app` | local | LLM apps / RAG pipelines |
 | `ros2` | local | ROS2 robotics |
+| `event-driven` | local | Schema-first messaging (NATS/Kafka/RabbitMQ) |
+| `observability` | local | Signals + dashboards/alerts |
+| `code-review` | local | Reviewer triad: security, contracts, performance |
 
 ## Full reference
 

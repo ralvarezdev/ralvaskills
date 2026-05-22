@@ -103,9 +103,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   └── event-driven-architect/   # ✅ exists (v1.0.0 — Protobuf schemas, outbox mandatory, broker-agnostic; NATS/Kafka/RabbitMQ)
 │   ├── tooling/
 │   │   ├── cli-tool-architect/       # ✅ exists (v1.0.0 — Go cobra+pflag+viper, Python typer; TOML/XDG config, --output, exit codes, NO_COLOR)
-│   │   ├── repo-tooling-architect/   # ✅ exists (v1.0.0 — .editorconfig/.gitignore, mise|proto, Task|just, pre-commit, Renovate)
-│   │   ├── rsk-guide/                # ✅ exists (v0.1.0 — tracks the planned rsk CLI)
-│   │   └── skill-builder/            # ✅ exists (v1.0.0 — meta-skill: scaffolds new skills following ralvaskills standards; no STACK.md)
+│   │   └── repo-tooling-architect/   # ✅ exists (v1.0.0 — .editorconfig/.gitignore, mise|proto, Task|just, pre-commit, Renovate)
 │   ├── design/
 │   │   ├── ddd-architect/            # ✅ exists (v1.0.0 — strategic-first DDD, bounded contexts, aggregates; event sourcing OOS)
 │   │   └── hexagonal-arch/           # ✅ exists (v1.0.0 — ports & adapters; dependency direction inward; no folder rule)
@@ -115,7 +113,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   └── ml-pipeline-architect/    # 📋 planned
 │   ├── infra/
 │   │   ├── docker-architect/         # ✅ exists (v1.0.0 — Docker 29, Compose v2, distroless/slim defaults, multi-arch, Trivy)
-│   │   ├── ci-cd-architect/          # 📋 planned
+│   │   ├── ci-cd-architect/          # ✅ exists (v1.0.0 — principles-first CI/CD; GitHub Actions recipes; suggestion-mode framing; pairs with docker-architect)
 │   │   ├── grafana-architect/        # ✅ exists (v1.0.0 — dashboards-as-code via Grizzly, unified alerting, per-service folders)
 │   │   └── observability-architect/  # ✅ exists (v1.0.0 — Prometheus metrics + OTel logs/traces, RED+USE, head sampling at 10%)
 │   ├── robotics/
@@ -126,16 +124,20 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   └── performance-reviewer/     # ✅ exists (v1.0.0 — N+1, blocking I/O, allocation hot paths; measurement-grounded)
 │   ├── frontend/
 │   │   └── ui-ux-architect/          # ✅ exists (v1.0.0 — WCAG 2.2 AA, Radix + Tailwind 4, design tokens, four-state UI discipline)
-│   └── workflows/
-│       ├── commit-author/            # ✅ exists
-│       ├── tdd/                      # ✅ exists
-│       ├── grill-with-docs/          # ✅ exists (formerly grill-me; absorbed ubiquitous-language)
-│       ├── caveman/                  # ✅ exists
-│       ├── logic-cleaner/            # ✅ exists
-│       ├── code-design-refactor/     # ✅ exists (v1.0.0 — design-level refactor; sits between logic-cleaner and improve-codebase-architecture)
-│       ├── feature-planner/          # ✅ exists (v1.0.0 — requirement → constraints → design → vertical-slice tasks)
-│       ├── improve-codebase-architecture/  # ✅ exists
-│       └── design-patterns/          # ✅ exists (v1.0.0 — skeptical catalog; modern Go/Python; defers to ddd-architect & hexagonal-arch)
+│   ├── workflows/
+│   │   ├── commit-author/            # ✅ exists
+│   │   ├── tdd/                      # ✅ exists
+│   │   ├── grill-with-docs/          # ✅ exists (formerly grill-me; absorbed ubiquitous-language)
+│   │   └── feature-planner/          # ✅ exists (v1.0.0 — requirement → constraints → design → vertical-slice tasks)
+│   ├── refactoring/                  # ✅ category — code cleanup ladder (expression → design → system) plus pattern catalog
+│   │   ├── logic-cleaner/            # ✅ exists (expression-level rung)
+│   │   ├── code-design-refactor/     # ✅ exists (v1.0.0 — design-level rung; sits between logic-cleaner and improve-codebase-architecture)
+│   │   ├── improve-codebase-architecture/  # ✅ exists (system-level rung)
+│   │   └── design-patterns/          # ✅ exists (v1.0.0 — skeptical reference catalog; modern Go/Python; defers to ddd-architect & hexagonal-arch)
+│   ├── meta/                         # ✅ category — ralvaskills-ecosystem skills (no library stack)
+│   │   ├── skill-builder/            # ✅ exists (v1.0.0 — meta-skill: scaffolds new skills following ralvaskills standards; no STACK.md)
+│   │   ├── rsk-guide/                # ✅ exists (v0.1.0 — tracks the planned rsk CLI; no STACK.md)
+│   │   └── caveman/                  # ✅ exists (communication mode, language-agnostic)
 │
 │   └── personal/                     # 📋 new category — personal skills, never auto-bundled
 │       ├── demo-script-architect/    # ✅ exists (moved from workflows/)
@@ -185,6 +187,7 @@ All paths shown below are **defaults** — every one is configurable via `config
     versions.json                     # default value of  versions_cache  (TTL: 24h)
 ~/.config/rsk/
   config.json                         # CLI config — path is fixed (XDG convention)
+  catalog.toml                        # optional user catalog — overrides/extends defaults
 ~/.claude/skills/                     # default  global_targets.claude-code
 ~/.config/opencode/skills/            # default  global_targets.opencode
 ```
@@ -298,7 +301,7 @@ This table is a **heuristic keyed on the skill's parent folder name** — it's n
 | `protocols/` | ✅ Yes | Tooling versions matter (e.g. `buf`, gRPC spec) |
 | `encoding/` | ✅ Yes | Proto spec version, `buf`, `protovalidate` |
 | `messaging/` | ✅ Yes | Kafka/RabbitMQ client library versions |
-| `tooling/` | ✅ Yes | Cobra, Click, Typer versions — **exception:** meta-skills with no library stack (e.g. `skill-builder`) are exempt |
+| `tooling/` | ✅ Yes | Cobra, Click, Typer versions |
 | `ai-ml/` | ✅ Yes | Library APIs change rapidly (LangChain, LlamaIndex) |
 | `infra/` | ✅ Yes | Docker, compose spec, GitHub Actions runner versions |
 | `robotics/` | ✅ Yes | ROS2 distro (Jazzy, Kilted, etc.) |
@@ -306,6 +309,8 @@ This table is a **heuristic keyed on the skill's parent folder name** — it's n
 | `design/` | ❌ No | Architectural patterns are version-agnostic |
 | `quality/` | ❌ No | Security/performance principles don't change with versions — add one if the skill references framework-specific vulnerability patterns |
 | `workflows/` | ❌ No | Workflow skills are tool/language agnostic |
+| `refactoring/` | ❌ No | Code-cleanup ladder is language-agnostic |
+| `meta/` | ❌ No | ralvaskills-ecosystem skills (e.g. `skill-builder`, `rsk-guide`, `caveman`) have no library stack |
 | `personal/` | Depends | Add if the skill references specific tooling |
 
 ### Naming Convention
@@ -322,7 +327,7 @@ All skill folder names follow `kebab-case` and end in a meaningful suffix:
 | `-patterns` | Catalog of patterns or principles for a domain | `design-patterns` |
 | `-builder` | Scaffolds new artifacts of a given type (meta-tooling) | `skill-builder` |
 | `-guide` | Documentation or usage guide for a specific tool | `rsk-guide` |
-| (none) | Workflow tools that don't fit above | `tdd`, `commit-author`, `caveman` |
+| (none) | Workflow tools or meta utilities that don't fit above | `tdd`, `commit-author`, `caveman` |
 
 ### Version Field
 
@@ -458,6 +463,46 @@ rsk status --global --for opencode                     # OpenCode global skills 
 ```
 
 > **CLI implementation note:** use `spf13/viper` to load this config (supports env var overrides via `RSK_*` prefixed vars) and `go-playground/validator` to validate required fields on load. This mirrors the canonical Go stack enforced by `go-architect`.
+
+---
+
+### User catalog (`~/.config/rsk/catalog.toml`)
+
+The bundle catalog is backed by TOML. The default catalog is embedded in the binary (`cli/internal/config/catalog.toml`). Users can extend or override it by creating `~/.config/rsk/catalog.toml` — no recompile required.
+
+**Merge rules:**
+- A user bundle whose `name` matches a default bundle **replaces it entirely**.
+- A user bundle with a new name is **appended** after the defaults.
+- If the file does not exist, defaults are used silently.
+- If the file exists but fails to parse, `rsk` logs a warning and falls back to defaults — it never refuses to run due to a bad catalog.
+
+**Example user catalog:**
+
+```toml
+# Override the global bundle to trim skills not used at this company
+[[bundle]]
+name        = "global"
+description = "Company-wide global skills"
+skills = [
+  { name = "commit-author",        source = "local" },
+  { name = "tdd",                  source = "local" },
+  { name = "security-reviewer",    source = "local" },
+  { name = "repo-tooling-architect", source = "local" },
+]
+
+# Custom bundle for internal stack
+[[bundle]]
+name        = "acme-go"
+description = "ACME Corp Go services — Gin + internal auth lib"
+skills = [
+  { name = "go-architect",     source = "local" },
+  { name = "gin-architect",    source = "local" },
+  { name = "sql-architect",    source = "local" },
+  { name = "docker-architect", source = "local" },
+]
+```
+
+`rsk init` can scaffold an empty `~/.config/rsk/catalog.toml` with commented examples via `rsk init --catalog`.
 
 ---
 
@@ -637,20 +682,21 @@ Universal skills installed machine-wide. Apply to every project regardless of st
 | Skill | Category | Description |
 |---|---|---|
 | `commit-author` | workflows | Conventional Commits from git diffs |
-| `logic-cleaner` | workflows | Guard clauses, boolean simplification, magic numbers |
-| `code-design-refactor` | workflows | Extract/encapsulate, reduce coupling, SRP, naming |
 | `tdd` | workflows | Red-green-refactor loop, behavior-focused tests |
 | `grill-with-docs` | workflows | Stress-tests plans through relentless questioning; also extracts and maintains the domain glossary (CONTEXT.md) |
-| `caveman` | workflows | ~75% token reduction mode, preserves technical accuracy |
 | `feature-planner` | workflows | Requirement clarification → design → task breakdown |
+| `logic-cleaner` | refactoring | Guard clauses, boolean simplification, magic numbers |
+| `code-design-refactor` | refactoring | Extract/encapsulate, reduce coupling, SRP, naming |
+| `design-patterns` | refactoring | When to apply, anti-patterns, Go & Python examples |
+| `improve-codebase-architecture` | refactoring | ADR-aware architectural friction analysis |
 | `security-reviewer` | quality | Injection, auth issues, secret leakage, insecure defaults |
 | `ddd-architect` | design | Bounded contexts, aggregates, value objects, domain events |
 | `hexagonal-arch` | design | Ports & adapters enforcement, dependency direction |
-| `design-patterns` | workflows | When to apply, anti-patterns, Go & Python examples |
-| `improve-codebase-architecture` | workflows | ADR-aware architectural friction analysis |
-| `rsk-guide` | tooling | How to use the `rsk` CLI — discover, install, update, status, uninstall, bundle catalog |
 | `repo-tooling-architect` | tooling | Repo-level productivity files — `.editorconfig`, `.gitignore`, tool version pinning (mise/proto), task runner (Task/just), pre-commit, Renovate |
-| `skill-builder` | tooling | Scaffolds new skills following ralvaskills naming, format, and STACK.md standards |
+| `ci-cd-architect` | infra | Principles-first CI/CD (suggestion-mode) — pipeline taxonomy, OIDC, supply-chain hygiene, release automation; GitHub Actions recipes |
+| `skill-builder` | meta | Scaffolds new skills following ralvaskills naming, format, and STACK.md standards |
+| `rsk-guide` | meta | How to use the `rsk` CLI — discover, install, update, status, uninstall, bundle catalog |
+| `caveman` | meta | ~75% token reduction mode, preserves technical accuracy |
 
 ---
 
@@ -728,6 +774,51 @@ ROS2 robotics application.
 | `ros2-architect` | local |
 | `docker-architect` | local |
 
+#### `python-grpc`
+Python service exposing a gRPC API. Mirror of `go-grpc`.
+
+| Skill | Source |
+|---|---|
+| `python-architect` | local |
+| `grpc-architect` | local |
+| `protobuf-architect` | local |
+| `docker-architect` | local |
+| `sql-architect` | local |
+
+#### `python-cli`
+Python command-line tool. Mirror of `go-cli`; `cli-tool-architect` carries the Typer recipes.
+
+| Skill | Source |
+|---|---|
+| `python-architect` | local |
+| `cli-tool-architect` | local |
+| `docker-architect` | local |
+
+#### `event-driven`
+Broker-agnostic event-driven messaging stack. Schema-first; pair with a language/framework bundle for the runtime.
+
+| Skill | Source |
+|---|---|
+| `event-driven-architect` | local |
+| `protobuf-architect` | local |
+
+#### `observability`
+Application-side signal production paired with dashboards-as-code consumption.
+
+| Skill | Source |
+|---|---|
+| `observability-architect` | local |
+| `grafana-architect` | local |
+
+#### `code-review`
+Cross-language review pass: security, API contract stability, performance.
+
+| Skill | Source |
+|---|---|
+| `security-reviewer` | local |
+| `api-contract-reviewer` | local |
+| `performance-reviewer` | local |
+
 ---
 
 ### Personal Skills (not bundled)
@@ -760,6 +851,12 @@ rsk install go-grpc docs
 
 # LLM app with full design and document capability
 rsk install llm-app design docs
+
+# Python gRPC service with event-driven messaging and observability
+rsk install python-grpc event-driven observability
+
+# Any service bundle + reviewers
+rsk install gin code-review
 
 # First machine setup — global + docs
 rsk install global docs --global
@@ -872,8 +969,6 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 |---|---|---|
 | `cli-tool-architect` | ✅ | v1.0.0 — cross-language CLI conventions. Root + subcommands, **flag > env > config > default** precedence, TOML config in XDG location, stdout/stderr separation, `--output text\|json\|yaml` mandatory, standard exit codes, `NO_COLOR` respect, shell completions, multi-arch distribution. Recipes for Go (cobra+pflag+viper) and Python (typer+rich) |
 | `repo-tooling-architect` | ✅ | v1.0.0 — cross-language repo productivity layer. `.editorconfig` + `.gitignore` always; `mise` (default) / `proto` (alternative) for tool version pinning; `Task` (default) / `just` (alternative) for task running + dotenv; minimal pre-commit hooks; Renovate for dependency updates; explicit "when to skip" guidance |
-| `rsk-guide` | ✅ | v0.1.0 draft — quick-reference for the `rsk` CLI. Tracks the planned CLI design; promote to 1.0 once `rsk` ships. **Exempt from STACK.md** (meta-skill mirroring SPECS.md) |
-| `skill-builder` | ✅ | v1.0.0 — interview-first scaffolder. References SPECS.md as source of truth; generates frontmatter, body skeleton, STACK.md if needed, atomic SPECS updates (folder structure + roadmap + bundles + convention table); validation checklist before hand-off. **Exempt from STACK.md** (meta-skill, no library stack) |
 
 #### Design
 | Skill | Status | Notes |
@@ -892,7 +987,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | Skill | Status | Notes |
 |---|---|---|
 | `docker-architect` | ✅ | v1.0.0 — Docker 29, Compose v2 (`docker compose` + `docker-compose.yaml`), per-language base defaults (distroless Go, debian-slim Python/Node), BuildKit cache+secret mounts, multi-arch (amd64+arm64), Trivy scanning, language-specific recipes |
-| `ci-cd-architect` | 📋 | GitHub Actions structure, test gates, deployment strategies |
+| `ci-cd-architect` | ✅ | v1.0.0 — principles-first CI/CD (suggestion-mode, trade-offs over mandates). Pipeline taxonomy (CI/release/deploy/scheduled), trigger + concurrency design, supply-chain hygiene (SHA-pinned actions + Renovate, minimal `permissions:`), OIDC over long-lived secrets, language caching, matrix discipline, test gates on branch-protection, build/push delegates to `docker-architect`, release-please for Conventional Commits → tags, deployment strategies + environment approval. GitHub Actions recipes in `RECIPES.md`; lean `STACK.md` tracks action versions for `rsk status --stack` |
 | `observability-architect` | ✅ | v1.0.0 — application-side signal production. Prometheus for metrics (naming convention, cardinality cap), OTLP for logs+traces, `log/slog` (Go) + `structlog` (Python), trace_id correlation across all three pillars, head sampling at 10% + 100% on errors, PII/secret redaction at SDK, RED + USE golden signals, SLOs per critical user journey |
 | `grafana-architect` | ✅ | v1.0.0 — dashboard + alert consumption layer. Dashboards-as-code via Grizzly (`grr`), one-folder-per-service ownership, one-question-per-panel design, unified alerting with multi-window/multi-burn-rate SLOs, mandatory `runbook_url` annotations, drift detection on UI edits. Pairs with `observability-architect` |
 
@@ -919,12 +1014,22 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | `commit-author` | ✅ | |
 | `tdd` | ✅ | |
 | `grill-with-docs` | ✅ | Stress-tests plans through relentless questioning; absorbed the former `ubiquitous-language` skill (domain glossary extraction into `CONTEXT.md`) |
-| `caveman` | ✅ | |
+| `feature-planner` | ✅ | v1.0.0 — upstream planning pipeline. Requirement → constraints → design outline → vertical-slice task breakdown ordered by risk (tracer bullet first, riskiest assumption next). Hands off to `grill-with-docs` and `tdd`. When NOT to plan: trivial changes, spikes, bug fixes with reproductions |
+
+#### Refactoring
+| Skill | Status | Notes |
+|---|---|---|
 | `logic-cleaner` | ✅ | Expression-level only — intentionally narrow |
 | `code-design-refactor` | ✅ | v1.0.0 — design-level refactoring rules (extract, decouple, SRP, encapsulation, primitive obsession). Sits between `logic-cleaner` (expression) and `improve-codebase-architecture` (system). One move at a time, tests first, commit each move |
-| `feature-planner` | ✅ | v1.0.0 — upstream planning pipeline. Requirement → constraints → design outline → vertical-slice task breakdown ordered by risk (tracer bullet first, riskiest assumption next). Hands off to `grill-with-docs` and `tdd`. When NOT to plan: trivial changes, spikes, bug fixes with reproductions |
 | `improve-codebase-architecture` | ✅ | |
-| `design-patterns` | ✅ | v1.0.0 — skeptical catalog for modern Go/Python. Keeps the few that still earn their place (Repository, Adapter, Strategy, Decorator, Observer, Builder/options, Factory); names anti-patterns (Singleton, Abstract Factory, Visitor, Chain-of-Responsibility, Template Method); defers depth to `ddd-architect` / `hexagonal-arch`; rule-of-three before introducing |
+| `design-patterns` | ✅ | v1.0.0 — skeptical reference catalog for modern Go/Python. Keeps the few that still earn their place (Repository, Adapter, Strategy, Decorator, Observer, Builder/options, Factory); names anti-patterns (Singleton, Abstract Factory, Visitor, Chain-of-Responsibility, Template Method); defers depth to `ddd-architect` / `hexagonal-arch`; rule-of-three before introducing. **Consult before applying** a pattern in the other refactoring skills |
+
+#### Meta
+| Skill | Status | Notes |
+|---|---|---|
+| `skill-builder` | ✅ | v1.0.0 — interview-first scaffolder. References SPECS.md as source of truth; generates frontmatter, body skeleton, STACK.md if needed, atomic SPECS updates (folder structure + roadmap + bundles + convention table); validation checklist before hand-off. **Exempt from STACK.md** (meta-skill, no library stack) |
+| `rsk-guide` | ✅ | v0.1.0 draft — quick-reference for the `rsk` CLI. Tracks the in-progress CLI design; promote to 1.0 once `rsk` ships. **Exempt from STACK.md** (meta-skill mirroring SPECS.md) |
+| `caveman` | ✅ | Communication mode — ~75% token reduction while preserving technical accuracy. Language-agnostic; no STACK.md |
 
 #### Personal
 | Skill | Status | Notes |

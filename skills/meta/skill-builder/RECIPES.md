@@ -147,9 +147,10 @@ If any item fails, fix before handing off.
 **Exempt from STACK.md:**
 
 - `workflows/` — language-agnostic process skills.
+- `refactoring/` — code-cleanup ladder is language-agnostic.
 - `design/` — architectural patterns are version-agnostic.
 - `quality/` — security/perf principles are stable (override only if framework-specific behavior).
-- **Meta-skills** in `tooling/` with no library stack (e.g. `skill-builder`, `rsk-guide`).
+- `meta/` — ralvaskills-ecosystem skills with no library stack (e.g. `skill-builder`, `rsk-guide`, `caveman`).
 
 Mark the exemption explicitly in the roadmap notes when applicable.
 

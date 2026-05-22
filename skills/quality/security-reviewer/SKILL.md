@@ -99,7 +99,7 @@ The read pass is where most real findings come from. Tools surface patterns; hum
 ## 6. What this skill does NOT do
 
 - **Penetration testing.** Black-box attack simulation against a running service is a different skill set and requires explicit authorization.
-- **Threat modeling.** Architecture-level "what attacker types can affect this system" lives in [improve-codebase-architecture](../../workflows/improve-codebase-architecture/SKILL.md) territory or a dedicated workshop.
+- **Threat modeling.** Architecture-level "what attacker types can affect this system" lives in [improve-codebase-architecture](../../refactoring/improve-codebase-architecture/SKILL.md) territory or a dedicated workshop.
 - **Compliance audit.** SOC 2 / HIPAA / PCI-DSS specifics need a compliance specialist.
 
 This skill stops at code- and configuration-level findings. Findings that imply deeper work flag that explicitly: *"recommendation: full threat-model session with the team that owns Payments."*

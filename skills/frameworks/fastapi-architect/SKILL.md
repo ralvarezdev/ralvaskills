@@ -1,7 +1,7 @@
 ---
 name: fastapi-architect
-version: 1.0.0
-description: Strict FastAPI standards — feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 7807 errors, in-house OAuth2+JWT or external IdP. FastAPI 0.136 on Python 3.14. Use when scaffolding or reviewing a FastAPI service.
+version: 1.0.1
+description: Framework-specific delta on rest-api-architect — FastAPI 0.136 on Python 3.14. Feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 7807 errors, in-house OAuth2+JWT or external IdP. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a FastAPI service.
 ---
 
 # FastAPI Architecture

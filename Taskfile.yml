@@ -62,6 +62,37 @@ tasks:
     cmds:
       - golangci-lint fmt --config ../../.golangci.yml ./...
 
+  # ── scripts/generate-registry ─────────────────────────────────────────────
+
+  registry:generate:
+    desc: "Build registry tarballs and updated index.json into dist/ (merges against registry/index.json)"
+    sources:
+      - skills/**/*.md
+      - scripts/generate-registry/**/*.go
+    generates:
+      - dist/index.json
+      - dist/new-versions.json
+    cmds:
+      - mkdir -p dist
+      - go run ./scripts/generate-registry --skills-dir skills --output-dir dist --existing-index registry/index.json {{.CLI_ARGS}}
+
+  registry:lint:
+    desc: Lint the generate-registry script
+    dir: scripts/generate-registry
+    cmds:
+      - golangci-lint run --config ../../.golangci.yml ./...
+
+  registry:fmt:
+    desc: Format the generate-registry script
+    dir: scripts/generate-registry
+    cmds:
+      - golangci-lint fmt --config ../../.golangci.yml ./...
+
+  registry:clean:
+    desc: Remove the dist/ output directory
+    cmds:
+      - rm -rf dist
+
   # ── aggregate ─────────────────────────────────────────────────────────────
 
   lint:
@@ -69,12 +100,14 @@ tasks:
     deps:
       - cli:lint
       - tokens:lint
+      - registry:lint
 
   fmt:
     desc: Format all Go modules
     deps:
       - cli:fmt
       - tokens:fmt
+      - registry:fmt
 
   build:
     desc: Build all Go binaries

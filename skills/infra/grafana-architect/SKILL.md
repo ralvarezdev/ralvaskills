@@ -99,5 +99,5 @@ This dashboard is the single source of truth during an incident. Link to it from
 - [observability-architect](../observability-architect/SKILL.md) — produces what Grafana consumes. Naming and cardinality discipline established there must hold for queries here to work.
 - [docker-architect §10](../docker-architect/SKILL.md#10-vulnerability-scanning--trivy) — Trivy scan results can be dashboards too (security metric over time).
 - [rest-api-architect](../../protocols/rest-api-architect/SKILL.md) — SLO burn rate alerts reference REST status codes (`5xx` → error budget) and latency.
-- [improve-codebase-architecture](../../workflows/improve-codebase-architecture/SKILL.md) — friction visible in dashboards is input to architecture review.
+- [improve-codebase-architecture](../../refactoring/improve-codebase-architecture/SKILL.md) — friction visible in dashboards is input to architecture review.
 - [grpc-architect §2](../../protocols/grpc-architect/SKILL.md) — gRPC status codes feed equivalent metrics; same SLO mechanics apply.
