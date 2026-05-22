@@ -20,6 +20,23 @@ import (
 	"time"
 )
 
+const (
+	// File and directory names.
+	skillMarkdownFile    = "SKILL.md"
+	frontmatterDelim     = "---"
+	versionField         = "version:"
+	descriptionField     = "description:"
+	archiveSuffix        = ".tar.gz"
+	tempFilePattern      = ".rsk-gen-*.tmp"
+	releaseURLPath       = "releases/download"
+	indexFileName        = "index.json"
+	newVersionsFileName  = "new-versions.json"
+	gitHubRepoDefault    = "ralvarezdev/ralvaskills"
+
+	// Output permissions.
+	dirPermission = 0o750
+)
+
 // ---- index schema -------------------------------------------------------
 
 type Index struct {
@@ -68,7 +85,7 @@ func walkSkills(root string) ([]skillInfo, error) {
 		if !d.IsDir() {
 			return nil
 		}
-		skillMD := filepath.Join(path, "SKILL.md")
+		skillMD := filepath.Join(path, skillMarkdownFile)
 		if _, statErr := os.Stat(skillMD); os.IsNotExist(statErr) {
 			return nil
 		}
@@ -102,7 +119,7 @@ func readFrontmatter(path string) (version, description string, err error) {
 	inFrontmatter := false
 	for scanner.Scan() {
 		line := scanner.Text()
-		if line == "---" {
+		if line == frontmatterDelim {
 			if !inFrontmatter {
 				inFrontmatter = true
 				continue
@@ -112,10 +129,10 @@ func readFrontmatter(path string) (version, description string, err error) {
 		if !inFrontmatter {
 			continue
 		}
-		if v, ok := strings.CutPrefix(line, "version:"); ok {
+		if v, ok := strings.CutPrefix(line, versionField); ok {
 			version = strings.Trim(strings.TrimSpace(v), `"'`)
 		}
-		if v, ok := strings.CutPrefix(line, "description:"); ok {
+		if v, ok := strings.CutPrefix(line, descriptionField); ok {
 			description = strings.Trim(strings.TrimSpace(v), `"'`)
 		}
 	}
@@ -216,7 +233,7 @@ func writeJSON(path string, v any) error {
 	payload := append(data, '\n')
 
 	dir := filepath.Dir(path)
-	tmp, err := os.CreateTemp(dir, ".rsk-gen-*.tmp")
+	tmp, err := os.CreateTemp(dir, tempFilePattern)
 	if err != nil {
 		return err
 	}
@@ -244,7 +261,7 @@ func main() {
 	skillsDir := flag.String("skills-dir", "skills", "Path to skills directory")
 	outputDir := flag.String("output-dir", "dist", "Output directory for tarballs and index")
 	existingIndex := flag.String("existing-index", "", "Path to existing index.json to merge with")
-	githubRepo := flag.String("github-repo", "ralvarezdev/ralvaskills", "GitHub repo (owner/name) used to build release asset URLs")
+	githubRepo := flag.String("github-repo", gitHubRepoDefault, "GitHub repo (owner/name) used to build release asset URLs")
 	flag.Parse()
 
 	index := loadIndex(*existingIndex)
@@ -255,7 +272,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := os.MkdirAll(*outputDir, 0o750); err != nil {
+	if err := os.MkdirAll(*outputDir, dirPermission); err != nil {
 		fmt.Fprintf(os.Stderr, "error creating output dir: %v\n", err)
 		os.Exit(1)
 	}
@@ -279,7 +296,7 @@ func main() {
 			continue
 		}
 
-		archiveFile := fmt.Sprintf("%s-v%s.tar.gz", s.Name, s.Version)
+		archiveFile := fmt.Sprintf("%s-v%s%s", s.Name, s.Version, archiveSuffix)
 		archivePath := filepath.Join(*outputDir, archiveFile)
 
 		if err := createTarball(s.Path, s.Name, archivePath); err != nil {
@@ -293,7 +310,7 @@ func main() {
 		entry.Versions[s.Version] = &VersionEntry{
 			Version:     s.Version,
 			PublishedAt: now,
-			ArchiveURL:  fmt.Sprintf("https://github.com/%s/releases/download/%s/%s", *githubRepo, tag, archiveFile),
+			ArchiveURL:  fmt.Sprintf("https://github.com/%s/%s/%s/%s", *githubRepo, releaseURLPath, tag, archiveFile),
 		}
 
 		newVersions = append(newVersions, NewVersion{
@@ -306,13 +323,13 @@ func main() {
 
 	index.GeneratedAt = now
 
-	if err := writeJSON(filepath.Join(*outputDir, "index.json"), index); err != nil {
-		fmt.Fprintf(os.Stderr, "error writing index.json: %v\n", err)
+	if err := writeJSON(filepath.Join(*outputDir, indexFileName), index); err != nil {
+		fmt.Fprintf(os.Stderr, "error writing %s: %v\n", indexFileName, err)
 		os.Exit(1)
 	}
 
-	if err := writeJSON(filepath.Join(*outputDir, "new-versions.json"), newVersions); err != nil {
-		fmt.Fprintf(os.Stderr, "error writing new-versions.json: %v\n", err)
+	if err := writeJSON(filepath.Join(*outputDir, newVersionsFileName), newVersions); err != nil {
+		fmt.Fprintf(os.Stderr, "error writing %s: %v\n", newVersionsFileName, err)
 		os.Exit(1)
 	}
 

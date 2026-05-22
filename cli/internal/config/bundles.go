@@ -4,10 +4,8 @@ import (
 	_ "embed"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"github.com/adrg/xdg"
 
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 )
@@ -15,29 +13,25 @@ import (
 //go:embed catalog.toml
 var defaultCatalogData []byte
 
-// SkillRef is a reference to a named skill from a specific source.
-type SkillRef struct {
-	Name   string       `toml:"name"`
-	Source skill.Source `toml:"source"`
-}
+type (
+	// SkillRef is a reference to a named skill from a specific source.
+	SkillRef struct {
+		Name   string       `toml:"name"`
+		Source skill.Source `toml:"source"`
+	}
 
-// Bundle is a named, ordered set of skill references.
-type Bundle struct {
-	Name        string     `toml:"name"`
-	Description string     `toml:"description"`
-	Skills      []SkillRef `toml:"skills"`
-}
+	// Bundle is a named, ordered set of skill references.
+	Bundle struct {
+		Name        string     `toml:"name"`
+		Description string     `toml:"description"`
+		Skills      []SkillRef `toml:"skills"`
+	}
 
-// catalogFile is the top-level shape of a catalog TOML file.
-type catalogFile struct {
-	Bundle []Bundle `toml:"bundle"`
-}
-
-// DefaultCatalogPath returns the canonical path of the user catalog
-// (~/.config/rsk/catalog.toml).
-func DefaultCatalogPath() string {
-	return filepath.Join(xdg.ConfigHome, "rsk", "catalog.toml")
-}
+	// catalogFile is the top-level shape of a catalog TOML file.
+	catalogFile struct {
+		Bundle []Bundle `toml:"bundle"`
+	}
+)
 
 // LoadCatalog returns the merged bundle catalog. It always starts with the
 // embedded defaults and then applies user overrides from userCatalogPath.
@@ -86,6 +80,7 @@ func mustParseEmbedded() []Bundle {
 func merge(defaults, user []Bundle) []Bundle {
 	index := make(map[string]int, len(defaults))
 	result := make([]Bundle, len(defaults))
+
 	copy(result, defaults)
 	for i, b := range result {
 		index[b.Name] = i

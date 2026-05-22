@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/ralvarezdev/ralvaskills/cli/internal"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
@@ -36,12 +37,12 @@ Examples:
   rsk install go-grpc --dry-run`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runInstall(cmd, installOpts{
-			global:   flagBool(cmd, "global"),
-			dryRun:   flagBool(cmd, "dry-run"),
-			personal: flagBool(cmd, "personal"),
-			forTool:  flagString(cmd, "for"),
-			skill:    flagString(cmd, "skill"),
-			version:  flagString(cmd, "version"),
+			global:   internal.FlagBool(cmd, internal.FlagGlobal),
+			dryRun:   internal.FlagBool(cmd, internal.FlagDryRun),
+			personal: internal.FlagBool(cmd, internal.FlagPersonal),
+			forTool:  internal.FlagString(cmd, internal.FlagFor),
+			skill:    internal.FlagString(cmd, internal.FlagSkill),
+			version:  internal.FlagString(cmd, internal.FlagVersion),
 		}, args)
 	},
 }
@@ -49,12 +50,12 @@ Examples:
 func init() {
 	rootCmd.AddCommand(installCmd)
 	f := installCmd.Flags()
-	f.Bool("global", false, "Install to global skills dir(s)")
-	f.String("for", "", "Scope --global to a single tool (claude-code|opencode)")
-	f.String("skill", "", "Install a single skill by name (skips bundle resolution)")
-	f.Bool("personal", false, "Allow installing personal/ skills")
-	f.String("version", "", "Pin to a specific repo tag (local skills only)")
-	f.Bool("dry-run", false, "Show what would be installed without doing it")
+	f.Bool(internal.FlagGlobal, false, "Install to global skills dir(s)")
+	f.String(internal.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
+	f.String(internal.FlagSkill, "", "Install a single skill by name (skips bundle resolution)")
+	f.Bool(internal.FlagPersonal, false, "Allow installing personal/ skills")
+	f.String(internal.FlagVersion, "", "Pin to a specific repo tag (local skills only)")
+	f.Bool(internal.FlagDryRun, false, "Show what would be installed without doing it")
 }
 
 func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
@@ -158,13 +159,13 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 		for _, target := range targets {
 			suffix := ""
 			if skill.IsLinked(s.Name, target) {
-				suffix = "  " + ui.ReLink()
+				suffix = "  " + ui.ReLink
 			}
 			fmt.Fprintf(out, "  %s  %s  %s  %s  %s%s\n",
 				ui.SourceLabel(s.Source),
 				ui.PadRight(ui.SkillName(s.Name), nameWidth),
 				ui.PadRight(ui.SkillVersion(s.Version), 7),
-				ui.Arrow(),
+				ui.Arrow,
 				ui.MutedPath(filepath.Join(target, s.Name)),
 				suffix,
 			)
@@ -196,7 +197,7 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 			} else {
 				ui.Success(out, fmt.Sprintf("%s  %s  %s",
 					ui.SkillName(s.Name),
-					ui.Arrow(),
+					ui.Arrow,
 					ui.MutedPath(filepath.Join(target, s.Name)),
 				))
 			}
@@ -219,7 +220,7 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 	errOut := cmd.ErrOrStderr()
 	ctx := cmd.Context()
 
-	rskDir, err := projectRskDir()
+	rskDir, err := manifest.LocalConfigFolderPath()
 	if err != nil {
 		return err
 	}
@@ -242,7 +243,7 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 	localSrc := newLocalSource(cfg)
 	officialSrc := source.NewOfficial(cfg.OfficialCache)
 
-	skillsDir := filepath.Join(rskDir, "skills")
+	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
 
 	sortedNames := make([]string, 0, len(m.Skills))
 	for name := range m.Skills {
@@ -273,13 +274,13 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 	for _, s := range skills {
 		suffix := ""
 		if skill.IsLinked(s.Name, skillsDir) {
-			suffix = "  " + ui.ReLink()
+			suffix = "  " + ui.ReLink
 		}
 		fmt.Fprintf(out, "  %s  %s  %s  %s  %s%s\n",
 			ui.SourceLabel(s.Source),
 			ui.PadRight(ui.SkillName(s.Name), nameWidth),
 			ui.PadRight(ui.SkillVersion(s.Version), 7),
-			ui.Arrow(),
+			ui.Arrow,
 			ui.MutedPath(filepath.Join(skillsDir, s.Name)),
 			suffix,
 		)
@@ -321,7 +322,7 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 		})
 		ui.Success(out, fmt.Sprintf("%s  %s  %s",
 			ui.SkillName(s.Name),
-			ui.Arrow(),
+			ui.Arrow,
 			ui.MutedPath(filepath.Join(skillsDir, s.Name)),
 		))
 	}

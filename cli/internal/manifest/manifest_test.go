@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ralvarezdev/ralvaskills/cli/internal"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 )
 
@@ -13,7 +14,7 @@ func TestWriteReadMod_roundtrip(t *testing.T) {
 
 	m := Mod{
 		Version: "1",
-		Tools:   []ToolID{ToolClaudeCode},
+		Tools:   []internal.ToolID{internal.ToolClaudeCode},
 		Pinned:  []string{"go-architect"},
 		Skills:  map[string]string{"go-architect": "*", "tdd": "1.2.0"},
 	}
@@ -148,7 +149,7 @@ func TestWritePinned(t *testing.T) {
 		t.Fatalf("WritePinned: %v", err)
 	}
 
-	content, err := os.ReadFile(filepath.Join(dir, "CLAUDE.md"))
+	content, err := os.ReadFile(filepath.Join(dir, ClaudeFileName))
 	if err != nil {
 		t.Fatalf("read CLAUDE.md: %v", err)
 	}
@@ -164,7 +165,7 @@ func TestWritePinned_empty(t *testing.T) {
 	if err := WritePinned(dir, nil); err != nil {
 		t.Fatalf("WritePinned empty: %v", err)
 	}
-	info, err := os.Stat(filepath.Join(dir, "CLAUDE.md"))
+	info, err := os.Stat(filepath.Join(dir, ClaudeFileName))
 	if err != nil {
 		t.Fatalf("CLAUDE.md not created: %v", err)
 	}
@@ -174,7 +175,7 @@ func TestWritePinned_empty(t *testing.T) {
 }
 
 func TestAppendImport_idempotent(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "CLAUDE.md")
+	path := filepath.Join(t.TempDir(), ClaudeFileName)
 
 	if err := AppendImport(path); err != nil {
 		t.Fatalf("first AppendImport: %v", err)
@@ -189,7 +190,7 @@ func TestAppendImport_idempotent(t *testing.T) {
 	}
 	count := 0
 	for i := 0; i < len(content); i++ {
-		if i+len(importLine) <= len(content) && string(content[i:i+len(importLine)]) == importLine {
+		if i+len(ClaudeImportLine) <= len(content) && string(content[i:i+len(ClaudeImportLine)]) == ClaudeImportLine {
 			count++
 		}
 	}
@@ -199,8 +200,8 @@ func TestAppendImport_idempotent(t *testing.T) {
 }
 
 func TestRemoveImport(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "CLAUDE.md")
-	os.WriteFile(path, []byte("# header\n"+importLine+"\n# footer\n"), 0o644)
+	path := filepath.Join(t.TempDir(), ClaudeFileName)
+	os.WriteFile(path, []byte("# header\n"+ClaudeImportLine+"\n# footer\n"), LocalFilePermission)
 
 	if err := RemoveImport(path); err != nil {
 		t.Fatalf("RemoveImport: %v", err)
@@ -214,7 +215,7 @@ func TestRemoveImport(t *testing.T) {
 		t.Fatal("RemoveImport removed everything")
 	}
 	for _, line := range []string{string(content)} {
-		if line == importLine {
+		if line == ClaudeImportLine {
 			t.Error("importLine still present after RemoveImport")
 		}
 	}

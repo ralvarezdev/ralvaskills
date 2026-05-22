@@ -7,6 +7,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
+	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 )
 
 // buildTarball builds an in-memory .tar.gz with the given entries.
@@ -22,7 +25,7 @@ func buildTarball(t *testing.T, entries []struct{ name, content string }) []byte
 			tw.WriteHeader(&tar.Header{
 				Typeflag: tar.TypeDir,
 				Name:     e.name,
-				Mode:     0o750,
+				Mode:     config.ConfigDirPermission,
 			})
 			continue
 		}
@@ -31,7 +34,7 @@ func buildTarball(t *testing.T, entries []struct{ name, content string }) []byte
 			Typeflag: tar.TypeReg,
 			Name:     e.name,
 			Size:     int64(len(body)),
-			Mode:     0o644,
+			Mode:     config.ConfigFilePermission,
 		})
 		tw.Write(body)
 	}
@@ -52,7 +55,7 @@ func TestExtractTarball_normal(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if _, err := os.Stat(filepath.Join(dest, "SKILL.md")); err != nil {
+	if _, err := os.Stat(filepath.Join(dest, skill.SkillFileName)); err != nil {
 		t.Errorf("SKILL.md not extracted: %v", err)
 	}
 	if _, err := os.Stat(filepath.Join(dest, "prompt.md")); err != nil {
@@ -71,13 +74,13 @@ func TestExtractTarball_zipSlip(t *testing.T) {
 		Typeflag: tar.TypeReg,
 		Name:     "skill/../../evil.txt",
 		Size:     int64(len(body)),
-		Mode:     0o644,
+		Mode:     config.ConfigFilePermission,
 	})
 	tw.Write(body)
 	tw.Close()
 	gw.Close()
 
-	err := extractTarball(bytes.NewReader(buf.Bytes()), dest, "skill")
+	err := extractTarball(bytes.NewReader(buf.Bytes()), dest, skill.SkillsFolderName)
 	if err == nil {
 		t.Fatal("expected error for zip-slip path, got nil")
 	}
@@ -103,7 +106,7 @@ func TestExtractTarball_rejectsSymlink(t *testing.T) {
 	tw.Close()
 	gw.Close()
 
-	if err := extractTarball(bytes.NewReader(buf.Bytes()), dest, "skill"); err == nil {
+	if err := extractTarball(bytes.NewReader(buf.Bytes()), dest, skill.SkillsFolderName); err == nil {
 		t.Fatal("expected error for symlink entry, got nil")
 	}
 }
@@ -118,7 +121,7 @@ func TestExtractTarball_stripPrefix(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	content, err := os.ReadFile(filepath.Join(dest, "SKILL.md"))
+	content, err := os.ReadFile(filepath.Join(dest, skill.SkillFileName))
 	if err != nil {
 		t.Fatalf("SKILL.md not found: %v", err)
 	}

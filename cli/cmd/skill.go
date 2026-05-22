@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
 
+	"github.com/ralvarezdev/ralvaskills/cli/internal"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
@@ -16,51 +16,53 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var skillCmd = &cobra.Command{
-	Use:   "skill",
-	Short: "Manage skills in the project manifest.",
-	Long: `Add, remove, pin, and list skills in the project rsk.mod.
+var (
+	skillCmd = &cobra.Command{
+		Use:   "skill",
+		Short: "Manage skills in the project manifest.",
+		Long: `Add, remove, pin, and list skills in the project rsk.mod.
 
   rsk skill add <name>     Add a skill and install it
   rsk skill pin <name>     Import the skill in .rsk/CLAUDE.md
   rsk skill unpin <name>   Remove the import
   rsk skill list           Show all skills in the manifest
   rsk skill upgrade <name> Re-resolve and re-link a skill`,
-}
+	}
 
-var skillAddCmd = &cobra.Command{
-	Use:   "add <name[@version]>",
-	Short: "Add a skill to the project manifest and install it.",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runSkillAdd,
-}
+	skillAddCmd = &cobra.Command{
+		Use:   "add <name[@version]>",
+		Short: "Add a skill to the project manifest and install it.",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runSkillAdd,
+	}
 
-var skillPinCmd = &cobra.Command{
-	Use:   "pin <name>",
-	Short: "Pin a skill so it is imported in .rsk/CLAUDE.md.",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runSkillPin,
-}
+	skillPinCmd = &cobra.Command{
+		Use:   "pin <name>",
+		Short: "Pin a skill so it is imported in .rsk/CLAUDE.md.",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runSkillPin,
+	}
 
-var skillUnpinCmd = &cobra.Command{
-	Use:   "unpin <name>",
-	Short: "Remove a skill from the pinned list.",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runSkillUnpin,
-}
+	skillUnpinCmd = &cobra.Command{
+		Use:   "unpin <name>",
+		Short: "Remove a skill from the pinned list.",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runSkillUnpin,
+	}
 
-var skillListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List skills in the project manifest.",
-	RunE:  runSkillList,
-}
+	skillListCmd = &cobra.Command{
+		Use:   "list",
+		Short: "List skills in the project manifest.",
+		RunE:  runSkillList,
+	}
 
-var skillUpgradeCmd = &cobra.Command{
-	Use:   "upgrade <name>",
-	Short: "Re-resolve and re-link a skill to its latest available version.",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runSkillUpgrade,
-}
+	skillUpgradeCmd = &cobra.Command{
+		Use:   "upgrade <name>",
+		Short: "Re-resolve and re-link a skill to its latest available version.",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runSkillUpgrade,
+	}
+)
 
 func init() {
 	rootCmd.AddCommand(skillCmd)
@@ -70,21 +72,7 @@ func init() {
 	skillCmd.AddCommand(skillListCmd)
 	skillCmd.AddCommand(skillUpgradeCmd)
 
-	skillAddCmd.Flags().Bool("pin", false, "Also pin the skill in .rsk/CLAUDE.md")
-}
-
-// projectRskDir returns the .rsk directory for the current working directory,
-// or an error if rsk.mod does not exist.
-func projectRskDir() (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("get working directory: %w", err)
-	}
-	rskDir := filepath.Join(cwd, ".rsk")
-	if _, err := os.Stat(manifest.ModPath(rskDir)); os.IsNotExist(err) {
-		return "", fmt.Errorf("no rsk.mod found — run 'rsk project init' first")
-	}
-	return rskDir, nil
+	skillAddCmd.Flags().Bool(internal.FlagPin, false, fmt.Sprintf("Also pin the skill in %s", manifest.RelativeClaudeFilePath))
 }
 
 func runSkillAdd(cmd *cobra.Command, args []string) error {
@@ -96,7 +84,7 @@ func runSkillAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	rskDir, err := projectRskDir()
+	rskDir, err := manifest.LocalConfigFolderPath()
 	if err != nil {
 		return err
 	}
@@ -114,7 +102,7 @@ func runSkillAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	skillsDir := filepath.Join(rskDir, "skills")
+	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
 	if err := skill.Link(s, skillsDir); err != nil {
 		return fmt.Errorf("link %s: %w", name, err)
 	}
@@ -130,7 +118,7 @@ func runSkillAdd(cmd *cobra.Command, args []string) error {
 	}
 	m.Skills[name] = constraint
 
-	if flagBool(cmd, "pin") && !slices.Contains(m.Pinned, name) {
+	if internal.FlagBool(cmd, internal.FlagPin) && !slices.Contains(m.Pinned, name) {
 		m.Pinned = append(m.Pinned, name)
 	}
 
@@ -168,7 +156,7 @@ func runSkillPin(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
 	name := args[0]
 
-	rskDir, err := projectRskDir()
+	rskDir, err := manifest.LocalConfigFolderPath()
 	if err != nil {
 		return err
 	}
@@ -205,7 +193,7 @@ func runSkillUnpin(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
 	name := args[0]
 
-	rskDir, err := projectRskDir()
+	rskDir, err := manifest.LocalConfigFolderPath()
 	if err != nil {
 		return err
 	}
@@ -237,7 +225,7 @@ func runSkillUnpin(cmd *cobra.Command, args []string) error {
 func runSkillList(cmd *cobra.Command, _ []string) error {
 	out := cmd.OutOrStdout()
 
-	rskDir, err := projectRskDir()
+	rskDir, err := manifest.LocalConfigFolderPath()
 	if err != nil {
 		return err
 	}
@@ -257,7 +245,7 @@ func runSkillList(cmd *cobra.Command, _ []string) error {
 	fmt.Fprintln(out)
 	ui.Header(out, "Project skills:")
 
-	skillsDir := filepath.Join(rskDir, "skills")
+	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
 	pinnedSet := make(map[string]bool, len(m.Pinned))
 	for _, p := range m.Pinned {
 		pinnedSet[p] = true
@@ -274,9 +262,9 @@ func runSkillList(cmd *cobra.Command, _ []string) error {
 		constraint := m.Skills[name]
 		installed := skill.IsLinked(name, skillsDir)
 
-		mark := ui.SuccessMark()
+		mark := ui.SuccessMark
 		if !installed {
-			mark = ui.ErrorMark()
+			mark = ui.ErrorMark
 		}
 		pinnedTag := ""
 		if pinnedSet[name] {
@@ -300,7 +288,7 @@ func runSkillUpgrade(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	name := args[0]
 
-	rskDir, err := projectRskDir()
+	rskDir, err := manifest.LocalConfigFolderPath()
 	if err != nil {
 		return err
 	}
@@ -327,7 +315,7 @@ func runSkillUpgrade(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	skillsDir := filepath.Join(rskDir, "skills")
+	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
 	if err := skill.Link(s, skillsDir); err != nil {
 		return fmt.Errorf("link %s: %w", name, err)
 	}
@@ -349,14 +337,12 @@ func runSkillUpgrade(cmd *cobra.Command, args []string) error {
 	fmt.Fprintln(out)
 	ui.Success(out, fmt.Sprintf("upgraded %s  %s  %s",
 		ui.SkillName(name),
-		ui.Arrow(),
+		ui.Arrow,
 		ui.SkillVersion(s.Version),
 	))
 	fmt.Fprintln(out)
 	return nil
 }
-
-// ── manifest sync ─────────────────────────────────────────────────────────────
 
 // syncPinnedAllTools writes pinned skill entries for every tool in m.Tools.
 // rskDir is .rsk/, projectDir is its parent.
@@ -364,11 +350,11 @@ func syncPinnedAllTools(rskDir string, m manifest.Mod) error {
 	projectDir := filepath.Dir(rskDir)
 	for _, tool := range m.Tools {
 		switch tool {
-		case manifest.ToolClaudeCode:
+		case internal.ToolClaudeCode:
 			if err := manifest.WritePinned(rskDir, m.Pinned); err != nil {
 				return fmt.Errorf("sync claude-code: %w", err)
 			}
-		case manifest.ToolOpenCode:
+		case internal.ToolOpenCode:
 			if err := manifest.SyncOpenCodeInstructions(projectDir, m.Pinned); err != nil {
 				return fmt.Errorf("sync opencode: %w", err)
 			}
@@ -378,8 +364,6 @@ func syncPinnedAllTools(rskDir string, m manifest.Mod) error {
 	}
 	return nil
 }
-
-// ── helpers ───────────────────────────────────────────────────────────────────
 
 func parseNameVersion(arg string) (name, version string, err error) {
 	if idx := strings.Index(arg, "@"); idx >= 0 {
@@ -393,5 +377,3 @@ func parseNameVersion(arg string) (name, version string, err error) {
 	}
 	return name, version, nil
 }
-
-

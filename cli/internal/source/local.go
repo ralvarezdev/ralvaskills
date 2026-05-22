@@ -21,7 +21,7 @@ func NewLocal(repoPath string) *Local {
 
 // SkillsRoot returns the absolute path to the skills/ directory.
 func (l *Local) SkillsRoot() string {
-	return filepath.Join(l.repoPath, "skills")
+	return filepath.Join(l.repoPath, skill.SkillsFolderName)
 }
 
 // All walks the skills/ directory and returns every discovered skill.

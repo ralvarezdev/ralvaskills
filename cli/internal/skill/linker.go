@@ -6,16 +6,23 @@ import (
 	"path/filepath"
 )
 
+const (
+	// DirPermission is the permission mode for created directories.
+	DirPermission = 0o750 // rwxr-x---
+)
+
 // Link creates a symlink at targetDir/<skill.Name> → skill.Path.
 // Replaces any existing symlink at that location.
 func Link(s Skill, targetDir string) error {
-	if err := os.MkdirAll(targetDir, 0o750); err != nil {
+	if err := os.MkdirAll(targetDir, DirPermission); err != nil {
 		return fmt.Errorf("create target dir %s: %w", targetDir, err)
 	}
+	
 	linkPath := filepath.Join(targetDir, s.Name)
 	if err := os.Remove(linkPath); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("remove existing link %s: %w", linkPath, err)
 	}
+	
 	if err := os.Symlink(s.Path, linkPath); err != nil {
 		return fmt.Errorf("symlink %s → %s: %w", linkPath, s.Path, err)
 	}

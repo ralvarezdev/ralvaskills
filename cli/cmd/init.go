@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ralvarezdev/ralvaskills/cli/internal"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/ui"
 	"github.com/spf13/cobra"
@@ -30,17 +31,17 @@ Examples:
   rsk init
   rsk init --force`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runInit(cmd, flagBool(cmd, "force"))
+		return runInit(cmd, internal.FlagBool(cmd, internal.FlagForce))
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-	initCmd.Flags().Bool("force", false, "Overwrite existing config without prompting")
+	initCmd.Flags().Bool(internal.FlagForce, false, "Overwrite existing config without prompting")
 }
 
 func runInit(cmd *cobra.Command, force bool) error {
-	cfgPath := config.DefaultPath()
+	cfgPath := config.DefaultConfigFilePath()
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
 
@@ -69,7 +70,7 @@ func runInit(cmd *cobra.Command, force bool) error {
 
 	var repoPath, registryURL string
 	if parseIntOrDefault(modeStr, 1) == 2 {
-		registryURL, err = prompt(r, out, "Registry URL", "https://skills.ralvarez.dev")
+		registryURL, err = prompt(r, out, "Registry URL", config.DefaultRegistryURL)
 		if err != nil {
 			return err
 		}
@@ -91,19 +92,11 @@ func runInit(cmd *cobra.Command, force bool) error {
 	}
 
 	// 2. AI tool selection
-	type toolDef struct {
-		id         string
-		defaultDir string
-	}
-	tools := []toolDef{
-		{id: "claude-code", defaultDir: claudeSkillsDir()},
-		{id: "opencode", defaultDir: openCodeSkillsDir()},
-	}
-
+	tools := internal.SupportedTools()
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, "Which AI tools do you want to support?")
 	for i, t := range tools {
-		fmt.Fprintf(out, "  [%d] %s  (default: %s)\n", i+1, t.id, t.defaultDir)
+		fmt.Fprintf(out, "  [%d] %s  (default: %s)\n", i+1, t.ID, t.DefaultDir)
 	}
 	selStr, err := prompt(r, out, "Select (comma-separated)", "1,2")
 	if err != nil {
@@ -123,22 +116,22 @@ func runInit(cmd *cobra.Command, force bool) error {
 	)
 	for _, idx := range selected {
 		t := tools[idx]
-		dir, err = prompt(r, out, fmt.Sprintf("Global skills dir for %s", t.id), t.defaultDir)
+		dir, err = prompt(r, out, fmt.Sprintf("Global skills dir for %s", t.ID), t.DefaultDir)
 		if err != nil {
 			return err
 		}
 		expanded, err = expandPath(dir)
 		if err != nil {
-			return fmt.Errorf("invalid path for %s: %w", t.id, err)
+			return fmt.Errorf("invalid path for %s: %w", t.ID, err)
 		}
-		globalTargets[t.id] = expanded
+		globalTargets[string(t.ID)] = expanded
 	}
 
 	// 4. Default target scope
 	scopeOptions := make([]string, 0, len(selected)+1)
-	scopeOptions = append(scopeOptions, "all")
+	scopeOptions = append(scopeOptions, internal.ForAll)
 	for _, idx := range selected {
-		scopeOptions = append(scopeOptions, tools[idx].id)
+		scopeOptions = append(scopeOptions, string(tools[idx].ID))
 	}
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, "Default scope when --global is passed without --for:")
@@ -149,21 +142,18 @@ func runInit(cmd *cobra.Command, force bool) error {
 	if err != nil {
 		return err
 	}
-	scopeIdx := clampInt(parseIntOrDefault(scopeStr, 1), 1, len(scopeOptions))
+	scopeIdx := internal.ClampInt(parseIntOrDefault(scopeStr, 1), 1, len(scopeOptions))
 	defaultScope := scopeOptions[scopeIdx-1]
 
 	// Build and save config.
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("resolve home dir: %w", err)
-	}
+	configDir := config.DefaultConfigFolderPath()
 	cfg := config.Config{
 		RepoPath:           repoPath,
 		RegistryURL:        registryURL,
 		GlobalTargets:      globalTargets,
 		DefaultTargetScope: defaultScope,
-		OfficialCache:      filepath.Join(home, ".ralvaskills", "cache", "anthropic"),
-		VersionsCache:      filepath.Join(home, ".ralvaskills", "cache", "versions.json"),
+		OfficialCache:      filepath.Join(configDir, "cache", "anthropic"),
+		VersionsCache:      filepath.Join(configDir, "cache", "versions.json"),
 	}
 	err = config.Save(cfg)
 	if err != nil {
@@ -221,16 +211,6 @@ func parseIntOrDefault(s string, def int) int {
 	return n
 }
 
-func clampInt(n, lo, hi int) int {
-	if n < lo {
-		return lo
-	}
-	if n > hi {
-		return hi
-	}
-	return n
-}
-
 // expandPath expands a leading ~ to the user home directory.
 func expandPath(p string) (string, error) {
 	if !strings.HasPrefix(p, "~") {
@@ -241,20 +221,4 @@ func expandPath(p string) (string, error) {
 		return "", err
 	}
 	return filepath.Join(home, p[1:]), nil
-}
-
-func claudeSkillsDir() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return filepath.Join(".claude", "skills")
-	}
-	return filepath.Join(home, ".claude", "skills")
-}
-
-func openCodeSkillsDir() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return filepath.Join(".config", "opencode", "skills")
-	}
-	return filepath.Join(home, ".config", "opencode", "skills")
 }

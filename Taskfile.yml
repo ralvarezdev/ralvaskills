@@ -93,6 +93,29 @@ tasks:
     cmds:
       - rm -rf dist
 
+  # ── dependencies ────────────────────────────────────────────────────────────
+
+  cli:deps:
+    desc: Update Go dependencies in the rsk CLI module
+    dir: cli
+    cmds:
+      - go get -u ./...
+      - go mod tidy
+
+  tokens:deps:
+    desc: Update Go dependencies in the count-tokens script
+    dir: scripts/count-tokens
+    cmds:
+      - go get -u ./...
+      - go mod tidy
+
+  registry:deps:
+    desc: Update Go dependencies in the generate-registry script
+    dir: scripts/generate-registry
+    cmds:
+      - go get -u ./...
+      - go mod tidy
+
   # ── aggregate ─────────────────────────────────────────────────────────────
 
   lint:
@@ -113,3 +136,10 @@ tasks:
     desc: Build all Go binaries
     deps:
       - cli:build
+
+  deps:
+    desc: Update Go dependencies in all modules
+    deps:
+      - cli:deps
+      - tokens:deps
+      - registry:deps

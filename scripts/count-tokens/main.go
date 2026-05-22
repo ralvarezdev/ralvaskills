@@ -33,52 +33,71 @@ const (
 	// descBytesPerToken applies to description fields: short dense noun phrases
 	// with few spaces tokenize closer to ~3 bytes/token.
 	descBytesPerToken = 3
-)
 
-// bytesPerToken is kept for side-file estimation (STACK.md, RECIPES.md) where
-// we only have file size and no content to inspect.
-const bytesPerToken = proseBytesPerToken
+	// bytesPerToken is kept for side-file estimation (STACK.md, RECIPES.md) where
+	// we only have file size and no content to inspect.
+	bytesPerToken = proseBytesPerToken
 
-type skill struct {
-	name          string
-	category      string
-	bodyBytes     int64
-	bodyTokens    int64
-	descTokens    int64
-	stackTokens   int64
-	recipesTokens int64
-	otherTokens   int64
-	otherFiles    []otherFile
-}
-
-type otherFile struct {
-	name   string
-	tokens int64
-}
-
-// bundle mirrors a [[bundle]] entry in cli/internal/config/catalog.toml.
-type bundle struct {
-	Name        string        `toml:"name"`
-	Description string        `toml:"description"`
-	Skills      []bundleSkill `toml:"skills"`
-}
-
-type bundleSkill struct {
-	Name   string `toml:"name"`
-	Source string `toml:"source"`
-}
-
-type catalogFile struct {
-	Bundle []bundle `toml:"bundle"`
-}
-
-const globalBundleName = "global"
-
-// Per-profile description token budgets. The global budget is tight because
-// every project pays it; the session budget is looser because it's project-specific.
-const (
+	// Per-profile description token budgets. The global budget is tight because
+	// every project pays it; the session budget is looser because it's project-specific.
 	globalDescBudget  int64 = 1500
 	sessionDescBudget int64 = 2200
+
+	// File and directory names.
+	skillMarkdownFile      = "SKILL.md"
+	stackMarkdownFile      = "STACK.md"
+	recipesMarkdownFile    = "RECIPES.md"
+	gitDir                 = ".git"
+	skillsDir              = "skills"
+	catalogFilePath        = "cli/internal/config/catalog.toml"
+	docsDir                = "docs"
+	tokenCountsFile        = "TOKEN_COUNTS.md"
+	tokenCountsJSONFile    = "TOKEN_COUNTS.json"
+
+	// Global bundle name.
+	globalBundleName = "global"
+
+	// Output file permissions.
+	filePermission = 0o644
+
+	// Token estimation thresholds for trimming suggestions.
+	bodyThreshold = 2500
+	topDescCount  = 10
+)
+
+type (
+	skill struct {
+		name          string
+		category      string
+		bodyBytes     int64
+		bodyTokens    int64
+		descTokens    int64
+		stackTokens   int64
+		recipesTokens int64
+		otherTokens   int64
+		otherFiles    []otherFile
+	}
+
+	otherFile struct {
+		name   string
+		tokens int64
+	}
+
+	// bundle mirrors a [[bundle]] entry in cli/internal/config/catalog.toml.
+	bundle struct {
+		Name        string        `toml:"name"`
+		Description string        `toml:"description"`
+		Skills      []bundleSkill `toml:"skills"`
+	}
+
+	bundleSkill struct {
+		Name   string `toml:"name"`
+		Source string `toml:"source"`
+	}
+
+	catalogFile struct {
+		Bundle []bundle `toml:"bundle"`
+	}
 )
 
 func descBudgetStatus(tokens, budget int64) string {
@@ -104,13 +123,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	skills, err := scan(filepath.Join(root, "skills"))
+	skills, err := scan(filepath.Join(root, skillsDir))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error scanning skills:", err)
 		os.Exit(1)
 	}
 
-	bundles, err := loadCatalog(filepath.Join(root, "cli", "internal", "config", "catalog.toml"))
+	bundles, err := loadCatalog(filepath.Join(root, catalogFilePath))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error loading catalog:", err)
 		os.Exit(1)
@@ -142,16 +161,16 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error encoding json:", jsonErr)
 			os.Exit(1)
 		}
-		outPath := filepath.Join(root, "docs", "TOKEN_COUNTS.json")
-		if writeErr := os.WriteFile(outPath, out, 0o644); writeErr != nil {
+		outPath := filepath.Join(root, docsDir, tokenCountsJSONFile)
+		if writeErr := os.WriteFile(outPath, out, filePermission); writeErr != nil {
 			fmt.Fprintln(os.Stderr, "error writing", outPath, ":", writeErr)
 			os.Exit(1)
 		}
 		fmt.Println("wrote", outPath)
 	case "markdown":
 		out := render(skills, bundles)
-		outPath := filepath.Join(root, "docs", "TOKEN_COUNTS.md")
-		if writeErr := os.WriteFile(outPath, []byte(out), 0o644); writeErr != nil {
+		outPath := filepath.Join(root, docsDir, tokenCountsFile)
+		if writeErr := os.WriteFile(outPath, []byte(out), filePermission); writeErr != nil {
 			fmt.Fprintln(os.Stderr, "error writing", outPath, ":", writeErr)
 			os.Exit(1)
 		}
@@ -182,8 +201,8 @@ func findRoot() (string, error) {
 		return "", err
 	}
 	for {
-		if _, statErr := os.Stat(filepath.Join(dir, ".git")); statErr == nil {
-			if _, skillsErr := os.Stat(filepath.Join(dir, "skills")); skillsErr != nil {
+		if _, statErr := os.Stat(filepath.Join(dir, gitDir)); statErr == nil {
+			if _, skillsErr := os.Stat(filepath.Join(dir, skillsDir)); skillsErr != nil {
 				return "", fmt.Errorf("found repo root at %s but no skills/ directory", dir)
 			}
 			return dir, nil
@@ -205,7 +224,7 @@ func scan(skillsDir string) ([]skill, error) {
 			fmt.Fprintf(os.Stderr, "warn: skipping %s: %v\n", path, walkErr)
 			return nil
 		}
-		if d.IsDir() || d.Name() != "SKILL.md" {
+		if d.IsDir() || d.Name() != skillMarkdownFile {
 			return nil
 		}
 
@@ -232,7 +251,7 @@ func scan(skillsDir string) ([]skill, error) {
 
 		siblings, _ := filepath.Glob(filepath.Join(skillDir, "*.md"))
 		for _, sib := range siblings {
-			if filepath.Base(sib) == "SKILL.md" {
+			if filepath.Base(sib) == skillMarkdownFile {
 				continue
 			}
 			si, siErr := os.Stat(sib)
@@ -243,9 +262,9 @@ func scan(skillsDir string) ([]skill, error) {
 			tokens := roundDiv(si.Size(), bytesPerToken)
 			base := filepath.Base(sib)
 			switch base {
-			case "STACK.md":
+			case stackMarkdownFile:
 				s.stackTokens = tokens
-			case "RECIPES.md":
+			case recipesMarkdownFile:
 				s.recipesTokens = tokens
 			default:
 				s.otherTokens += tokens
@@ -577,7 +596,6 @@ func render(skills []skill, bundles []bundle) string {
 		buf.WriteString("\n")
 	}
 
-	const bodyThreshold, topDescCount = 2500, 10
 	var heavyBody []skill
 	for _, s := range skills {
 		if s.bodyTokens > bodyThreshold {
@@ -636,11 +654,11 @@ func renderJSON(skills []skill) ([]byte, error) {
 		OtherFiles    []otherFileJSON `json:"other_files,omitempty"`
 	}
 	type totalsJSON struct {
-		BodyBytes   int64 `json:"body_bytes"`
-		BodyTokens  int64 `json:"body_tokens"`
-		DescTokens  int64 `json:"desc_tokens"`
-		SideTokens  int64 `json:"side_tokens"`
-		SkillCount  int   `json:"skill_count"`
+		BodyBytes  int64 `json:"body_bytes"`
+		BodyTokens int64 `json:"body_tokens"`
+		DescTokens int64 `json:"desc_tokens"`
+		SideTokens int64 `json:"side_tokens"`
+		SkillCount int   `json:"skill_count"`
 	}
 	type output struct {
 		GeneratedAt string      `json:"generated_at"`

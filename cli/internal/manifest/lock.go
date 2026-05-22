@@ -12,25 +12,20 @@ import (
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 )
 
-const LockFile = "rsk.lock"
+type (
+	// LockEntry records the resolved state of one installed skill.
+	LockEntry struct {
+		Name    string       `toml:"name"`
+		Version string       `toml:"version"`
+		Source  skill.Source `toml:"source"`
+		Path    string       `toml:"path"` // resolved symlink target
+	}
 
-// LockEntry records the resolved state of one installed skill.
-type LockEntry struct {
-	Name    string       `toml:"name"`
-	Version string       `toml:"version"`
-	Source  skill.Source `toml:"source"`
-	Path    string       `toml:"path"` // resolved symlink target
-}
-
-// Lock is the in-memory representation of rsk.lock.
-type Lock struct {
-	Skills []LockEntry `toml:"skills"`
-}
-
-// LockPath returns the canonical path of rsk.lock inside rskDir.
-func LockPath(rskDir string) string {
-	return filepath.Join(rskDir, LockFile)
-}
+	// Lock is the in-memory representation of rsk.lock.
+	Lock struct {
+		Skills []LockEntry `toml:"skills"`
+	}
+)
 
 // ReadLock decodes rsk.lock from rskDir. Returns an empty Lock if the file does not exist.
 func ReadLock(rskDir string) (Lock, error) {
@@ -39,6 +34,7 @@ func ReadLock(rskDir string) (Lock, error) {
 	if _, statErr := os.Stat(path); errors.Is(statErr, os.ErrNotExist) {
 		return Lock{}, nil
 	}
+	
 	if _, err := toml.DecodeFile(path, &l); err != nil {
 		return Lock{}, fmt.Errorf("read %s: %w", path, err)
 	}
@@ -48,7 +44,7 @@ func ReadLock(rskDir string) (Lock, error) {
 // WriteLock encodes l as TOML to rskDir/rsk.lock atomically, creating parent dirs as needed.
 func WriteLock(rskDir string, l Lock) error {
 	path := LockPath(rskDir)
-	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), LocalDirPermission); err != nil {
 		return fmt.Errorf("create dir: %w", err)
 	}
 	return writeFileAtomic(path, func(w io.Writer) error {

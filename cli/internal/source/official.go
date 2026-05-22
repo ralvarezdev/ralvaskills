@@ -16,7 +16,7 @@ type Official struct {
 
 // NewOfficial returns an Official source backed by cacheDir (the official_cache config value).
 func NewOfficial(cacheDir string) *Official {
-	return &Official{cacheDir: filepath.Join(cacheDir, "skills")}
+	return &Official{cacheDir: filepath.Join(cacheDir, skill.SkillsFolderName)}
 }
 
 // All walks the cache and returns every discovered official skill.

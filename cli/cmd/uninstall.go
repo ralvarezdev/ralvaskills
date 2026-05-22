@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/ralvarezdev/ralvaskills/cli/internal"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
@@ -14,15 +15,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type removeEntry struct {
-	name   string
-	target string
-}
+type (
+	removeEntry struct {
+		name   string
+		target string
+	}
 
-type uninstallOpts struct {
-	global, dryRun, personal bool
-	forTool, skill           string
-}
+	uninstallOpts struct {
+		global, dryRun, personal bool
+		forTool, skill           string
+	}
+)
 
 var uninstallCmd = &cobra.Command{
 	Use:   "uninstall [bundle...] [flags]",
@@ -36,11 +39,11 @@ Examples:
   rsk uninstall go-grpc --dry-run`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runUninstall(cmd, uninstallOpts{
-			global:   flagBool(cmd, "global"),
-			dryRun:   flagBool(cmd, "dry-run"),
-			personal: flagBool(cmd, "personal"),
-			forTool:  flagString(cmd, "for"),
-			skill:    flagString(cmd, "skill"),
+			global:   internal.FlagBool(cmd, internal.FlagGlobal),
+			dryRun:   internal.FlagBool(cmd, internal.FlagDryRun),
+			personal: internal.FlagBool(cmd, internal.FlagPersonal),
+			forTool:  internal.FlagString(cmd, internal.FlagFor),
+			skill:    internal.FlagString(cmd, internal.FlagSkill),
 		}, args)
 	},
 }
@@ -48,11 +51,11 @@ Examples:
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
 	f := uninstallCmd.Flags()
-	f.Bool("global", false, "Target global skills dir(s)")
-	f.String("for", "", "Scope --global to a single tool (claude-code|opencode)")
-	f.String("skill", "", "Remove a single skill by name")
-	f.Bool("personal", false, "Allow removing personal/ skills")
-	f.Bool("dry-run", false, "Show what would be removed without doing it")
+	f.Bool(internal.FlagGlobal, false, "Target global skills dir(s)")
+	f.String(internal.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
+	f.String(internal.FlagSkill, "", "Remove a single skill by name")
+	f.Bool(internal.FlagPersonal, false, "Allow removing personal/ skills")
+	f.Bool(internal.FlagDryRun, false, "Show what would be removed without doing it")
 }
 
 func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
@@ -135,7 +138,7 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	for _, e := range toRemove {
 		fmt.Fprintf(out, "  %s  %s  %s\n",
 			ui.PadRight(ui.SkillName(e.name), nameWidth),
-			ui.Arrow(),
+			ui.Arrow,
 			ui.MutedPath(filepath.Join(e.target, e.name)),
 		)
 	}
@@ -166,13 +169,14 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	}
 
 	if !opts.global {
-		cwd, cwdErr := os.Getwd()
-		if cwdErr == nil {
-			rskDir := filepath.Join(cwd, ".rsk")
-			projectSkillsDir := filepath.Join(rskDir, "skills")
-			if err := cleanupManifest(rskDir, projectSkillsDir, toRemove); err != nil {
-				ui.Warn(out, fmt.Sprintf("update manifest: %v", err))
-			}
+		rskDir, err := manifest.LocalConfigFolderPath()
+		if err != nil {
+			return err
+		}
+		
+		projectSkillsDir := manifest.LocalConfigSkillsPath(rskDir)
+		if err := cleanupManifest(rskDir, projectSkillsDir, toRemove); err != nil {
+			ui.Warn(out, fmt.Sprintf("update manifest: %v", err))
 		}
 	}
 

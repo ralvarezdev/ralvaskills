@@ -30,8 +30,8 @@ func TestDedupSkills(t *testing.T) {
 
 func TestDetectSkillSource(t *testing.T) {
 	repo := filepath.FromSlash("/home/user/ralvaskills")
-	official := filepath.FromSlash("/home/user/.ralvaskills/cache/anthropic")
-	registry := filepath.FromSlash("/home/user/.ralvaskills/cache/registry")
+	official := filepath.FromSlash("/home/user/.config/rsk/cache/anthropic")
+	registry := filepath.FromSlash("/home/user/.config/rsk/cache/registry")
 
 	tests := []struct {
 		name      string

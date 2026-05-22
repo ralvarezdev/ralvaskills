@@ -16,58 +16,75 @@ import (
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 )
 
-const defaultHTTPTimeout = 30 * time.Second
+const (
+	// DefaultHTTPTimeout is the timeout for HTTP requests to the registry.
+	DefaultHTTPTimeout = 30 * time.Second
 
-// indexSkillEntry mirrors the SkillEntry shape in the published index.json.
-type indexSkillEntry struct {
-	Name        string                    `json:"name"`
-	Description string                    `json:"description"`
-	Personal    bool                      `json:"personal"`
-	Latest      string                    `json:"latest"`
-	Versions    map[string]*indexVersion  `json:"versions"`
-}
+	// IndexFileName is the name of the registry index file.
+	IndexFileName = "index.json"
 
-type indexVersion struct {
-	Version    string `json:"version"`
-	ArchiveURL string `json:"archive_url"`
-}
+	// FilePermissionMask is the permission bits mask for extracted files (tar header mode & FilePermission).
+	FilePermissionMask = 0o777
 
-type registryIndex struct {
-	Skills map[string]*indexSkillEntry `json:"skills"`
-}
+	// FileOpenFlags are the flags used when creating files during tarball extraction.
+	FileOpenFlags = os.O_CREATE | os.O_WRONLY | os.O_TRUNC
+)
 
-// Registry resolves skills from the hosted registry at baseURL.
-// Skills are downloaded as tarballs and cached in cacheDir.
-type Registry struct {
-	baseURL  string
-	cacheDir string
-	client   *http.Client
-}
+type (
+	// indexSkillEntry mirrors the SkillEntry shape in the published index.json.
+	indexSkillEntry struct {
+		Name        string                   `json:"name"`
+		Description string                   `json:"description"`
+		Personal    bool                     `json:"personal"`
+		Latest      string                   `json:"latest"`
+		Versions    map[string]*indexVersion `json:"versions"`
+	}
+
+	indexVersion struct {
+		Version    string `json:"version"`
+		ArchiveURL string `json:"archive_url"`
+	}
+
+	registryIndex struct {
+		Skills map[string]*indexSkillEntry `json:"skills"`
+	}
+
+	// Registry resolves skills from the hosted registry at baseURL.
+	// Skills are downloaded as tarballs and cached in cacheDir.
+	Registry struct {
+		baseURL  string
+		cacheDir string
+		client   *http.Client
+	}
+)
 
 // NewRegistry returns a Registry backed by baseURL, caching extractions in cacheDir.
 func NewRegistry(baseURL, cacheDir string) *Registry {
 	return &Registry{
 		baseURL:  baseURL,
 		cacheDir: cacheDir,
-		client:   &http.Client{Timeout: defaultHTTPTimeout},
+		client:   &http.Client{Timeout: DefaultHTTPTimeout},
 	}
 }
 
 // Index fetches and returns the registry index.
 func (r *Registry) Index(ctx context.Context) (map[string]*indexSkillEntry, error) {
-	url := r.baseURL + "/index.json"
+	url := r.baseURL + "/" + IndexFileName
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("build index request: %w", err)
 	}
 	resp, err := r.client.Do(req)
+
 	if err != nil {
 		return nil, fmt.Errorf("fetch index: %w", err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetch index: HTTP %d from %s", resp.StatusCode, url)
 	}
+
 	var idx registryIndex
 	if err := json.NewDecoder(resp.Body).Decode(&idx); err != nil {
 		return nil, fmt.Errorf("decode index: %w", err)
@@ -81,6 +98,7 @@ func (r *Registry) All(ctx context.Context) ([]skill.Skill, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	skills := make([]skill.Skill, 0, len(index))
 	for _, entry := range index {
 		skills = append(skills, skill.Skill{
@@ -105,6 +123,7 @@ func (r *Registry) FindVersion(ctx context.Context, name, version string) (skill
 	if err != nil {
 		return skill.Skill{}, err
 	}
+
 	entry, ok := index[name]
 	if !ok {
 		return skill.Skill{}, fmt.Errorf("%w: registry skill %q not found", ErrNotFound, name)
@@ -112,6 +131,7 @@ func (r *Registry) FindVersion(ctx context.Context, name, version string) (skill
 	if version == "" {
 		version = entry.Latest
 	}
+
 	ver, ok := entry.Versions[version]
 	if !ok {
 		return skill.Skill{}, fmt.Errorf("%w: registry skill %q has no version %s", ErrNotFound, name, version)
@@ -143,16 +163,18 @@ func (r *Registry) ensureCached(ctx context.Context, name, version, archiveURL s
 	if err != nil {
 		return "", fmt.Errorf("build download request: %w", err)
 	}
+
 	resp, err := r.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("download %s: %w", archiveURL, err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("download %s: HTTP %d", archiveURL, resp.StatusCode)
 	}
 
-	if err := os.MkdirAll(skillDir, 0o750); err != nil {
+	if err := os.MkdirAll(skillDir, skill.DirPermission); err != nil {
 		return "", fmt.Errorf("create cache dir: %w", err)
 	}
 
@@ -219,22 +241,25 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, 0o750); err != nil {
+			if err := os.MkdirAll(target, skill.DirPermission); err != nil {
 				return err
 			}
 		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(target), 0o750); err != nil {
+			if err := os.MkdirAll(filepath.Dir(target), skill.DirPermission); err != nil {
 				return err
 			}
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(hdr.Mode)&0o777)
+
+			f, err := os.OpenFile(target, FileOpenFlags, os.FileMode(hdr.Mode)&FilePermissionMask)
 			if err != nil {
 				return err
 			}
+
 			_, copyErr := io.Copy(f, tr)
 			closeErr := f.Close()
 			if copyErr != nil {
 				return copyErr
 			}
+
 			if closeErr != nil {
 				return closeErr
 			}

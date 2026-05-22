@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ralvarezdev/ralvaskills/cli/internal"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
@@ -13,10 +14,29 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type statusOpts struct {
-	global, project, stack, refresh, personal bool
-	forTool                                   string
-}
+type (
+	// statusOpts holds the options for the status command.
+	statusOpts struct {
+		global, project, stack, refresh, personal bool
+		forTool                                   string
+	}
+
+	// statusSection groups linked skills under a single target directory.
+	statusSection struct {
+		title    string
+		subtitle string
+		dir      string
+		skills   []linkedEntry
+	}
+
+	// linkedEntry describes one symlink found in a target directory.
+	linkedEntry struct {
+		name    string
+		version string
+		source  skill.Source
+		bundles []string
+	}
+)
 
 var statusCmd = &cobra.Command{
 	Use:   "status [flags]",
@@ -35,12 +55,12 @@ Examples:
   rsk status --stack --refresh`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runStatus(cmd, statusOpts{
-			global:   flagBool(cmd, "global"),
-			project:  flagBool(cmd, "project"),
-			stack:    flagBool(cmd, "stack"),
-			refresh:  flagBool(cmd, "refresh"),
-			personal: flagBool(cmd, "personal"),
-			forTool:  flagString(cmd, "for"),
+			global:   internal.FlagBool(cmd, internal.FlagGlobal),
+			project:  internal.FlagBool(cmd, "project"),
+			stack:    internal.FlagBool(cmd, internal.FlagStack),
+			refresh:  internal.FlagBool(cmd, internal.FlagRefresh),
+			personal: internal.FlagBool(cmd, internal.FlagPersonal),
+			forTool:  internal.FlagString(cmd, internal.FlagFor),
 		})
 	},
 }
@@ -48,28 +68,12 @@ Examples:
 func init() {
 	rootCmd.AddCommand(statusCmd)
 	f := statusCmd.Flags()
-	f.Bool("global", false, "Show global skills only")
-	f.String("for", "", "Scope --global to a single tool (claude-code|opencode)")
+	f.Bool(internal.FlagGlobal, false, "Show global skills only")
+	f.String(internal.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
 	f.Bool("project", false, "Show project skills only")
-	f.Bool("stack", false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
-	f.Bool("refresh", false, "With --stack: bypass the 24h cache and force a re-fetch")
-	f.Bool("personal", false, "Include personal/ skills in output")
-}
-
-// statusSection groups linked skills under a single target directory.
-type statusSection struct {
-	title    string
-	subtitle string
-	dir      string
-	skills   []linkedEntry
-}
-
-// linkedEntry describes one symlink found in a target directory.
-type linkedEntry struct {
-	name    string
-	version string
-	source  skill.Source
-	bundles []string
+	f.Bool(internal.FlagStack, false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
+	f.Bool(internal.FlagRefresh, false, "With --stack: bypass the 24h cache and force a re-fetch")
+	f.Bool(internal.FlagPersonal, false, "Include personal/ skills in output")
 }
 
 func runStatus(cmd *cobra.Command, opts statusOpts) error {
@@ -93,21 +97,22 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
 	}
 
-	cwd, _ := os.Getwd()
+	rskDir, err := manifest.LocalConfigFolderPath()
+	if err != nil {
+		return err
+	}
 
 	catalog, catalogWarn := config.LoadCatalog("")
 	if catalogWarn != nil {
 		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
 	}
 	membership := bundleMembershipIndex(catalog)
-	sections := buildStatusSections(cfg, opts.global, opts.project, opts.forTool, cwd)
+	sections := buildStatusSections(cfg, opts.global, opts.project, opts.forTool, rskDir)
 
 	pinnedSet := make(map[string]bool)
-	if cwd != "" {
-		if m, modErr := manifest.ReadMod(filepath.Join(cwd, ".rsk")); modErr == nil {
-			for _, p := range m.Pinned {
-				pinnedSet[p] = true
-			}
+	if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
+		for _, p := range m.Pinned {
+			pinnedSet[p] = true
 		}
 	}
 
@@ -154,7 +159,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 				ui.SourceLabel(e.source),
 				ui.PadRight(ui.SkillName(e.name), nameWidth),
 				ui.PadRight(ui.SkillVersion(e.version), 7),
-				ui.SuccessMark(),
+				ui.SuccessMark,
 				tags,
 			)
 		}
@@ -170,7 +175,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	return nil
 }
 
-func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forTool, cwd string) []statusSection {
+func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forTool, rskDir string) []statusSection {
 	var sections []statusSection
 
 	if !projectOnly {
@@ -193,8 +198,8 @@ func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forToo
 		}
 	}
 
-	if !globalOnly && cwd != "" {
-		projectDir := filepath.Join(cwd, ".rsk", "skills")
+	if !globalOnly {
+		projectDir := manifest.LocalConfigSkillsPath(rskDir)
 		sections = append(sections, statusSection{
 			title:    "Project",
 			subtitle: projectDir,

@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ralvarezdev/ralvaskills/cli/internal"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
+	"github.com/ralvarezdev/ralvaskills/cli/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/source"
 )
@@ -37,7 +39,8 @@ func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string
 		if err != nil {
 			return nil, fmt.Errorf("get working directory: %w", err)
 		}
-		return []string{filepath.Join(cwd, ".rsk", "skills")}, nil
+		rskDir := filepath.Join(cwd, manifest.LocalConfigFolderName)
+		return []string{manifest.LocalConfigSkillsPath(rskDir)}, nil
 	}
 
 	if forTool != "" {
@@ -52,7 +55,7 @@ func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string
 	}
 
 	scope := cfg.DefaultTargetScope
-	if scope == "all" {
+	if scope == internal.ForAll {
 		dirs := make([]string, 0, len(cfg.GlobalTargets))
 		for _, dir := range cfg.GlobalTargets {
 			dirs = append(dirs, dir)
@@ -209,7 +212,8 @@ func allTargetDirs(cfg config.Config) []string {
 		dirs = append(dirs, dir)
 	}
 	if cwd, err := os.Getwd(); err == nil {
-		dirs = append(dirs, filepath.Join(cwd, ".rsk", "skills"))
+		rskDir := filepath.Join(cwd, manifest.LocalConfigFolderName)
+		dirs = append(dirs, manifest.LocalConfigSkillsPath(rskDir))
 	}
 	return dirs
 }

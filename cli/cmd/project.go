@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/ralvarezdev/ralvaskills/cli/internal"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/ui"
 	"github.com/spf13/cobra"
@@ -46,19 +47,19 @@ func init() {
 	projectCmd.AddCommand(projectInitCmd)
 	projectCmd.AddCommand(projectRemoveCmd)
 
-	projectInitCmd.Flags().StringVar(&projectInitFor, "for", "claude-code", "Tools to configure: claude-code | opencode | all")
+	projectInitCmd.Flags().StringVar(&projectInitFor, internal.FlagFor, string(internal.ToolClaudeCode), "Tools to configure: claude-code | opencode | all")
 }
 
-func toolsFromFlag(flag string) ([]manifest.ToolID, error) {
+func toolsFromFlag(flag string) ([]internal.ToolID, error) {
 	switch flag {
-	case string(manifest.ToolClaudeCode):
-		return []manifest.ToolID{manifest.ToolClaudeCode}, nil
-	case string(manifest.ToolOpenCode):
-		return []manifest.ToolID{manifest.ToolOpenCode}, nil
-	case "all":
-		return []manifest.ToolID{manifest.ToolClaudeCode, manifest.ToolOpenCode}, nil
+	case string(internal.ToolClaudeCode):
+		return []internal.ToolID{internal.ToolClaudeCode}, nil
+	case string(internal.ToolOpenCode):
+		return []internal.ToolID{internal.ToolOpenCode}, nil
+	case internal.ForAll:
+		return []internal.ToolID{internal.ToolClaudeCode, internal.ToolOpenCode}, nil
 	default:
-		return nil, fmt.Errorf("--for must be %s, %s, or all; got %q", manifest.ToolClaudeCode, manifest.ToolOpenCode, flag)
+		return nil, fmt.Errorf("--for must be %s, %s, or %s; got %q", internal.ToolClaudeCode, internal.ToolOpenCode, internal.ForAll, flag)
 	}
 }
 
@@ -75,9 +76,9 @@ func runProjectInit(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("get working directory: %w", err)
 	}
 
-	rskDir := filepath.Join(cwd, ".rsk")
-	skillsDir := filepath.Join(rskDir, "skills")
-	if err := os.MkdirAll(skillsDir, 0o750); err != nil {
+	rskDir := filepath.Join(cwd, manifest.LocalConfigFolderName)
+	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
+	if err := os.MkdirAll(skillsDir, manifest.LocalDirPermission); err != nil {
 		return fmt.Errorf("create .rsk/skills: %w", err)
 	}
 
@@ -91,7 +92,7 @@ func runProjectInit(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if slices.Contains(tools, manifest.ToolClaudeCode) {
+	if slices.Contains(tools, internal.ToolClaudeCode) {
 		if err := manifest.WritePinned(rskDir, nil); err != nil {
 			return err
 		}
@@ -116,20 +117,20 @@ func runProjectRemove(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("get working directory: %w", err)
 	}
 
-	rskDir := filepath.Join(cwd, ".rsk")
+	rskDir := filepath.Join(cwd, manifest.LocalConfigFolderName)
 
 	// Read tools from mod before deleting .rsk/ so we know what to clean up.
-	tools := []manifest.ToolID{manifest.ToolClaudeCode} // safe default if mod is unreadable
+	tools := []internal.ToolID{internal.ToolClaudeCode} // safe default if mod is unreadable
 	if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
 		tools = m.Tools
 	}
 
-	if slices.Contains(tools, manifest.ToolClaudeCode) {
+	if slices.Contains(tools, internal.ToolClaudeCode) {
 		if err := manifest.RemoveImport(filepath.Join(cwd, "CLAUDE.md")); err != nil {
 			return err
 		}
 	}
-	if slices.Contains(tools, manifest.ToolOpenCode) {
+	if slices.Contains(tools, internal.ToolOpenCode) {
 		if err := manifest.RemoveOpenCodeInstructions(cwd); err != nil {
 			return err
 		}

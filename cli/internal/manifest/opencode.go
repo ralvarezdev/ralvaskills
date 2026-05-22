@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
+
+	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 )
 
 const (
-	openCodeConfigFile = "opencode.json"
-	rskSkillsPrefix    = ".rsk/skills/"
+	// InstructionsKey is the key in opencode.json where pinned instructions are stored.
+	InstructionsKey = "instructions"
 )
 
 // SyncOpenCodeInstructions updates opencode.json in projectDir so that the
@@ -20,22 +21,22 @@ const (
 // All non-rsk entries in the instructions array are left untouched.
 // Creates opencode.json if it does not exist.
 func SyncOpenCodeInstructions(projectDir string, pinnedNames []string) error {
-	path := filepath.Join(projectDir, openCodeConfigFile)
+	path := OpenCodeConfigFilePath(projectDir)
 
 	cfg, err := readOpenCodeConfig(path)
 	if err != nil {
 		return err
 	}
 
-	kept := filterNonRskEntries(cfg["instructions"])
+	kept := filterNonRskEntries(cfg[InstructionsKey])
 	for _, name := range pinnedNames {
-		kept = append(kept, rskSkillsPrefix+name+"/SKILL.md")
+		kept = append(kept, LocalSkillsPrefix+name+"/"+skill.SkillFileName)
 	}
 
 	if len(kept) == 0 {
-		delete(cfg, "instructions")
+		delete(cfg, InstructionsKey)
 	} else {
-		cfg["instructions"] = kept
+		cfg[InstructionsKey] = kept
 	}
 
 	return writeOpenCodeConfig(path, cfg)
@@ -44,18 +45,18 @@ func SyncOpenCodeInstructions(projectDir string, pinnedNames []string) error {
 // RemoveOpenCodeInstructions removes all .rsk/skills/ entries from opencode.json
 // in projectDir. Returns nil if the file does not exist.
 func RemoveOpenCodeInstructions(projectDir string) error {
-	path := filepath.Join(projectDir, openCodeConfigFile)
+	path := OpenCodeConfigFilePath(projectDir)
 
 	cfg, err := readOpenCodeConfig(path)
 	if err != nil {
 		return err
 	}
 
-	kept := filterNonRskEntries(cfg["instructions"])
+	kept := filterNonRskEntries(cfg[InstructionsKey])
 	if len(kept) == 0 {
-		delete(cfg, "instructions")
+		delete(cfg, InstructionsKey)
 	} else {
-		cfg["instructions"] = kept
+		cfg[InstructionsKey] = kept
 	}
 
 	return writeOpenCodeConfig(path, cfg)
@@ -67,7 +68,7 @@ func filterNonRskEntries(raw any) []any {
 	existing, _ := raw.([]any)
 	kept := make([]any, 0, len(existing))
 	for _, e := range existing {
-		if s, ok := e.(string); ok && strings.HasPrefix(s, rskSkillsPrefix) {
+		if s, ok := e.(string); ok && strings.HasPrefix(s, LocalSkillsPrefix) {
 			continue
 		}
 		kept = append(kept, e)
@@ -83,6 +84,7 @@ func readOpenCodeConfig(path string) (map[string]any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
+
 	cfg := make(map[string]any)
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return nil, fmt.Errorf("parse %s: %w", path, err)
@@ -91,13 +93,9 @@ func readOpenCodeConfig(path string) (map[string]any, error) {
 }
 
 func writeOpenCodeConfig(path string, cfg map[string]any) error {
-	data, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal %s: %w", path, err)
-	}
-	payload := append(data, '\n')
 	return writeFileAtomic(path, func(w io.Writer) error {
-		_, err := w.Write(payload)
-		return err
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(cfg)
 	})
 }
