@@ -1,4 +1,4 @@
-// Package ui provides terminal output helpers with color and TTY-aware formatting.
+// Package ui provides styled terminal output for the rsk CLI.
 package ui
 
 import (
@@ -7,108 +7,191 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 )
 
-const (
-	ansiReset  = "\033[0m"
-	ansiRed    = "\033[31m"
-	ansiGreen  = "\033[32m"
-	ansiYellow = "\033[33m"
-	ansiBold   = "\033[1m"
-	ansiDim    = "\033[2m"
+// ── palette ──────────────────────────────────────────────────────────────────
+
+var (
+	clrBrand    = lipgloss.Color("#2DD4BF") // teal  — rsk brand
+	clrLocal    = lipgloss.Color("#A78BFA") // violet — ralva skills
+	clrOfficial = lipgloss.Color("#60A5FA") // blue   — anthr skills
+	clrSuccess  = lipgloss.Color("#4ADE80") // green
+	clrWarn     = lipgloss.Color("#FBBF24") // amber
+	clrError    = lipgloss.Color("#F87171") // red
+	clrMuted    = lipgloss.Color("#6B7280") // gray
+	clrText     = lipgloss.Color("#F9FAFB") // near-white
+	clrBundle   = lipgloss.Color("#34D399") // emerald
 )
 
-// ColorEnabled reports whether colored output is allowed for w.
-// Respects NO_COLOR, FORCE_COLOR, and TTY detection.
-func ColorEnabled(w io.Writer) bool {
-	if os.Getenv("NO_COLOR") != "" {
-		return false
-	}
-	if os.Getenv("FORCE_COLOR") != "" {
-		return true
-	}
-	f, ok := w.(*os.File)
-	if !ok {
-		return false
-	}
-	fi, err := f.Stat()
-	if err != nil {
-		return false
-	}
-	return fi.Mode()&os.ModeCharDevice != 0
+// ── styles ───────────────────────────────────────────────────────────────────
+
+var (
+	brandStyle      = lipgloss.NewStyle().Foreground(clrBrand).Bold(true)
+	versionStyle    = lipgloss.NewStyle().Foreground(clrMuted)
+	localStyle      = lipgloss.NewStyle().Foreground(clrLocal).Bold(true)
+	officialStyle   = lipgloss.NewStyle().Foreground(clrOfficial).Bold(true)
+	successStyle    = lipgloss.NewStyle().Foreground(clrSuccess).Bold(true)
+	warnStyle       = lipgloss.NewStyle().Foreground(clrWarn).Bold(true)
+	errorStyle      = lipgloss.NewStyle().Foreground(clrError).Bold(true)
+	mutedStyle      = lipgloss.NewStyle().Foreground(clrMuted)
+	boldStyle       = lipgloss.NewStyle().Foreground(clrText).Bold(true)
+	bundleStyle     = lipgloss.NewStyle().Foreground(clrBundle)
+	titleStyle      = lipgloss.NewStyle().Foreground(clrText).Bold(true)
+	divStyle        = lipgloss.NewStyle().Foreground(clrMuted)
+	promptStyle     = lipgloss.NewStyle().Foreground(clrBrand).Bold(true)
+	arrowStyle      = lipgloss.NewStyle().Foreground(clrMuted)
+	relinkStyle     = lipgloss.NewStyle().Foreground(clrWarn)
+)
+
+const dividerLen = 48
+
+func divider() string {
+	return divStyle.Render(strings.Repeat("─", dividerLen))
 }
 
-func colorize(w io.Writer, code, msg string) string {
-	if ColorEnabled(w) {
-		return code + msg + ansiReset
-	}
-	return msg
+// ── brand ────────────────────────────────────────────────────────────────────
+
+// Brand prints the rsk name + version header line.
+func Brand(w io.Writer, version string) {
+	fmt.Fprintf(w, "\n  %s  %s\n\n",
+		brandStyle.Render("rsk"),
+		versionStyle.Render("v"+version),
+	)
 }
 
-// Success prints a green ✓ prefixed line to w.
+// ── headers ───────────────────────────────────────────────────────────────────
+
+// Header prints a bold section title with a divider.
+func Header(w io.Writer, msg string) {
+	fmt.Fprintln(w, titleStyle.Render(msg))
+	fmt.Fprintln(w, divider())
+}
+
+// SectionHeader prints a two-part header: bold title + muted subtitle + divider.
+func SectionHeader(w io.Writer, title, subtitle string) {
+	line := boldStyle.Render(title)
+	if subtitle != "" {
+		line += "  " + mutedStyle.Render(subtitle)
+	}
+	fmt.Fprintln(w, line)
+	fmt.Fprintln(w, divider())
+}
+
+// ── source labels ─────────────────────────────────────────────────────────────
+
+// SourceLabel returns a styled source badge: "ralva" in violet or "anthr" in blue.
+func SourceLabel(src skill.Source) string {
+	switch src {
+	case skill.SourceLocal:
+		return localStyle.Render("ralva")
+	case skill.SourceOfficial:
+		return officialStyle.Render("anthr")
+	default:
+		return mutedStyle.Render("?????")
+	}
+}
+
+// BundleTag returns a styled bundle name for status/list rows.
+func BundleTag(name string) string {
+	return bundleStyle.Render(name)
+}
+
+// ── marks & symbols ───────────────────────────────────────────────────────────
+
+func SuccessMark() string { return successStyle.Render("✓") }
+func WarnMark() string    { return warnStyle.Render("⚠") }
+func ErrorMark() string   { return errorStyle.Render("✗") }
+func Arrow() string       { return arrowStyle.Render("→") }
+func ReLink() string      { return relinkStyle.Render("re-link") }
+
+// ── print helpers ─────────────────────────────────────────────────────────────
+
+// Success prints a green ✓ line.
 func Success(w io.Writer, msg string) {
-	fmt.Fprintln(w, colorize(w, ansiGreen, "✓")+" "+msg)
+	fmt.Fprintln(w, "  "+SuccessMark()+"  "+msg)
 }
 
-// Warn prints a yellow ⚠ prefixed line to w.
+// Warn prints an amber ⚠ line.
 func Warn(w io.Writer, msg string) {
-	fmt.Fprintln(w, colorize(w, ansiYellow, "⚠")+" "+msg)
+	fmt.Fprintln(w, "  "+WarnMark()+"  "+msg)
 }
 
-// Fail prints a red ✗ prefixed line to stderr.
+// Fail prints a red ✗ line to stderr.
 func Fail(msg string) {
-	fmt.Fprintln(os.Stderr, colorize(os.Stderr, ansiRed, "✗")+" "+msg)
+	fmt.Fprintln(os.Stderr, "  "+ErrorMark()+"  "+msg)
 }
 
-// Failf prints a formatted red ✗ prefixed line to stderr.
+// Failf prints a formatted red ✗ line to stderr.
 func Failf(format string, args ...any) {
 	Fail(fmt.Sprintf(format, args...))
 }
 
-// Info prints a plain line to w.
+// Info prints a plain line.
 func Info(w io.Writer, msg string) {
 	fmt.Fprintln(w, msg)
 }
 
-// Indent prints msg with two-space indent to w.
+// Indent prints a muted indented line.
 func Indent(w io.Writer, msg string) {
-	fmt.Fprintln(w, "  "+msg)
+	fmt.Fprintln(w, "  "+mutedStyle.Render(msg))
 }
 
-// Header prints a bold section header to w.
-func Header(w io.Writer, msg string) {
-	fmt.Fprintln(w, colorize(w, ansiBold, msg))
-}
-
-// Dim prints a faint line to w.
+// Dim prints a muted line.
 func Dim(w io.Writer, msg string) {
-	fmt.Fprintln(w, colorize(w, ansiDim, msg))
+	fmt.Fprintln(w, mutedStyle.Render(msg))
 }
 
-// PadRight pads s with spaces on the right to width n.
-func PadRight(s string, n int) string {
-	if len(s) >= n {
-		return s
-	}
-	return s + strings.Repeat(" ", n-len(s))
-}
+// ── confirm ───────────────────────────────────────────────────────────────────
 
-// MaxWidth returns the length of the longest string in items.
-func MaxWidth(items []string) int {
-	width := 0
-	for _, s := range items {
-		if len(s) > width {
-			width = len(s)
-		}
-	}
-	return width
-}
-
-// ConfirmYN prints a [y/N] prompt to w and returns true if the user answers "y" or "yes".
+// ConfirmYN prints a styled [y/N] prompt and returns true for "y" or "yes".
 func ConfirmYN(w io.Writer, prompt string) bool {
-	fmt.Fprintf(w, "%s [y/N] ", prompt)
+	fmt.Fprintf(w, "\n  %s %s ", promptStyle.Render(prompt), mutedStyle.Render("[y/N]"))
 	r := bufio.NewReader(os.Stdin)
 	line, _ := r.ReadString('\n')
+	fmt.Fprintln(w)
 	line = strings.ToLower(strings.TrimSpace(strings.TrimRight(line, "\r\n")))
 	return line == "y" || line == "yes"
+}
+
+// ── table helpers ─────────────────────────────────────────────────────────────
+
+// PadRight pads s to visual width n, correctly handling ANSI escape codes.
+func PadRight(s string, n int) string {
+	w := lipgloss.Width(s)
+	if w >= n {
+		return s
+	}
+	return s + strings.Repeat(" ", n-w)
+}
+
+// MaxWidth returns the visual width of the longest string in items.
+func MaxWidth(items []string) int {
+	w := 0
+	for _, s := range items {
+		if vw := lipgloss.Width(s); vw > w {
+			w = vw
+		}
+	}
+	return w
+}
+
+// SkillName returns a styled skill name for table rows.
+func SkillName(name string) string {
+	return boldStyle.Render(name)
+}
+
+// SkillVersion returns a styled version string for table rows.
+func SkillVersion(version string) string {
+	if version == "" {
+		return mutedStyle.Render("-")
+	}
+	return mutedStyle.Render(version)
+}
+
+// MutedPath returns a dimmed path string.
+func MutedPath(p string) string {
+	return mutedStyle.Render(p)
 }

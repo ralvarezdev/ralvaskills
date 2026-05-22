@@ -139,13 +139,14 @@ func runInstall(cmd *cobra.Command, args []string) error {
 		for _, target := range targets {
 			suffix := ""
 			if skill.IsLinked(s.Name, target) {
-				suffix = " (re-link)"
+				suffix = "  " + ui.ReLink()
 			}
-			fmt.Fprintf(out, "  %s  %s  %s  →  %s%s\n",
-				s.Source.Label(),
-				ui.PadRight(s.Name, nameWidth),
-				ui.PadRight(s.Version, 7),
-				filepath.Join(target, s.Name),
+			fmt.Fprintf(out, "  %s  %s  %s  %s  %s%s\n",
+				ui.SourceLabel(s.Source),
+				ui.PadRight(ui.SkillName(s.Name), nameWidth),
+				ui.PadRight(ui.SkillVersion(s.Version), 7),
+				ui.Arrow(),
+				ui.MutedPath(filepath.Join(target, s.Name)),
 				suffix,
 			)
 		}
@@ -174,7 +175,11 @@ func runInstall(cmd *cobra.Command, args []string) error {
 				ui.Failf("link %s: %v", s.Name, linkErr)
 				failed++
 			} else {
-				ui.Success(out, fmt.Sprintf("%s  →  %s", s.Name, filepath.Join(target, s.Name)))
+				ui.Success(out, fmt.Sprintf("%s  %s  %s",
+					ui.SkillName(s.Name),
+					ui.Arrow(),
+					ui.MutedPath(filepath.Join(target, s.Name)),
+				))
 			}
 		}
 	}

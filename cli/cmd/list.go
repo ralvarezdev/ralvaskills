@@ -159,17 +159,15 @@ func printListTable(out io.Writer, skills []skill.Skill) error {
 	}
 	nameWidth := ui.MaxWidth(names)
 
+	fmt.Fprintln(out)
 	for _, s := range skills {
-		ver := s.Version
-		if ver == "" {
-			ver = "-"
-		}
 		fmt.Fprintf(out, "  %s  %s  %s\n",
-			s.Source.Label(),
-			ui.PadRight(s.Name, nameWidth),
-			ver,
+			ui.SourceLabel(s.Source),
+			ui.PadRight(ui.SkillName(s.Name), nameWidth),
+			ui.SkillVersion(s.Version),
 		)
 	}
+	fmt.Fprintln(out)
 	return nil
 }
 

@@ -120,10 +120,11 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 		}
 	}
 	for _, e := range toRemove {
-		fmt.Fprintf(out, "  %s  →  removed\n",
-			ui.PadRight(e.name, nameWidth),
+		fmt.Fprintf(out, "  %s  %s  %s\n",
+			ui.PadRight(ui.SkillName(e.name), nameWidth),
+			ui.Arrow(),
+			ui.MutedPath(filepath.Join(e.target, e.name)),
 		)
-		_ = filepath.Join(e.target, e.name) // referenced for future --verbose path display
 	}
 	fmt.Fprintln(out)
 

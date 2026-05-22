@@ -230,8 +230,12 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config) err
 		if from == "" {
 			from = "?"
 		}
-		fmt.Fprintf(out, "  %s  %s → %s\n",
-			ui.PadRight(u.name, nameWidth), from, u.latest)
+		fmt.Fprintf(out, "  %s  %s  %s  %s\n",
+			ui.PadRight(ui.SkillName(u.name), nameWidth),
+			ui.SkillVersion(from),
+			ui.Arrow(),
+			ui.SkillVersion(u.latest),
+		)
 	}
 	fmt.Fprintln(out)
 
@@ -255,7 +259,12 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config) err
 				ui.Failf("re-link %s: %v", u.name, linkErr)
 				failed++
 			} else {
-				ui.Success(out, fmt.Sprintf("%s  %s → %s", u.name, u.installed, u.latest))
+				ui.Success(out, fmt.Sprintf("%s  %s  %s  %s",
+					ui.SkillName(u.name),
+					ui.SkillVersion(u.installed),
+					ui.Arrow(),
+					ui.SkillVersion(u.latest),
+				))
 			}
 		}
 	}

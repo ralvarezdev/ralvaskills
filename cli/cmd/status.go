@@ -52,9 +52,10 @@ func init() {
 
 // statusSection groups linked skills under a single target directory.
 type statusSection struct {
-	label  string // e.g. "Global (~/.claude/skills/)"
-	dir    string
-	skills []linkedEntry
+	title    string
+	subtitle string
+	dir      string
+	skills   []linkedEntry
 }
 
 // linkedEntry describes one symlink found in a target directory.
@@ -62,7 +63,7 @@ type linkedEntry struct {
 	name    string
 	version string
 	source  skill.Source
-	bundles []string // bundle names this skill belongs to
+	bundles []string
 }
 
 func runStatus(cmd *cobra.Command, _ []string) error {
@@ -88,19 +89,20 @@ func runStatus(cmd *cobra.Command, _ []string) error {
 
 	catalog := config.LoadCatalog("")
 	membership := bundleMembershipIndex(catalog)
-
 	sections := buildStatusSections(cfg, statusGlobal, statusProject, statusFor)
 
-	// Populate each section by scanning symlinks.
 	for i := range sections {
-		entries, scanErr := scanLinked(sections[i].dir, cfg.RepoPath, cfg.OfficialCache, cfg.RegistryCache(), membership, statusPersonal)
+		entries, scanErr := scanLinked(
+			sections[i].dir,
+			cfg.RepoPath, cfg.OfficialCache, cfg.RegistryCache(),
+			membership, statusPersonal,
+		)
 		if scanErr != nil {
 			ui.Warn(out, fmt.Sprintf("scan %s: %v", sections[i].dir, scanErr))
 		}
 		sections[i].skills = entries
 	}
 
-	// Print.
 	any := false
 	for _, sec := range sections {
 		if len(sec.skills) == 0 {
@@ -108,7 +110,7 @@ func runStatus(cmd *cobra.Command, _ []string) error {
 		}
 		any = true
 		fmt.Fprintln(out)
-		ui.Header(out, sec.label)
+		ui.SectionHeader(out, sec.title, sec.subtitle)
 
 		names := make([]string, len(sec.skills))
 		for i, e := range sec.skills {
@@ -117,64 +119,65 @@ func runStatus(cmd *cobra.Command, _ []string) error {
 		nameWidth := ui.MaxWidth(names)
 
 		for _, e := range sec.skills {
-			ver := e.version
-			if ver == "" {
-				ver = "-"
-			}
 			bundleTag := ""
 			if len(e.bundles) > 0 {
-				bundleTag = "  [" + strings.Join(e.bundles, ", ") + "]"
+				tags := make([]string, len(e.bundles))
+				for i, b := range e.bundles {
+					tags[i] = ui.BundleTag(b)
+				}
+				bundleTag = "  " + strings.Join(tags, " ")
 			}
-			fmt.Fprintf(out, "  %s  %s  %s  ✓%s\n",
-				e.source.Label(),
-				ui.PadRight(e.name, nameWidth),
-				ui.PadRight(ver, 7),
+			fmt.Fprintf(out, "  %s  %s  %s  %s%s\n",
+				ui.SourceLabel(e.source),
+				ui.PadRight(ui.SkillName(e.name), nameWidth),
+				ui.PadRight(ui.SkillVersion(e.version), 7),
+				ui.SuccessMark(),
 				bundleTag,
 			)
 		}
 	}
 
+	fmt.Fprintln(out)
+
 	if !any {
-		ui.Info(out, "No skills installed.")
-		ui.Info(out, "  Run 'rsk install <bundle>' to get started.")
-	} else {
-		fmt.Fprintln(out)
+		ui.Warn(out, "No skills installed.")
+		ui.Indent(out, "Run 'rsk install <bundle>' to get started.")
 	}
 
 	return nil
 }
 
-// buildStatusSections determines which target directories to display and their labels.
 func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forTool string) []statusSection {
 	var sections []statusSection
 
 	if !projectOnly {
-		// Global sections.
 		if forTool != "" {
 			if dir, ok := cfg.GlobalTargets[forTool]; ok {
 				sections = append(sections, statusSection{
-					label: fmt.Sprintf("Global — %s (%s)", forTool, dir),
-					dir:   dir,
+					title:    "Global — " + forTool,
+					subtitle: dir,
+					dir:      dir,
 				})
 			}
 		} else {
 			for tool, dir := range cfg.GlobalTargets {
 				sections = append(sections, statusSection{
-					label: fmt.Sprintf("Global — %s (%s)", tool, dir),
-					dir:   dir,
+					title:    "Global — " + tool,
+					subtitle: dir,
+					dir:      dir,
 				})
 			}
 		}
 	}
 
 	if !globalOnly {
-		// Project-local section.
 		cwd, err := os.Getwd()
 		if err == nil {
 			projectDir := filepath.Join(cwd, ".claude", "skills")
 			sections = append(sections, statusSection{
-				label: fmt.Sprintf("Project (%s)", projectDir),
-				dir:   projectDir,
+				title:    "Project",
+				subtitle: projectDir,
+				dir:      projectDir,
 			})
 		}
 	}
@@ -182,7 +185,6 @@ func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forToo
 	return sections
 }
 
-// scanLinked enumerates symlinks in targetDir and builds linkedEntry values.
 func scanLinked(targetDir, repoPath, officialCachePath, registryCachePath string, membership map[string][]string, includePersonal bool) ([]linkedEntry, error) {
 	entries, err := os.ReadDir(targetDir)
 	if os.IsNotExist(err) {
@@ -203,14 +205,11 @@ func scanLinked(targetDir, repoPath, officialCachePath, registryCachePath string
 		if readErr != nil {
 			continue
 		}
-
 		if !includePersonal && skill.IsPersonalPath(symlinkTarget) {
 			continue
 		}
-
 		version, _ := skill.ReadVersion(symlinkTarget)
 		src := detectSkillSource(symlinkTarget, repoPath, officialCachePath, registryCachePath)
-
 		result = append(result, linkedEntry{
 			name:    e.Name(),
 			version: version,
