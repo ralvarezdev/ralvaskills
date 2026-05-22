@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -77,8 +78,7 @@ func walkSkills(root string) ([]skillInfo, error) {
 			return fs.SkipDir
 		}
 		rel, _ := filepath.Rel(root, path)
-		personal := strings.Contains(filepath.ToSlash(rel), "/personal/") ||
-			strings.Contains(filepath.ToSlash(rel), "personal/")
+		personal := slices.Contains(strings.Split(filepath.ToSlash(rel), "/"), "personal")
 		skills = append(skills, skillInfo{
 			Name:        filepath.Base(path),
 			Version:     version,
@@ -129,19 +129,23 @@ func readFrontmatter(path string) (version, description string, err error) {
 
 // createTarball packs skillPath into a .tar.gz at dest.
 // Archive entries are rooted at skillName/ so extracting creates a single directory.
-func createTarball(skillPath, skillName, dest string) error {
+// On failure the partial file at dest is removed.
+func createTarball(skillPath, skillName, dest string) (retErr error) {
 	f, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		f.Close()
+		if retErr != nil {
+			os.Remove(dest)
+		}
+	}()
 
 	gw := gzip.NewWriter(f)
-	defer gw.Close()
 	tw := tar.NewWriter(gw)
-	defer tw.Close()
 
-	return filepath.WalkDir(skillPath, func(path string, d fs.DirEntry, err error) error {
+	walkErr := filepath.WalkDir(skillPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -175,6 +179,13 @@ func createTarball(skillPath, skillName, dest string) error {
 		_, err = io.Copy(tw, src)
 		return err
 	})
+	if walkErr != nil {
+		return walkErr
+	}
+	if err := tw.Close(); err != nil {
+		return err
+	}
+	return gw.Close()
 }
 
 // ---- index helpers ------------------------------------------------------
@@ -202,7 +213,29 @@ func writeJSON(path string, v any) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, append(data, '\n'), 0o644)
+	payload := append(data, '\n')
+
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, ".rsk-gen-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+
+	if _, err := tmp.Write(payload); err != nil {
+		tmp.Close()
+		os.Remove(tmpPath)
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpPath)
+		return err
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		os.Remove(tmpPath)
+		return err
+	}
+	return nil
 }
 
 // ---- main ---------------------------------------------------------------

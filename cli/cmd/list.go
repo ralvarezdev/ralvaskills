@@ -14,6 +14,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type listOpts struct {
+	installed, personal    bool
+	bundle, source, output string
+}
+
 var listCmd = &cobra.Command{
 	Use:   "list [flags]",
 	Short: "Browse the skill catalog.",
@@ -26,34 +31,36 @@ Examples:
   rsk list --installed
   rsk list --personal
   rsk list -o json`,
-	RunE: runList,
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		output, _ := cmd.Flags().GetString("output")
+		return runList(cmd, listOpts{
+			installed: flagBool(cmd, "installed"),
+			personal:  flagBool(cmd, "personal"),
+			bundle:    flagString(cmd, "bundle"),
+			source:    flagString(cmd, "source"),
+			output:    output,
+		})
+	},
 }
-
-var (
-	listBundle    string
-	listSource    string
-	listInstalled bool
-	listPersonal  bool
-	listOutput    string
-)
 
 func init() {
 	rootCmd.AddCommand(listCmd)
 	f := listCmd.Flags()
-	f.StringVar(&listBundle, "bundle", "", "Show skills in a specific bundle")
-	f.StringVar(&listSource, "source", "", "Filter by source: local | official")
-	f.BoolVar(&listInstalled, "installed", false, "Show only installed skills")
-	f.BoolVar(&listPersonal, "personal", false, "Include personal/ skills in listing")
-	f.StringVarP(&listOutput, "output", "o", "text", "Output format: text | json")
+	f.String("bundle", "", "Show skills in a specific bundle")
+	f.String("source", "", "Filter by source: local | official")
+	f.Bool("installed", false, "Show only installed skills")
+	f.Bool("personal", false, "Include personal/ skills in listing")
+	f.StringP("output", "o", "text", "Output format: text | json")
 }
 
-func runList(cmd *cobra.Command, _ []string) error {
+func runList(cmd *cobra.Command, opts listOpts) error {
 	out := cmd.OutOrStdout()
+	ctx := cmd.Context()
 
-	if listSource != "" && listSource != "local" && listSource != "official" {
+	if opts.source != "" && opts.source != "local" && opts.source != "official" {
 		return fmt.Errorf("--source must be 'local' or 'official'")
 	}
-	if listOutput != "text" && listOutput != "json" {
+	if opts.output != "text" && opts.output != "json" {
 		return fmt.Errorf("--output must be 'text' or 'json'")
 	}
 
@@ -67,8 +74,8 @@ func runList(cmd *cobra.Command, _ []string) error {
 
 	var all []skill.Skill
 
-	if listSource == "" || listSource == "local" {
-		local, walkErr := localSrc.All()
+	if opts.source == "" || opts.source == "local" {
+		local, walkErr := localSrc.All(ctx)
 		if walkErr != nil {
 			ui.Warn(out, fmt.Sprintf("walk local skills: %v", walkErr))
 		} else {
@@ -76,8 +83,8 @@ func runList(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	if listSource == "" || listSource == "official" {
-		official, walkErr := officialSrc.All()
+	if opts.source == "" || opts.source == "official" {
+		official, walkErr := officialSrc.All(ctx)
 		if walkErr != nil {
 			if !os.IsNotExist(walkErr) {
 				ui.Warn(out, fmt.Sprintf("walk official skills: %v", walkErr))
@@ -88,49 +95,38 @@ func runList(cmd *cobra.Command, _ []string) error {
 	}
 
 	// --bundle filter: keep only skills that appear in that bundle.
-	if listBundle != "" {
-		catalog := config.LoadCatalog("")
-		bundle, ok := config.FindBundle(catalog, listBundle)
+	if opts.bundle != "" {
+		catalog, catalogWarn := config.LoadCatalog("")
+		if catalogWarn != nil {
+			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+		}
+		bundle, ok := config.FindBundle(catalog, opts.bundle)
 		if !ok {
-			return fmt.Errorf("bundle %q not found — run 'rsk list' to see all bundles", listBundle)
+			return fmt.Errorf("bundle %q not found — run 'rsk list' to see all bundles", opts.bundle)
 		}
 		want := make(map[string]bool, len(bundle.Skills))
 		for _, ref := range bundle.Skills {
 			want[ref.Name] = true
 		}
-		filtered := all[:0]
-		for _, s := range all {
-			if want[s.Name] {
-				filtered = append(filtered, s)
-			}
-		}
-		all = filtered
+		all = filterSkills(all, func(s skill.Skill) bool { return want[s.Name] })
 	}
 
 	// --personal filter: drop personal skills unless opted in.
-	if !listPersonal {
-		filtered := all[:0]
-		for _, s := range all {
-			if !s.IsPersonal {
-				filtered = append(filtered, s)
-			}
-		}
-		all = filtered
+	if !opts.personal {
+		all = filterSkills(all, func(s skill.Skill) bool { return !s.IsPersonal })
 	}
 
 	// --installed filter: keep only skills linked in any configured target dir.
-	if listInstalled {
+	if opts.installed {
 		targets := allTargetDirs(cfg)
-		filtered := all[:0]
-		for _, s := range all {
+		all = filterSkills(all, func(s skill.Skill) bool {
 			for _, t := range targets {
 				if skill.IsLinked(s.Name, t) {
-					filtered = append(filtered, s)
-					break
+					return true
 				}
 			}
-		}
-		all = filtered
+			return false
+		})
 	}
 
 	// Stable sort: official before local, then alphabetical within each.
@@ -146,7 +142,7 @@ func runList(cmd *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	if listOutput == "json" {
+	if opts.output == "json" {
 		return writeJSON(out, skillsToEntries(all))
 	}
 	return printListTable(out, all)

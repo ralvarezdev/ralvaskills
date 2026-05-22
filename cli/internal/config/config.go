@@ -34,15 +34,15 @@ func (c Config) LocalMode() bool { return c.RepoPath != "" }
 // RegistryCache returns the directory used to cache skill downloads from the
 // hosted registry. Derived from OfficialCache so both caches sit under the
 // same ~/.ralvaskills/cache/ root.
+//
+// OfficialCache is required by config validation, so the fallback branch is
+// only reachable if RegistryCache is called on an unvalidated Config.
 func (c Config) RegistryCache() string {
 	if c.OfficialCache != "" {
 		return filepath.Join(filepath.Dir(filepath.Clean(c.OfficialCache)), "registry")
 	}
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".ralvaskills", "cache", "registry")
+	return filepath.Join(xdg.Home, ".ralvaskills", "cache", "registry")
 }
-
-var validate = validator.New()
 
 // DefaultPath returns the canonical path of config.json (~/.config/rsk/config.json).
 func DefaultPath() string {
@@ -70,7 +70,8 @@ func LoadFrom(path string) (Config, error) {
 	if err = json.Unmarshal(data, &cfg); err != nil {
 		return Config{}, fmt.Errorf("parse config %s: %w", path, err)
 	}
-	if err = validate.Struct(cfg); err != nil {
+	v := validator.New()
+	if err = v.Struct(cfg); err != nil {
 		return Config{}, fmt.Errorf("invalid config: %w", err)
 	}
 	if cfg.RepoPath == "" && cfg.RegistryURL == "" {

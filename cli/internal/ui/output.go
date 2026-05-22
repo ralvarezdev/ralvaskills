@@ -82,13 +82,15 @@ func SectionHeader(w io.Writer, title, subtitle string) {
 
 // ── source labels ─────────────────────────────────────────────────────────────
 
-// SourceLabel returns a styled source badge: "ralva" in violet or "anthr" in blue.
+// SourceLabel returns a styled source badge for table rows.
 func SourceLabel(src skill.Source) string {
 	switch src {
 	case skill.SourceLocal:
 		return localStyle.Render("ralva")
 	case skill.SourceOfficial:
 		return officialStyle.Render("anthr")
+	case skill.SourceRegistry:
+		return mutedStyle.Render("reg  ")
 	default:
 		return mutedStyle.Render("?????")
 	}
@@ -119,14 +121,14 @@ func Warn(w io.Writer, msg string) {
 	fmt.Fprintln(w, "  "+WarnMark()+"  "+msg)
 }
 
-// Fail prints a red ✗ line to stderr.
-func Fail(msg string) {
-	fmt.Fprintln(os.Stderr, "  "+ErrorMark()+"  "+msg)
+// Fail prints a red ✗ line to w.
+func Fail(w io.Writer, msg string) {
+	fmt.Fprintln(w, "  "+ErrorMark()+"  "+msg)
 }
 
-// Failf prints a formatted red ✗ line to stderr.
-func Failf(format string, args ...any) {
-	Fail(fmt.Sprintf(format, args...))
+// Failf prints a formatted red ✗ line to w.
+func Failf(w io.Writer, format string, args ...any) {
+	Fail(w, fmt.Sprintf(format, args...))
 }
 
 // Info prints a plain line.

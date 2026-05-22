@@ -2,6 +2,7 @@
 package source
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
@@ -24,7 +25,7 @@ func (l *Local) SkillsRoot() string {
 }
 
 // All walks the skills/ directory and returns every discovered skill.
-func (l *Local) All() ([]skill.Skill, error) {
+func (l *Local) All(_ context.Context) ([]skill.Skill, error) {
 	skills, err := skill.Walk(l.SkillsRoot(), skill.SourceLocal)
 	if err != nil {
 		return nil, fmt.Errorf("walk local skills: %w", err)
@@ -33,8 +34,8 @@ func (l *Local) All() ([]skill.Skill, error) {
 }
 
 // Find returns the local skill with the given name.
-func (l *Local) Find(name string) (skill.Skill, error) {
-	all, err := l.All()
+func (l *Local) Find(ctx context.Context, name string) (skill.Skill, error) {
+	all, err := l.All(ctx)
 	if err != nil {
 		return skill.Skill{}, err
 	}

@@ -1,15 +1,28 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
+	"github.com/ralvarezdev/ralvaskills/cli/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/ui"
 	"github.com/spf13/cobra"
 )
+
+type removeEntry struct {
+	name   string
+	target string
+}
+
+type uninstallOpts struct {
+	global, dryRun, personal bool
+	forTool, skill           string
+}
 
 var uninstallCmd = &cobra.Command{
 	Use:   "uninstall [bundle...] [flags]",
@@ -21,37 +34,38 @@ Examples:
   rsk uninstall --skill go-architect
   rsk uninstall global --global
   rsk uninstall go-grpc --dry-run`,
-	RunE: runUninstall,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runUninstall(cmd, uninstallOpts{
+			global:   flagBool(cmd, "global"),
+			dryRun:   flagBool(cmd, "dry-run"),
+			personal: flagBool(cmd, "personal"),
+			forTool:  flagString(cmd, "for"),
+			skill:    flagString(cmd, "skill"),
+		}, args)
+	},
 }
-
-var (
-	uninstallGlobal   bool
-	uninstallFor      string
-	uninstallSkill    string
-	uninstallPersonal bool
-	uninstallDryRun   bool
-)
 
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
 	f := uninstallCmd.Flags()
-	f.BoolVar(&uninstallGlobal, "global", false, "Target global skills dir(s)")
-	f.StringVar(&uninstallFor, "for", "", "Scope --global to a single tool (claude-code|opencode)")
-	f.StringVar(&uninstallSkill, "skill", "", "Remove a single skill by name")
-	f.BoolVar(&uninstallPersonal, "personal", false, "Allow removing personal/ skills")
-	f.BoolVar(&uninstallDryRun, "dry-run", false, "Show what would be removed without doing it")
+	f.Bool("global", false, "Target global skills dir(s)")
+	f.String("for", "", "Scope --global to a single tool (claude-code|opencode)")
+	f.String("skill", "", "Remove a single skill by name")
+	f.Bool("personal", false, "Allow removing personal/ skills")
+	f.Bool("dry-run", false, "Show what would be removed without doing it")
 }
 
-func runUninstall(cmd *cobra.Command, args []string) error {
+func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	out := cmd.OutOrStdout()
+	errOut := cmd.ErrOrStderr()
 
-	if uninstallSkill != "" && len(args) > 0 {
+	if opts.skill != "" && len(args) > 0 {
 		return fmt.Errorf("use either positional bundle names or --skill <name>, not both")
 	}
-	if uninstallSkill == "" && len(args) == 0 {
+	if opts.skill == "" && len(args) == 0 {
 		return fmt.Errorf("specify at least one bundle name or use --skill <name>")
 	}
-	if !uninstallGlobal && uninstallFor != "" {
+	if !opts.global && opts.forTool != "" {
 		return fmt.Errorf("--for requires --global")
 	}
 
@@ -60,19 +74,22 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
 	}
 
-	targets, err := resolveTargetDirs(cfg, uninstallGlobal, uninstallFor)
+	targets, err := resolveTargetDirs(cfg, opts.global, opts.forTool)
 	if err != nil {
 		return err
 	}
 
-	catalog := config.LoadCatalog("")
-	names, err := skillNamesFromArgs(args, uninstallSkill, catalog)
+	catalog, catalogWarn := config.LoadCatalog("")
+	if catalogWarn != nil {
+		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+	}
+	names, err := skillNamesFromArgs(args, opts.skill, catalog)
 	if err != nil {
 		return err
 	}
 
 	// Personal guard: check via symlink target path.
-	if !uninstallPersonal {
+	if !opts.personal {
 		for _, name := range names {
 			for _, target := range targets {
 				linkPath := filepath.Join(target, name)
@@ -88,10 +105,6 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	}
 
 	// Determine which (name, targetDir) pairs are actually linked.
-	type removeEntry struct {
-		name   string
-		target string
-	}
 	var toRemove []removeEntry
 	for _, name := range names {
 		for _, target := range targets {
@@ -107,7 +120,7 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintln(out)
-	if uninstallDryRun {
+	if opts.dryRun {
 		ui.Header(out, "Dry run — would remove:")
 	} else {
 		ui.Header(out, "Skills to remove:")
@@ -128,7 +141,7 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Fprintln(out)
 
-	if uninstallDryRun {
+	if opts.dryRun {
 		return nil
 	}
 
@@ -141,7 +154,7 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	var failed int
 	for _, e := range toRemove {
 		if unlinkErr := skill.Unlink(e.name, e.target); unlinkErr != nil {
-			ui.Failf("remove %s: %v", e.name, unlinkErr)
+			ui.Failf(errOut, "remove %s: %v", e.name, unlinkErr)
 			failed++
 		} else {
 			ui.Success(out, fmt.Sprintf("%s removed from %s", e.name, e.target))
@@ -151,5 +164,64 @@ func runUninstall(cmd *cobra.Command, args []string) error {
 	if failed > 0 {
 		return fmt.Errorf("%d skill(s) failed to remove", failed)
 	}
+
+	if !opts.global {
+		cwd, cwdErr := os.Getwd()
+		if cwdErr == nil {
+			rskDir := filepath.Join(cwd, ".rsk")
+			projectSkillsDir := filepath.Join(rskDir, "skills")
+			if err := cleanupManifest(rskDir, projectSkillsDir, toRemove); err != nil {
+				ui.Warn(out, fmt.Sprintf("update manifest: %v", err))
+			}
+		}
+	}
+
+	return nil
+}
+
+// cleanupManifest removes uninstalled skills from rsk.mod, rsk.lock, and tool configs.
+// Returns nil without error if rsk.mod does not exist.
+func cleanupManifest(rskDir, projectSkillsDir string, removed []removeEntry) error {
+	m, err := manifest.ReadMod(rskDir)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	var toClean []string
+	for _, e := range removed {
+		if e.target == projectSkillsDir {
+			toClean = append(toClean, e.name)
+		}
+	}
+	if len(toClean) == 0 {
+		return nil
+	}
+
+	for _, name := range toClean {
+		delete(m.Skills, name)
+		m.Pinned = slices.DeleteFunc(m.Pinned, func(v string) bool { return v == name })
+	}
+	if err := manifest.WriteMod(rskDir, m); err != nil {
+		return fmt.Errorf("write rsk.mod: %w", err)
+	}
+
+	lock, err := manifest.ReadLock(rskDir)
+	if err != nil {
+		return fmt.Errorf("read rsk.lock: %w", err)
+	}
+	for _, name := range toClean {
+		lock = manifest.RemoveLockEntry(lock, name)
+	}
+	if err := manifest.WriteLock(rskDir, lock); err != nil {
+		return fmt.Errorf("write rsk.lock: %w", err)
+	}
+
+	if err := syncPinnedAllTools(rskDir, m); err != nil {
+		return fmt.Errorf("sync tool configs: %w", err)
+	}
+
 	return nil
 }

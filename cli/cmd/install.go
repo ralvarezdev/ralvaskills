@@ -3,13 +3,20 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
 
 	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
+	"github.com/ralvarezdev/ralvaskills/cli/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/source"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/ui"
 	"github.com/spf13/cobra"
 )
+
+type installOpts struct {
+	global, dryRun, personal bool
+	forTool, skill, version  string
+}
 
 var installCmd = &cobra.Command{
 	Use:   "install [bundle...] [flags]",
@@ -27,43 +34,52 @@ Examples:
   rsk install go-grpc --global --for claude-code
   rsk install --skill demo-script-architect --personal
   rsk install go-grpc --dry-run`,
-	RunE: runInstall,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runInstall(cmd, installOpts{
+			global:   flagBool(cmd, "global"),
+			dryRun:   flagBool(cmd, "dry-run"),
+			personal: flagBool(cmd, "personal"),
+			forTool:  flagString(cmd, "for"),
+			skill:    flagString(cmd, "skill"),
+			version:  flagString(cmd, "version"),
+		}, args)
+	},
 }
-
-var (
-	installGlobal   bool
-	installFor      string
-	installSkill    string
-	installPersonal bool
-	installVersion  string
-	installDryRun   bool
-)
 
 func init() {
 	rootCmd.AddCommand(installCmd)
 	f := installCmd.Flags()
-	f.BoolVar(&installGlobal, "global", false, "Install to global skills dir(s)")
-	f.StringVar(&installFor, "for", "", "Scope --global to a single tool (claude-code|opencode)")
-	f.StringVar(&installSkill, "skill", "", "Install a single skill by name (skips bundle resolution)")
-	f.BoolVar(&installPersonal, "personal", false, "Allow installing personal/ skills")
-	f.StringVar(&installVersion, "version", "", "Pin to a specific repo tag (local skills only)")
-	f.BoolVar(&installDryRun, "dry-run", false, "Show what would be installed without doing it")
+	f.Bool("global", false, "Install to global skills dir(s)")
+	f.String("for", "", "Scope --global to a single tool (claude-code|opencode)")
+	f.String("skill", "", "Install a single skill by name (skips bundle resolution)")
+	f.Bool("personal", false, "Allow installing personal/ skills")
+	f.String("version", "", "Pin to a specific repo tag (local skills only)")
+	f.Bool("dry-run", false, "Show what would be installed without doing it")
 }
 
-func runInstall(cmd *cobra.Command, args []string) error {
+func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 	out := cmd.OutOrStdout()
+	errOut := cmd.ErrOrStderr()
+	ctx := cmd.Context()
 
-	if installSkill != "" && len(args) > 0 {
+	// Validate flag combinations before any dispatch.
+	if opts.skill != "" && len(args) > 0 {
 		return fmt.Errorf("use either positional bundle names or --skill <name>, not both")
 	}
-	if installSkill == "" && len(args) == 0 {
-		return fmt.Errorf("specify at least one bundle name or use --skill <name>")
-	}
-	if !installGlobal && installFor != "" {
+	if !opts.global && opts.forTool != "" {
 		return fmt.Errorf("--for requires --global")
 	}
-	if installVersion != "" {
+	if opts.version != "" {
 		return fmt.Errorf("--version is not yet supported; skills are symlinked from the local repo HEAD")
+	}
+
+	// No explicit targets: install from rsk.mod in the current project.
+	if opts.skill == "" && len(args) == 0 && !opts.global {
+		return runInstallFromMod(cmd, opts)
+	}
+
+	if opts.skill == "" && len(args) == 0 && opts.global {
+		return fmt.Errorf("specify at least one bundle name or use --skill <name>")
 	}
 
 	cfg, err := config.Load()
@@ -71,7 +87,7 @@ func runInstall(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
 	}
 
-	targets, err := resolveTargetDirs(cfg, installGlobal, installFor)
+	targets, err := resolveTargetDirs(cfg, opts.global, opts.forTool)
 	if err != nil {
 		return err
 	}
@@ -82,20 +98,23 @@ func runInstall(cmd *cobra.Command, args []string) error {
 	var skills []skill.Skill
 	var warnings []string
 
-	if installSkill != "" {
-		s, findErr := findSkillByName(installSkill, localSrc, officialSrc)
+	if opts.skill != "" {
+		s, findErr := findSkillByName(ctx, opts.skill, localSrc, officialSrc)
 		if findErr != nil {
 			return findErr
 		}
 		skills = append(skills, s)
 	} else {
-		catalog := config.LoadCatalog("")
+		catalog, catalogWarn := config.LoadCatalog("")
+		if catalogWarn != nil {
+			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+		}
 		for _, bundleName := range args {
 			bundle, ok := config.FindBundle(catalog, bundleName)
 			if !ok {
 				return fmt.Errorf("bundle %q not found — run 'rsk list' to see available bundles", bundleName)
 			}
-			ss, ws, resolveErr := resolveBundleSkills(bundle, localSrc, officialSrc)
+			ss, ws, resolveErr := resolveBundleSkills(ctx, bundle, localSrc, officialSrc)
 			if resolveErr != nil {
 				return resolveErr
 			}
@@ -104,7 +123,7 @@ func runInstall(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if !installPersonal {
+	if !opts.personal {
 		for _, s := range skills {
 			if s.IsPersonal {
 				return fmt.Errorf("skill %q is in personal/ — pass --personal to install it", s.Name)
@@ -123,7 +142,7 @@ func runInstall(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintln(out)
-	if installDryRun {
+	if opts.dryRun {
 		ui.Header(out, "Dry run — would install:")
 	} else {
 		ui.Header(out, "Skills to install:")
@@ -158,7 +177,7 @@ func runInstall(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Fprintln(out)
 
-	if installDryRun {
+	if opts.dryRun {
 		return nil
 	}
 
@@ -172,7 +191,7 @@ func runInstall(cmd *cobra.Command, args []string) error {
 	for _, s := range skills {
 		for _, target := range targets {
 			if linkErr := skill.Link(s, target); linkErr != nil {
-				ui.Failf("link %s: %v", s.Name, linkErr)
+				ui.Failf(errOut, "link %s: %v", s.Name, linkErr)
 				failed++
 			} else {
 				ui.Success(out, fmt.Sprintf("%s  %s  %s",
@@ -186,6 +205,136 @@ func runInstall(cmd *cobra.Command, args []string) error {
 
 	if failed > 0 {
 		return fmt.Errorf("%d skill(s) failed to install", failed)
+	}
+
+	fmt.Fprintln(out)
+	ui.Info(out, "Run 'rsk status' to verify installed skills.")
+	return nil
+}
+
+// runInstallFromMod reads rsk.mod in the current project, resolves all skills,
+// symlinks them into .rsk/skills/, updates rsk.lock, and rewrites .rsk/CLAUDE.md.
+func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
+	out := cmd.OutOrStdout()
+	errOut := cmd.ErrOrStderr()
+	ctx := cmd.Context()
+
+	rskDir, err := projectRskDir()
+	if err != nil {
+		return err
+	}
+
+	m, err := manifest.ReadMod(rskDir)
+	if err != nil {
+		return err
+	}
+
+	if len(m.Skills) == 0 {
+		ui.Warn(out, "rsk.mod has no skills. Run 'rsk skill add <name>' to add one.")
+		return nil
+	}
+
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
+	}
+
+	localSrc := newLocalSource(cfg)
+	officialSrc := source.NewOfficial(cfg.OfficialCache)
+
+	skillsDir := filepath.Join(rskDir, "skills")
+
+	sortedNames := make([]string, 0, len(m.Skills))
+	for name := range m.Skills {
+		sortedNames = append(sortedNames, name)
+	}
+	sort.Strings(sortedNames)
+
+	var skills []skill.Skill
+	var warnings []string
+	for _, name := range sortedNames {
+		s, findErr := findSkillByName(ctx, name, localSrc, officialSrc)
+		if findErr != nil {
+			warnings = append(warnings, fmt.Sprintf("%s: %v — skipped", name, findErr))
+			continue
+		}
+		skills = append(skills, s)
+	}
+
+	fmt.Fprintln(out)
+	ui.Header(out, "Skills to install:")
+
+	names := make([]string, len(skills))
+	for i, s := range skills {
+		names[i] = s.Name
+	}
+	nameWidth := ui.MaxWidth(names)
+
+	for _, s := range skills {
+		suffix := ""
+		if skill.IsLinked(s.Name, skillsDir) {
+			suffix = "  " + ui.ReLink()
+		}
+		fmt.Fprintf(out, "  %s  %s  %s  %s  %s%s\n",
+			ui.SourceLabel(s.Source),
+			ui.PadRight(ui.SkillName(s.Name), nameWidth),
+			ui.PadRight(ui.SkillVersion(s.Version), 7),
+			ui.Arrow(),
+			ui.MutedPath(filepath.Join(skillsDir, s.Name)),
+			suffix,
+		)
+	}
+
+	for _, w := range warnings {
+		fmt.Fprintln(out)
+		ui.Warn(out, w)
+	}
+	fmt.Fprintln(out)
+
+	if opts.dryRun {
+		return nil
+	}
+
+	if !ui.ConfirmYN(out, "Proceed?") {
+		fmt.Fprintln(out, "Aborted.")
+		return nil
+	}
+	fmt.Fprintln(out)
+
+	lock, err := manifest.ReadLock(rskDir)
+	if err != nil {
+		return err
+	}
+
+	var failed int
+	for _, s := range skills {
+		if linkErr := skill.Link(s, skillsDir); linkErr != nil {
+			ui.Failf(errOut, "link %s: %v", s.Name, linkErr)
+			failed++
+			continue
+		}
+		lock = manifest.UpsertLockEntry(lock, manifest.LockEntry{
+			Name:    s.Name,
+			Version: s.Version,
+			Source:  s.Source,
+			Path:    s.Path,
+		})
+		ui.Success(out, fmt.Sprintf("%s  %s  %s",
+			ui.SkillName(s.Name),
+			ui.Arrow(),
+			ui.MutedPath(filepath.Join(skillsDir, s.Name)),
+		))
+	}
+
+	if failed > 0 {
+		return fmt.Errorf("%d skill(s) failed to install", failed)
+	}
+
+	if err := manifest.WriteLock(rskDir, lock); err != nil {
+		return err
+	}
+	if err := syncPinnedAllTools(rskDir, m); err != nil {
+		return err
 	}
 
 	fmt.Fprintln(out)

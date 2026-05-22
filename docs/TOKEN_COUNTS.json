@@ -1,0 +1,536 @@
+{
+  "generated_at": "2026-05-22",
+  "totals": {
+    "body_bytes": 331686,
+    "body_tokens": 84077,
+    "desc_tokens": 3935,
+    "side_tokens": 62141,
+    "skill_count": 41
+  },
+  "skills": [
+    {
+      "name": "website-concept-architect",
+      "category": "frontend",
+      "body_bytes": 11524,
+      "body_tokens": 3083,
+      "desc_tokens": 122,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "nextjs-architect",
+      "category": "frameworks",
+      "body_bytes": 11671,
+      "body_tokens": 2918,
+      "desc_tokens": 108,
+      "stack_tokens": 454,
+      "recipes_tokens": 1824,
+      "other_tokens": 0
+    },
+    {
+      "name": "event-driven-architect",
+      "category": "messaging",
+      "body_bytes": 11494,
+      "body_tokens": 2878,
+      "desc_tokens": 83,
+      "stack_tokens": 514,
+      "recipes_tokens": 2148,
+      "other_tokens": 0
+    },
+    {
+      "name": "react-architect",
+      "category": "frameworks",
+      "body_bytes": 11499,
+      "body_tokens": 2875,
+      "desc_tokens": 102,
+      "stack_tokens": 465,
+      "recipes_tokens": 1426,
+      "other_tokens": 0
+    },
+    {
+      "name": "cli-tool-architect",
+      "category": "tooling",
+      "body_bytes": 11334,
+      "body_tokens": 2838,
+      "desc_tokens": 93,
+      "stack_tokens": 591,
+      "recipes_tokens": 1436,
+      "other_tokens": 0
+    },
+    {
+      "name": "ros2-architect",
+      "category": "robotics",
+      "body_bytes": 10867,
+      "body_tokens": 2717,
+      "desc_tokens": 105,
+      "stack_tokens": 607,
+      "recipes_tokens": 1714,
+      "other_tokens": 0
+    },
+    {
+      "name": "repo-tooling-architect",
+      "category": "tooling",
+      "body_bytes": 9968,
+      "body_tokens": 2681,
+      "desc_tokens": 91,
+      "stack_tokens": 479,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "uru-thesis-reviewer",
+      "category": "personal",
+      "body_bytes": 10542,
+      "body_tokens": 2636,
+      "desc_tokens": 97,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 7058,
+      "other_files": [
+        {
+          "name": "CHECKS.md",
+          "tokens": 807
+        },
+        {
+          "name": "NORMAS_URU_2020.md",
+          "tokens": 4950
+        },
+        {
+          "name": "TEMPLATES.md",
+          "tokens": 1301
+        }
+      ]
+    },
+    {
+      "name": "observability-architect",
+      "category": "infra",
+      "body_bytes": 10238,
+      "body_tokens": 2577,
+      "desc_tokens": 74,
+      "stack_tokens": 546,
+      "recipes_tokens": 874,
+      "other_tokens": 0
+    },
+    {
+      "name": "api-contract-reviewer",
+      "category": "quality",
+      "body_bytes": 9798,
+      "body_tokens": 2511,
+      "desc_tokens": 108,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "rest-api-architect",
+      "category": "protocols",
+      "body_bytes": 10005,
+      "body_tokens": 2502,
+      "desc_tokens": 102,
+      "stack_tokens": 427,
+      "recipes_tokens": 0,
+      "other_tokens": 3990,
+      "other_files": [
+        {
+          "name": "AUTH_PATTERNS.md",
+          "tokens": 767
+        },
+        {
+          "name": "CONCURRENCY.md",
+          "tokens": 1056
+        },
+        {
+          "name": "IDEMPOTENCY.md",
+          "tokens": 869
+        },
+        {
+          "name": "PAYLOADS.md",
+          "tokens": 636
+        },
+        {
+          "name": "STATUS_CODES.md",
+          "tokens": 662
+        }
+      ]
+    },
+    {
+      "name": "grpc-architect",
+      "category": "protocols",
+      "body_bytes": 9932,
+      "body_tokens": 2483,
+      "desc_tokens": 106,
+      "stack_tokens": 521,
+      "recipes_tokens": 833,
+      "other_tokens": 0
+    },
+    {
+      "name": "rsk-guide",
+      "category": "meta",
+      "body_bytes": 9195,
+      "body_tokens": 2478,
+      "desc_tokens": 148,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "ci-cd-architect",
+      "category": "infra",
+      "body_bytes": 9758,
+      "body_tokens": 2440,
+      "desc_tokens": 114,
+      "stack_tokens": 624,
+      "recipes_tokens": 2915,
+      "other_tokens": 0
+    },
+    {
+      "name": "feature-planner",
+      "category": "workflows",
+      "body_bytes": 9202,
+      "body_tokens": 2369,
+      "desc_tokens": 114,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "demo-presentation-architect",
+      "category": "personal",
+      "body_bytes": 9421,
+      "body_tokens": 2356,
+      "desc_tokens": 101,
+      "stack_tokens": 0,
+      "recipes_tokens": 1776,
+      "other_tokens": 3772,
+      "other_files": [
+        {
+          "name": "LAYOUTS.md",
+          "tokens": 3772
+        }
+      ]
+    },
+    {
+      "name": "hexagonal-arch",
+      "category": "design",
+      "body_bytes": 8972,
+      "body_tokens": 2277,
+      "desc_tokens": 101,
+      "stack_tokens": 0,
+      "recipes_tokens": 768,
+      "other_tokens": 0
+    },
+    {
+      "name": "code-design-refactor",
+      "category": "refactoring",
+      "body_bytes": 8927,
+      "body_tokens": 2264,
+      "desc_tokens": 96,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "ui-ux-architect",
+      "category": "frontend",
+      "body_bytes": 8920,
+      "body_tokens": 2230,
+      "desc_tokens": 103,
+      "stack_tokens": 466,
+      "recipes_tokens": 1387,
+      "other_tokens": 0
+    },
+    {
+      "name": "sql-architect",
+      "category": "databases",
+      "body_bytes": 8564,
+      "body_tokens": 2141,
+      "desc_tokens": 90,
+      "stack_tokens": 295,
+      "recipes_tokens": 0,
+      "other_tokens": 979,
+      "other_files": [
+        {
+          "name": "ENGINES.md",
+          "tokens": 478
+        },
+        {
+          "name": "POSTGRES.md",
+          "tokens": 501
+        }
+      ]
+    },
+    {
+      "name": "security-reviewer",
+      "category": "quality",
+      "body_bytes": 8474,
+      "body_tokens": 2119,
+      "desc_tokens": 77,
+      "stack_tokens": 0,
+      "recipes_tokens": 539,
+      "other_tokens": 0
+    },
+    {
+      "name": "work-report-generator",
+      "category": "personal",
+      "body_bytes": 8295,
+      "body_tokens": 2104,
+      "desc_tokens": 82,
+      "stack_tokens": 0,
+      "recipes_tokens": 1240,
+      "other_tokens": 0
+    },
+    {
+      "name": "performance-reviewer",
+      "category": "quality",
+      "body_bytes": 8350,
+      "body_tokens": 2088,
+      "desc_tokens": 84,
+      "stack_tokens": 0,
+      "recipes_tokens": 612,
+      "other_tokens": 0
+    },
+    {
+      "name": "protobuf-architect",
+      "category": "encoding",
+      "body_bytes": 7763,
+      "body_tokens": 1941,
+      "desc_tokens": 84,
+      "stack_tokens": 474,
+      "recipes_tokens": 762,
+      "other_tokens": 0
+    },
+    {
+      "name": "nethttp-architect",
+      "category": "frameworks",
+      "body_bytes": 7494,
+      "body_tokens": 1928,
+      "desc_tokens": 120,
+      "stack_tokens": 398,
+      "recipes_tokens": 1508,
+      "other_tokens": 0
+    },
+    {
+      "name": "ddd-architect",
+      "category": "design",
+      "body_bytes": 7602,
+      "body_tokens": 1901,
+      "desc_tokens": 78,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 751,
+      "other_files": [
+        {
+          "name": "PATTERNS.md",
+          "tokens": 751
+        }
+      ]
+    },
+    {
+      "name": "improve-codebase-architecture",
+      "category": "refactoring",
+      "body_bytes": 7437,
+      "body_tokens": 1860,
+      "desc_tokens": 97,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 3971,
+      "other_files": [
+        {
+          "name": "DEEPENING.md",
+          "tokens": 641
+        },
+        {
+          "name": "HTML_REPORT.md",
+          "tokens": 1698
+        },
+        {
+          "name": "INTERFACE_DESIGN.md",
+          "tokens": 681
+        },
+        {
+          "name": "LANGUAGE.md",
+          "tokens": 951
+        }
+      ]
+    },
+    {
+      "name": "design-patterns",
+      "category": "refactoring",
+      "body_bytes": 7299,
+      "body_tokens": 1825,
+      "desc_tokens": 122,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 2130,
+      "other_files": [
+        {
+          "name": "PATTERNS.md",
+          "tokens": 2130
+        }
+      ]
+    },
+    {
+      "name": "fastapi-architect",
+      "category": "frameworks",
+      "body_bytes": 7220,
+      "body_tokens": 1805,
+      "desc_tokens": 120,
+      "stack_tokens": 420,
+      "recipes_tokens": 1016,
+      "other_tokens": 0
+    },
+    {
+      "name": "go-architect",
+      "category": "languages",
+      "body_bytes": 7055,
+      "body_tokens": 1796,
+      "desc_tokens": 74,
+      "stack_tokens": 385,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "gin-architect",
+      "category": "frameworks",
+      "body_bytes": 6865,
+      "body_tokens": 1765,
+      "desc_tokens": 108,
+      "stack_tokens": 413,
+      "recipes_tokens": 1146,
+      "other_tokens": 0
+    },
+    {
+      "name": "skill-builder",
+      "category": "meta",
+      "body_bytes": 7030,
+      "body_tokens": 1758,
+      "desc_tokens": 72,
+      "stack_tokens": 0,
+      "recipes_tokens": 1718,
+      "other_tokens": 0
+    },
+    {
+      "name": "docker-architect",
+      "category": "infra",
+      "body_bytes": 6762,
+      "body_tokens": 1698,
+      "desc_tokens": 89,
+      "stack_tokens": 333,
+      "recipes_tokens": 718,
+      "other_tokens": 0
+    },
+    {
+      "name": "grafana-architect",
+      "category": "infra",
+      "body_bytes": 6632,
+      "body_tokens": 1658,
+      "desc_tokens": 77,
+      "stack_tokens": 407,
+      "recipes_tokens": 1149,
+      "other_tokens": 0
+    },
+    {
+      "name": "python-architect",
+      "category": "languages",
+      "body_bytes": 6376,
+      "body_tokens": 1652,
+      "desc_tokens": 79,
+      "stack_tokens": 419,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "demo-script-architect",
+      "category": "personal",
+      "body_bytes": 4828,
+      "body_tokens": 1237,
+      "desc_tokens": 96,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "tdd",
+      "category": "workflows",
+      "body_bytes": 4279,
+      "body_tokens": 1119,
+      "desc_tokens": 69,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 1350,
+      "other_files": [
+        {
+          "name": "DEEP_MODULES.md",
+          "tokens": 310
+        },
+        {
+          "name": "INTERFACE_DESIGN.md",
+          "tokens": 163
+        },
+        {
+          "name": "MOCKING.md",
+          "tokens": 370
+        },
+        {
+          "name": "REFACTORING.md",
+          "tokens": 97
+        },
+        {
+          "name": "TESTS.md",
+          "tokens": 410
+        }
+      ]
+    },
+    {
+      "name": "grill-with-docs",
+      "category": "workflows",
+      "body_bytes": 3376,
+      "body_tokens": 889,
+      "desc_tokens": 104,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 1393,
+      "other_files": [
+        {
+          "name": "ADR_FORMAT.md",
+          "tokens": 703
+        },
+        {
+          "name": "CONTEXT_FORMAT.md",
+          "tokens": 690
+        }
+      ]
+    },
+    {
+      "name": "commit-author",
+      "category": "workflows",
+      "body_bytes": 2599,
+      "body_tokens": 650,
+      "desc_tokens": 81,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "logic-cleaner",
+      "category": "refactoring",
+      "body_bytes": 2432,
+      "body_tokens": 608,
+      "desc_tokens": 93,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "caveman",
+      "category": "meta",
+      "body_bytes": 1687,
+      "body_tokens": 422,
+      "desc_tokens": 71,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    }
+  ]
+}

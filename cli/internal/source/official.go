@@ -1,6 +1,7 @@
 package source
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,7 +20,7 @@ func NewOfficial(cacheDir string) *Official {
 }
 
 // All walks the cache and returns every discovered official skill.
-func (o *Official) All() ([]skill.Skill, error) {
+func (o *Official) All(_ context.Context) ([]skill.Skill, error) {
 	skills, err := skill.Walk(o.cacheDir, skill.SourceOfficial)
 	if err != nil {
 		return nil, fmt.Errorf("walk official skills: %w", err)
@@ -28,14 +29,14 @@ func (o *Official) All() ([]skill.Skill, error) {
 }
 
 // Find returns the official skill with the given name.
-func (o *Official) Find(name string) (skill.Skill, error) {
+func (o *Official) Find(ctx context.Context, name string) (skill.Skill, error) {
 	if _, err := os.Stat(o.cacheDir); os.IsNotExist(err) {
 		return skill.Skill{}, fmt.Errorf(
 			"%w: official skill %q — cache not found; run 'rsk update --official' to fetch it",
 			ErrNotFound, name,
 		)
 	}
-	all, err := o.All()
+	all, err := o.All(ctx)
 	if err != nil {
 		return skill.Skill{}, err
 	}

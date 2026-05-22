@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -28,24 +29,25 @@ Run once per machine. Prompts for:
 Examples:
   rsk init
   rsk init --force`,
-	RunE: runInit,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runInit(cmd, flagBool(cmd, "force"))
+	},
 }
-
-var initForce bool
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-	initCmd.Flags().BoolVar(&initForce, "force", false, "Overwrite existing config without prompting")
+	initCmd.Flags().Bool("force", false, "Overwrite existing config without prompting")
 }
 
-func runInit(cmd *cobra.Command, _ []string) error {
+func runInit(cmd *cobra.Command, force bool) error {
 	cfgPath := config.DefaultPath()
 	out := cmd.OutOrStdout()
+	errOut := cmd.ErrOrStderr()
 
 	if config.Exists() {
-		if !initForce {
-			ui.Fail(fmt.Sprintf("config already exists at %s", cfgPath))
-			ui.Fail("  Use --force to overwrite.")
+		if !force {
+			ui.Fail(errOut, fmt.Sprintf("config already exists at %s", cfgPath))
+			ui.Fail(errOut, "  Use --force to overwrite.")
 			return fmt.Errorf("config already exists: %s", cfgPath)
 		}
 		ui.Warn(out, fmt.Sprintf("overwriting existing config at %s", cfgPath))
@@ -186,7 +188,7 @@ func prompt(r *bufio.Reader, w io.Writer, label, defaultVal string) (string, err
 		fmt.Fprintf(w, "%s: ", label)
 	}
 	line, err := r.ReadString('\n')
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return "", fmt.Errorf("read input: %w", err)
 	}
 	line = strings.TrimRight(line, "\r\n")

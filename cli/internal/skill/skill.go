@@ -2,7 +2,9 @@
 package skill
 
 import (
+	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -12,6 +14,7 @@ type Source int
 const (
 	SourceLocal    Source = iota // symlinked from the local ralvaskills repo
 	SourceOfficial               // fetched from anthropics/skills
+	SourceRegistry               // downloaded from the hosted registry
 )
 
 // String returns the lowercase source identifier.
@@ -21,6 +24,8 @@ func (s Source) String() string {
 		return "local"
 	case SourceOfficial:
 		return "official"
+	case SourceRegistry:
+		return "registry"
 	default:
 		return "unknown"
 	}
@@ -33,6 +38,8 @@ func (s Source) Label() string {
 		return "[ralva]"
 	case SourceOfficial:
 		return "[anthr]"
+	case SourceRegistry:
+		return "[reg]"
 	default:
 		return "[?????]"
 	}
@@ -47,9 +54,30 @@ type Skill struct {
 	IsPersonal bool // true when path contains a "personal/" segment
 }
 
+// MarshalText implements encoding.TextMarshaler so Source encodes as its
+// string name in TOML, JSON, and other text-based formats.
+func (s Source) MarshalText() ([]byte, error) {
+	return []byte(s.String()), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler so Source decodes from
+// its string name in TOML, JSON, and other text-based formats.
+func (s *Source) UnmarshalText(b []byte) error {
+	switch string(b) {
+	case "local":
+		*s = SourceLocal
+	case "official":
+		*s = SourceOfficial
+	case "registry":
+		*s = SourceRegistry
+	default:
+		return fmt.Errorf("unknown skill source %q", string(b))
+	}
+	return nil
+}
+
 // IsPersonalPath reports whether path contains a "personal" path segment.
 func IsPersonalPath(path string) bool {
 	clean := filepath.ToSlash(filepath.Clean(path))
-	return strings.Contains(clean, "/personal/") ||
-		strings.HasSuffix(clean, "/personal")
+	return slices.Contains(strings.Split(clean, "/"), "personal")
 }

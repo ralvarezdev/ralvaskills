@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +15,11 @@ import (
 )
 
 const officialSkillsURL = "https://github.com/anthropics/skills"
+
+type updateOpts struct {
+	global, dryRun, personal, official bool
+	forTool, skill                     string
+}
 
 var updateCmd = &cobra.Command{
 	Use:   "update [bundle...] [flags]",
@@ -30,31 +36,31 @@ Examples:
   rsk update --official
   rsk update docs
   rsk update --skill grpc-architect`,
-	RunE: runUpdate,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runUpdate(cmd, updateOpts{
+			global:   flagBool(cmd, "global"),
+			dryRun:   flagBool(cmd, "dry-run"),
+			personal: flagBool(cmd, "personal"),
+			official: flagBool(cmd, "official"),
+			forTool:  flagString(cmd, "for"),
+			skill:    flagString(cmd, "skill"),
+		}, args)
+	},
 }
-
-var (
-	updateGlobal   bool
-	updateFor      string
-	updateSkill    string
-	updateOfficial bool
-	updatePersonal bool
-	updateDryRun   bool
-)
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
 	f := updateCmd.Flags()
-	f.BoolVar(&updateGlobal, "global", false, "Target global skills dir(s)")
-	f.StringVar(&updateFor, "for", "", "Scope --global to a single tool (claude-code|opencode)")
-	f.StringVar(&updateSkill, "skill", "", "Update a single skill by name")
-	f.BoolVar(&updateOfficial, "official", false, "Also re-fetch the anthropics/skills cache")
-	f.BoolVar(&updatePersonal, "personal", false, "Include personal/ skills in update")
-	f.BoolVar(&updateDryRun, "dry-run", false, "Show what would change without applying it")
+	f.Bool("global", false, "Target global skills dir(s)")
+	f.String("for", "", "Scope --global to a single tool (claude-code|opencode)")
+	f.String("skill", "", "Update a single skill by name")
+	f.Bool("official", false, "Also re-fetch the anthropics/skills cache")
+	f.Bool("personal", false, "Include personal/ skills in update")
+	f.Bool("dry-run", false, "Show what would change without applying it")
 }
 
-func runUpdate(cmd *cobra.Command, args []string) error {
-	if updateSkill != "" && len(args) > 0 {
+func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {
+	if opts.skill != "" && len(args) > 0 {
 		return fmt.Errorf("use either positional bundle names or --skill <name>, not both")
 	}
 
@@ -64,26 +70,29 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	if cfg.LocalMode() {
-		return runUpdateLocal(cmd, args, cfg)
+		return runUpdateLocal(cmd, args, cfg, opts)
 	}
-	return runUpdateRegistry(cmd, args, cfg)
+	return runUpdateRegistry(cmd, args, cfg, opts)
 }
 
 // runUpdateLocal handles update for local-repo mode: git pull + optional official cache refresh.
-func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config) error {
+func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts updateOpts) error {
 	out := cmd.OutOrStdout()
 
-	needsOfficial := updateOfficial
-	if !needsOfficial && (len(args) > 0 || updateSkill != "") {
-		catalog := config.LoadCatalog("")
-		names, namesErr := skillNamesFromArgs(args, updateSkill, catalog)
+	needsOfficial := opts.official
+	if !needsOfficial && (len(args) > 0 || opts.skill != "") {
+		catalog, catalogWarn := config.LoadCatalog("")
+		if catalogWarn != nil {
+			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+		}
+		names, namesErr := skillNamesFromArgs(args, opts.skill, catalog)
 		if namesErr != nil {
 			return namesErr
 		}
 		for _, name := range names {
 			for _, b := range catalog {
 				for _, ref := range b.Skills {
-					if ref.Name == name && ref.Source == config.SourceOfficial {
+					if ref.Name == name && ref.Source == skill.SourceOfficial {
 						needsOfficial = true
 					}
 				}
@@ -93,7 +102,7 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config) error 
 
 	officialCacheDir := filepath.Join(cfg.OfficialCache, "skills")
 
-	if updateDryRun {
+	if opts.dryRun {
 		fmt.Fprintln(out)
 		ui.Header(out, "Dry run — would run:")
 		fmt.Fprintf(out, "  git pull  in  %s\n", cfg.RepoPath)
@@ -141,10 +150,12 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config) error 
 
 // runUpdateRegistry handles update for registry mode: fetch the index, compare
 // installed skills against latest versions, re-download and re-link any that changed.
-func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config) error {
+func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opts updateOpts) error {
 	out := cmd.OutOrStdout()
+	errOut := cmd.ErrOrStderr()
+	ctx := cmd.Context()
 
-	targets, err := resolveTargetDirs(cfg, updateGlobal, updateFor)
+	targets, err := resolveTargetDirs(cfg, opts.global, opts.forTool)
 	if err != nil {
 		return err
 	}
@@ -153,16 +164,19 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config) err
 
 	// Fetch the registry index to find latest versions.
 	ui.Info(out, fmt.Sprintf("Fetching index from %s …", cfg.RegistryURL))
-	index, err := reg.Index()
+	index, err := reg.Index(ctx)
 	if err != nil {
 		return fmt.Errorf("fetch registry index: %w", err)
 	}
 
 	// Determine which skill names to check (all installed, or just the args).
 	var namesToCheck []string
-	if updateSkill != "" || len(args) > 0 {
-		catalog := config.LoadCatalog("")
-		namesToCheck, err = skillNamesFromArgs(args, updateSkill, catalog)
+	if opts.skill != "" || len(args) > 0 {
+		catalog, catalogWarn := config.LoadCatalog("")
+		if catalogWarn != nil {
+			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+		}
+		namesToCheck, err = skillNamesFromArgs(args, opts.skill, catalog)
 		if err != nil {
 			return err
 		}
@@ -199,7 +213,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config) err
 		if installedVer == entry.Latest {
 			continue
 		}
-		s, findErr := reg.FindVersion(name, entry.Latest)
+		s, findErr := reg.FindVersion(ctx, name, entry.Latest)
 		if findErr != nil {
 			ui.Warn(out, fmt.Sprintf("skip %s: %v", name, findErr))
 			continue
@@ -239,7 +253,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config) err
 	}
 	fmt.Fprintln(out)
 
-	if updateDryRun {
+	if opts.dryRun {
 		return nil
 	}
 
@@ -256,7 +270,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config) err
 				continue
 			}
 			if linkErr := skill.Link(u.newSkill, target); linkErr != nil {
-				ui.Failf("re-link %s: %v", u.name, linkErr)
+				ui.Failf(errOut, "re-link %s: %v", u.name, linkErr)
 				failed++
 			} else {
 				ui.Success(out, fmt.Sprintf("%s  %s  %s  %s",
@@ -303,14 +317,14 @@ func installedVersionFromTargets(name string, targets []string, registryCacheDir
 	return ""
 }
 
-func gitPull(dir string, out interface{ Write([]byte) (int, error) }) error {
+func gitPull(dir string, out io.Writer) error {
 	c := exec.Command("git", "-C", dir, "pull")
 	c.Stdout = out
 	c.Stderr = os.Stderr
 	return c.Run()
 }
 
-func gitClone(url, dest string, out interface{ Write([]byte) (int, error) }) error {
+func gitClone(url, dest string, out io.Writer) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0o750); err != nil {
 		return fmt.Errorf("create parent dir: %w", err)
 	}

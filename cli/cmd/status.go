@@ -7,10 +7,16 @@ import (
 	"strings"
 
 	"github.com/ralvarezdev/ralvaskills/cli/internal/config"
+	"github.com/ralvarezdev/ralvaskills/cli/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/cli/internal/ui"
 	"github.com/spf13/cobra"
 )
+
+type statusOpts struct {
+	global, project, stack, refresh, personal bool
+	forTool                                   string
+}
 
 var statusCmd = &cobra.Command{
 	Use:   "status [flags]",
@@ -27,27 +33,27 @@ Examples:
   rsk status --project
   rsk status --stack
   rsk status --stack --refresh`,
-	RunE: runStatus,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runStatus(cmd, statusOpts{
+			global:   flagBool(cmd, "global"),
+			project:  flagBool(cmd, "project"),
+			stack:    flagBool(cmd, "stack"),
+			refresh:  flagBool(cmd, "refresh"),
+			personal: flagBool(cmd, "personal"),
+			forTool:  flagString(cmd, "for"),
+		})
+	},
 }
-
-var (
-	statusGlobal   bool
-	statusFor      string
-	statusProject  bool
-	statusStack    bool
-	statusRefresh  bool
-	statusPersonal bool
-)
 
 func init() {
 	rootCmd.AddCommand(statusCmd)
 	f := statusCmd.Flags()
-	f.BoolVar(&statusGlobal, "global", false, "Show global skills only")
-	f.StringVar(&statusFor, "for", "", "Scope --global to a single tool (claude-code|opencode)")
-	f.BoolVar(&statusProject, "project", false, "Show project skills only")
-	f.BoolVar(&statusStack, "stack", false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
-	f.BoolVar(&statusRefresh, "refresh", false, "With --stack: bypass the 24h cache and force a re-fetch")
-	f.BoolVar(&statusPersonal, "personal", false, "Include personal/ skills in output")
+	f.Bool("global", false, "Show global skills only")
+	f.String("for", "", "Scope --global to a single tool (claude-code|opencode)")
+	f.Bool("project", false, "Show project skills only")
+	f.Bool("stack", false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
+	f.Bool("refresh", false, "With --stack: bypass the 24h cache and force a re-fetch")
+	f.Bool("personal", false, "Include personal/ skills in output")
 }
 
 // statusSection groups linked skills under a single target directory.
@@ -66,19 +72,19 @@ type linkedEntry struct {
 	bundles []string
 }
 
-func runStatus(cmd *cobra.Command, _ []string) error {
+func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	out := cmd.OutOrStdout()
 
-	if statusStack {
+	if opts.stack {
 		return fmt.Errorf("--stack is not yet implemented")
 	}
-	if !statusStack && statusRefresh {
+	if !opts.stack && opts.refresh {
 		return fmt.Errorf("--refresh requires --stack")
 	}
-	if statusGlobal && statusProject {
+	if opts.global && opts.project {
 		return fmt.Errorf("--global and --project are mutually exclusive")
 	}
-	if !statusGlobal && statusFor != "" {
+	if !opts.global && opts.forTool != "" {
 		return fmt.Errorf("--for requires --global")
 	}
 
@@ -87,15 +93,29 @@ func runStatus(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
 	}
 
-	catalog := config.LoadCatalog("")
+	cwd, _ := os.Getwd()
+
+	catalog, catalogWarn := config.LoadCatalog("")
+	if catalogWarn != nil {
+		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+	}
 	membership := bundleMembershipIndex(catalog)
-	sections := buildStatusSections(cfg, statusGlobal, statusProject, statusFor)
+	sections := buildStatusSections(cfg, opts.global, opts.project, opts.forTool, cwd)
+
+	pinnedSet := make(map[string]bool)
+	if cwd != "" {
+		if m, modErr := manifest.ReadMod(filepath.Join(cwd, ".rsk")); modErr == nil {
+			for _, p := range m.Pinned {
+				pinnedSet[p] = true
+			}
+		}
+	}
 
 	for i := range sections {
 		entries, scanErr := scanLinked(
 			sections[i].dir,
 			cfg.RepoPath, cfg.OfficialCache, cfg.RegistryCache(),
-			membership, statusPersonal,
+			membership, opts.personal,
 		)
 		if scanErr != nil {
 			ui.Warn(out, fmt.Sprintf("scan %s: %v", sections[i].dir, scanErr))
@@ -119,20 +139,23 @@ func runStatus(cmd *cobra.Command, _ []string) error {
 		nameWidth := ui.MaxWidth(names)
 
 		for _, e := range sec.skills {
-			bundleTag := ""
+			tags := ""
+			if pinnedSet[e.name] {
+				tags += "  [pinned]"
+			}
 			if len(e.bundles) > 0 {
-				tags := make([]string, len(e.bundles))
+				bundleTags := make([]string, len(e.bundles))
 				for i, b := range e.bundles {
-					tags[i] = ui.BundleTag(b)
+					bundleTags[i] = ui.BundleTag(b)
 				}
-				bundleTag = "  " + strings.Join(tags, " ")
+				tags += "  " + strings.Join(bundleTags, " ")
 			}
 			fmt.Fprintf(out, "  %s  %s  %s  %s%s\n",
 				ui.SourceLabel(e.source),
 				ui.PadRight(ui.SkillName(e.name), nameWidth),
 				ui.PadRight(ui.SkillVersion(e.version), 7),
 				ui.SuccessMark(),
-				bundleTag,
+				tags,
 			)
 		}
 	}
@@ -147,7 +170,7 @@ func runStatus(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forTool string) []statusSection {
+func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forTool, cwd string) []statusSection {
 	var sections []statusSection
 
 	if !projectOnly {
@@ -170,16 +193,13 @@ func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forToo
 		}
 	}
 
-	if !globalOnly {
-		cwd, err := os.Getwd()
-		if err == nil {
-			projectDir := filepath.Join(cwd, ".claude", "skills")
-			sections = append(sections, statusSection{
-				title:    "Project",
-				subtitle: projectDir,
-				dir:      projectDir,
-			})
-		}
+	if !globalOnly && cwd != "" {
+		projectDir := filepath.Join(cwd, ".rsk", "skills")
+		sections = append(sections, statusSection{
+			title:    "Project",
+			subtitle: projectDir,
+			dir:      projectDir,
+		})
 	}
 
 	return sections

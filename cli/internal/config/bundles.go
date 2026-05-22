@@ -3,29 +3,22 @@ package config
 import (
 	_ "embed"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 	"github.com/adrg/xdg"
+
+	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
 )
 
 //go:embed catalog.toml
 var defaultCatalogData []byte
 
-// SourceID identifies where a skill originates.
-type SourceID string
-
-const (
-	SourceLocal    SourceID = "local"    // symlinked from the local ralvaskills repo
-	SourceOfficial SourceID = "official" // fetched from anthropics/skills
-)
-
 // SkillRef is a reference to a named skill from a specific source.
 type SkillRef struct {
-	Name   string   `toml:"name"`
-	Source SourceID `toml:"source"`
+	Name   string       `toml:"name"`
+	Source skill.Source `toml:"source"`
 }
 
 // Bundle is a named, ordered set of skill references.
@@ -50,10 +43,11 @@ func DefaultCatalogPath() string {
 // embedded defaults and then applies user overrides from userCatalogPath.
 // Pass an empty string to use DefaultCatalogPath.
 //
-// User catalog errors (missing file excluded) are logged as warnings and the
-// defaults are returned unchanged, so a misconfigured user catalog never
-// prevents rsk from running.
-func LoadCatalog(userCatalogPath string) []Bundle {
+// When the user catalog exists but cannot be read or parsed, the embedded
+// defaults are returned together with a non-nil error describing the problem.
+// Callers should surface this error as a warning — rsk continues to work, but
+// the user's customisations are not applied.
+func LoadCatalog(userCatalogPath string) ([]Bundle, error) {
 	defaults := mustParseEmbedded()
 
 	if userCatalogPath == "" {
@@ -62,20 +56,18 @@ func LoadCatalog(userCatalogPath string) []Bundle {
 
 	raw, err := os.ReadFile(userCatalogPath)
 	if os.IsNotExist(err) {
-		return defaults
+		return defaults, nil
 	}
 	if err != nil {
-		slog.Warn("user catalog unreadable; using defaults", "path", userCatalogPath, "err", err)
-		return defaults
+		return defaults, fmt.Errorf("user catalog unreadable (%s): %w", userCatalogPath, err)
 	}
 
 	var user catalogFile
 	if _, err = toml.Decode(string(raw), &user); err != nil {
-		slog.Warn("user catalog parse error; using defaults", "path", userCatalogPath, "err", err)
-		return defaults
+		return defaults, fmt.Errorf("user catalog parse error (%s): %w", userCatalogPath, err)
 	}
 
-	return merge(defaults, user.Bundle)
+	return merge(defaults, user.Bundle), nil
 }
 
 // mustParseEmbedded parses the embedded catalog.toml and panics on failure.

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -15,8 +16,8 @@ import (
 // skillResolver is the common interface satisfied by source.Local, source.Registry,
 // and source.Official. Commands depend on this interface, not on concrete types.
 type skillResolver interface {
-	All() ([]skill.Skill, error)
-	Find(name string) (skill.Skill, error)
+	All(ctx context.Context) ([]skill.Skill, error)
+	Find(ctx context.Context, name string) (skill.Skill, error)
 }
 
 // newLocalSource returns the appropriate skillResolver for local skills based on
@@ -36,7 +37,7 @@ func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string
 		if err != nil {
 			return nil, fmt.Errorf("get working directory: %w", err)
 		}
-		return []string{filepath.Join(cwd, ".claude", "skills")}, nil
+		return []string{filepath.Join(cwd, ".rsk", "skills")}, nil
 	}
 
 	if forTool != "" {
@@ -70,8 +71,8 @@ func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string
 }
 
 // findSkillByName looks up a skill by name, trying local first then official.
-func findSkillByName(name string, localSrc skillResolver, officialSrc skillResolver) (skill.Skill, error) {
-	s, localErr := localSrc.Find(name)
+func findSkillByName(ctx context.Context, name string, localSrc skillResolver, officialSrc skillResolver) (skill.Skill, error) {
+	s, localErr := localSrc.Find(ctx, name)
 	if localErr == nil {
 		return s, nil
 	}
@@ -79,7 +80,7 @@ func findSkillByName(name string, localSrc skillResolver, officialSrc skillResol
 		return skill.Skill{}, localErr
 	}
 
-	s, officialErr := officialSrc.Find(name)
+	s, officialErr := officialSrc.Find(ctx, name)
 	if officialErr == nil {
 		return s, nil
 	}
@@ -96,14 +97,14 @@ func findSkillByName(name string, localSrc skillResolver, officialSrc skillResol
 // resolveBundleSkills resolves a bundle's skill refs into concrete Skill values.
 // Planned skills (not on disk) and missing official cache entries produce warnings
 // rather than errors — the operation continues for all available skills.
-func resolveBundleSkills(bundle config.Bundle, localSrc skillResolver, officialSrc skillResolver) ([]skill.Skill, []string, error) {
+func resolveBundleSkills(ctx context.Context, bundle config.Bundle, localSrc skillResolver, officialSrc skillResolver) ([]skill.Skill, []string, error) {
 	var skills []skill.Skill
 	var warnings []string
 
 	for _, ref := range bundle.Skills {
 		switch ref.Source {
-		case config.SourceLocal:
-			s, err := localSrc.Find(ref.Name)
+		case skill.SourceLocal:
+			s, err := localSrc.Find(ctx, ref.Name)
 			if err != nil {
 				if errors.Is(err, source.ErrNotFound) {
 					warnings = append(warnings, fmt.Sprintf(
@@ -116,8 +117,8 @@ func resolveBundleSkills(bundle config.Bundle, localSrc skillResolver, officialS
 			}
 			skills = append(skills, s)
 
-		case config.SourceOfficial:
-			s, err := officialSrc.Find(ref.Name)
+		case skill.SourceOfficial:
+			s, err := officialSrc.Find(ctx, ref.Name)
 			if err != nil {
 				if errors.Is(err, source.ErrNotFound) {
 					warnings = append(warnings, fmt.Sprintf(
@@ -133,6 +134,17 @@ func resolveBundleSkills(bundle config.Bundle, localSrc skillResolver, officialS
 	}
 
 	return skills, warnings, nil
+}
+
+// filterSkills returns a new slice containing only the skills for which keep returns true.
+func filterSkills(in []skill.Skill, keep func(skill.Skill) bool) []skill.Skill {
+	out := make([]skill.Skill, 0, len(in))
+	for _, s := range in {
+		if keep(s) {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 func dedupSkills(skills []skill.Skill) []skill.Skill {
@@ -171,17 +183,21 @@ func skillNamesFromArgs(bundleArgs []string, skillFlag string, catalog []config.
 }
 
 // detectSkillSource determines the origin of a skill by matching its path against
-// known cache roots. Registry-cached skills are treated as local source.
+// known cache roots. Falls back to SourceRegistry in registry mode (repoPath == "")
+// and SourceLocal in local-clone mode.
 func detectSkillSource(skillPath, repoPath, officialCachePath, registryCachePath string) skill.Source {
 	sp := filepath.ToSlash(filepath.Clean(skillPath))
 	if repoPath != "" && strings.HasPrefix(sp, filepath.ToSlash(filepath.Clean(repoPath))+"/") {
 		return skill.SourceLocal
 	}
 	if registryCachePath != "" && strings.HasPrefix(sp, filepath.ToSlash(filepath.Clean(registryCachePath))+"/") {
-		return skill.SourceLocal
+		return skill.SourceRegistry
 	}
 	if officialCachePath != "" && strings.HasPrefix(sp, filepath.ToSlash(filepath.Clean(officialCachePath))+"/") {
 		return skill.SourceOfficial
+	}
+	if repoPath == "" {
+		return skill.SourceRegistry
 	}
 	return skill.SourceLocal
 }
@@ -193,7 +209,7 @@ func allTargetDirs(cfg config.Config) []string {
 		dirs = append(dirs, dir)
 	}
 	if cwd, err := os.Getwd(); err == nil {
-		dirs = append(dirs, filepath.Join(cwd, ".claude", "skills"))
+		dirs = append(dirs, filepath.Join(cwd, ".rsk", "skills"))
 	}
 	return dirs
 }

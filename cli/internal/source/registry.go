@@ -3,12 +3,14 @@ package source
 import (
 	"archive/tar"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ralvarezdev/ralvaskills/cli/internal/skill"
@@ -52,9 +54,13 @@ func NewRegistry(baseURL, cacheDir string) *Registry {
 }
 
 // Index fetches and returns the registry index.
-func (r *Registry) Index() (map[string]*indexSkillEntry, error) {
+func (r *Registry) Index(ctx context.Context) (map[string]*indexSkillEntry, error) {
 	url := r.baseURL + "/index.json"
-	resp, err := r.client.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("build index request: %w", err)
+	}
+	resp, err := r.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch index: %w", err)
 	}
@@ -70,8 +76,8 @@ func (r *Registry) Index() (map[string]*indexSkillEntry, error) {
 }
 
 // All fetches the index and returns every non-personal skill at its latest version.
-func (r *Registry) All() ([]skill.Skill, error) {
-	index, err := r.Index()
+func (r *Registry) All(ctx context.Context) ([]skill.Skill, error) {
+	index, err := r.Index(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +86,7 @@ func (r *Registry) All() ([]skill.Skill, error) {
 		skills = append(skills, skill.Skill{
 			Name:       entry.Name,
 			Version:    entry.Latest,
-			Source:     skill.SourceLocal,
+			Source:     skill.SourceRegistry,
 			IsPersonal: entry.Personal,
 		})
 	}
@@ -89,13 +95,13 @@ func (r *Registry) All() ([]skill.Skill, error) {
 
 // Find returns the skill at its latest version, downloading and caching the
 // tarball if it is not already present in cacheDir.
-func (r *Registry) Find(name string) (skill.Skill, error) {
-	return r.FindVersion(name, "")
+func (r *Registry) Find(ctx context.Context, name string) (skill.Skill, error) {
+	return r.FindVersion(ctx, name, "")
 }
 
 // FindVersion returns the skill at a specific version (empty string = latest).
-func (r *Registry) FindVersion(name, version string) (skill.Skill, error) {
-	index, err := r.Index()
+func (r *Registry) FindVersion(ctx context.Context, name, version string) (skill.Skill, error) {
+	index, err := r.Index(ctx)
 	if err != nil {
 		return skill.Skill{}, err
 	}
@@ -111,7 +117,7 @@ func (r *Registry) FindVersion(name, version string) (skill.Skill, error) {
 		return skill.Skill{}, fmt.Errorf("%w: registry skill %q has no version %s", ErrNotFound, name, version)
 	}
 
-	skillDir, err := r.ensureCached(name, version, ver.ArchiveURL)
+	skillDir, err := r.ensureCached(ctx, name, version, ver.ArchiveURL)
 	if err != nil {
 		return skill.Skill{}, fmt.Errorf("cache skill %q@%s: %w", name, version, err)
 	}
@@ -120,20 +126,24 @@ func (r *Registry) FindVersion(name, version string) (skill.Skill, error) {
 		Name:       name,
 		Version:    version,
 		Path:       skillDir,
-		Source:     skill.SourceLocal,
+		Source:     skill.SourceRegistry,
 		IsPersonal: entry.Personal,
 	}, nil
 }
 
 // ensureCached downloads and extracts the tarball for name@version if not
 // already present in cacheDir. Returns the path to the extracted skill directory.
-func (r *Registry) ensureCached(name, version, archiveURL string) (string, error) {
+func (r *Registry) ensureCached(ctx context.Context, name, version, archiveURL string) (string, error) {
 	skillDir := filepath.Join(r.cacheDir, name, version)
 	if _, err := os.Stat(skillDir); err == nil {
 		return skillDir, nil // already cached
 	}
 
-	resp, err := r.client.Get(archiveURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, archiveURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("build download request: %w", err)
+	}
+	resp, err := r.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("download %s: %w", archiveURL, err)
 	}
@@ -157,12 +167,20 @@ func (r *Registry) ensureCached(name, version, archiveURL string) (string, error
 // extractTarball extracts a .tar.gz stream into destDir.
 // Entries rooted at skillName/ are stripped of that prefix so the skill files
 // land directly in destDir.
+//
+// Only regular files and directories are extracted. Symlinks and hard links are
+// rejected to prevent link-based escape attacks. All resolved paths are
+// validated to remain inside destDir (zip-slip protection).
 func extractTarball(r io.Reader, destDir, skillName string) error {
 	gr, err := gzip.NewReader(r)
 	if err != nil {
 		return err
 	}
 	defer gr.Close()
+
+	// destDir must be absolute and clean so the HasPrefix check below is reliable.
+	destDir = filepath.Clean(destDir)
+	safeRoot := destDir + string(filepath.Separator)
 
 	prefix := skillName + "/"
 	tr := tar.NewReader(gr)
@@ -174,6 +192,15 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 		if err != nil {
 			return err
 		}
+
+		switch hdr.Typeflag {
+		case tar.TypeDir, tar.TypeReg:
+			// allowed
+		default:
+			// Reject symlinks, hard links, devices, etc.
+			return fmt.Errorf("unsupported tar entry type %d for %q", hdr.Typeflag, hdr.Name)
+		}
+
 		// Strip the leading skillName/ prefix from archive paths.
 		rel := hdr.Name
 		if len(rel) > len(prefix) && rel[:len(prefix)] == prefix {
@@ -182,7 +209,13 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 		if rel == "" || rel == "." {
 			continue
 		}
+
 		target := filepath.Join(destDir, filepath.FromSlash(rel))
+
+		// Zip-slip guard: resolved path must stay inside destDir.
+		if target != destDir && !strings.HasPrefix(target, safeRoot) {
+			return fmt.Errorf("archive entry %q escapes destination directory", hdr.Name)
+		}
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
@@ -193,15 +226,18 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 			if err := os.MkdirAll(filepath.Dir(target), 0o750); err != nil {
 				return err
 			}
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(hdr.Mode))
+			f, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(hdr.Mode)&0o777)
 			if err != nil {
 				return err
 			}
-			if _, err := io.Copy(f, tr); err != nil {
-				f.Close()
-				return err
+			_, copyErr := io.Copy(f, tr)
+			closeErr := f.Close()
+			if copyErr != nil {
+				return copyErr
 			}
-			f.Close()
+			if closeErr != nil {
+				return closeErr
+			}
 		}
 	}
 	return nil
