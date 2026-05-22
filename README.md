@@ -114,7 +114,7 @@ These are personal to me and excluded from bundle installs. Listed here for tran
 A Go CLI is in development to manage skill installation across projects without copy-pasting folders. Tracked in [`docs/SPECS.md`](docs/SPECS.md).
 
 ```
-go install github.com/ralvarezdev/ralvaskills@latest
+go install github.com/ralvarezdev/ralvaskills/cmd/rsk@latest
 rsk init
 rsk install <bundle>
 rsk update

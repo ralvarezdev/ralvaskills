@@ -4,16 +4,14 @@ project_name: rsk
 
 before:
   hooks:
-    - go mod tidy ./cli/...
+    - go mod tidy
 
 builds:
   - id: rsk
-    dir: cli
-    main: .
+    main: ./cmd/rsk
     binary: rsk
     env:
       - CGO_ENABLED=0
-      - GOWORK=off # build from cli/go.mod only, not the workspace
     goos:
       - linux
       - darwin
@@ -26,9 +24,9 @@ builds:
         goarch: arm64
     ldflags:
       - -s -w
-      - -X github.com/ralvarezdev/ralvaskills/cli/cmd.version={{ .Version }}
-      - -X github.com/ralvarezdev/ralvaskills/cli/cmd.commit={{ .ShortCommit }}
-      - -X github.com/ralvarezdev/ralvaskills/cli/cmd.buildDate={{ .Date }}
+      - -X github.com/ralvarezdev/ralvaskills/cmd/rsk.version={{ .Version }}
+      - -X github.com/ralvarezdev/ralvaskills/cmd/rsk.commit={{ .ShortCommit }}
+      - -X github.com/ralvarezdev/ralvaskills/cmd/rsk.buildDate={{ .Date }}
 
 archives:
   - id: rsk

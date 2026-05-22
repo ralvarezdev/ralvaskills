@@ -11,135 +11,105 @@ tasks:
 
   cli:build:
     desc: Build the rsk CLI binary to bin/rsk
-    dir: cli
     sources:
-      - "**/*.go"
+      - "cmd/rsk/**/*.go"
+      - "internal/**/*.go"
       - go.mod
     generates:
-      - ../bin/rsk
+      - bin/rsk
     cmds:
-      - go build -o ../bin/rsk .
+      - go build -o bin/rsk ./cmd/rsk
 
   cli:run:
     desc: "Run the rsk CLI — pass args after --  (e.g. task cli:run -- init)"
-    dir: cli
     cmds:
-      - go run . {{.CLI_ARGS}}
+      - go run ./cmd/rsk {{.CLI_ARGS}}
 
   cli:lint:
-    desc: Lint the rsk CLI module
-    dir: cli
+    desc: Lint the rsk CLI
     cmds:
-      - golangci-lint run --config ../.golangci.yml ./...
+      - golangci-lint run --config .golangci.yml ./cmd/rsk/... ./internal/...
 
   cli:fmt:
-    desc: Format the rsk CLI module (goimports + golines)
-    dir: cli
+    desc: Format the rsk CLI (goimports + golines)
     cmds:
-      - golangci-lint fmt --config ../.golangci.yml ./...
+      - golangci-lint fmt --config .golangci.yml ./cmd/rsk/... ./internal/...
 
-  # ── scripts/count-tokens ──────────────────────────────────────────────────
+  # ── cmd/count-tokens ──────────────────────────────────────────────────────
 
   tokens:
     desc: Re-generate docs/TOKEN_COUNTS.md with latest SKILL.md byte/token estimates
     sources:
       - skills/**/SKILL.md
-      - scripts/count-tokens/**/*.go
+      - cmd/count-tokens/**/*.go
     generates:
       - docs/TOKEN_COUNTS.md
     cmds:
-      - go run ./scripts/count-tokens
+      - go run ./cmd/count-tokens
 
   tokens:lint:
-    desc: Lint the count-tokens script
-    dir: scripts/count-tokens
+    desc: Lint the count-tokens tool
     cmds:
-      - golangci-lint run --config ../../.golangci.yml ./...
+      - golangci-lint run --config .golangci.yml ./cmd/count-tokens/...
 
   tokens:fmt:
-    desc: Format the count-tokens script (goimports + golines)
-    dir: scripts/count-tokens
+    desc: Format the count-tokens tool (goimports + golines)
     cmds:
-      - golangci-lint fmt --config ../../.golangci.yml ./...
+      - golangci-lint fmt --config .golangci.yml ./cmd/count-tokens/...
 
-  # ── scripts/generate-registry ─────────────────────────────────────────────
+  # ── cmd/generate-registry ─────────────────────────────────────────────────
 
   registry:generate:
     desc: "Build registry tarballs and updated index.json into dist/ (merges against registry/index.json)"
     sources:
       - skills/**/*.md
-      - scripts/generate-registry/**/*.go
+      - cmd/generate-registry/**/*.go
     generates:
       - dist/index.json
       - dist/new-versions.json
     cmds:
       - mkdir -p dist
-      - go run ./scripts/generate-registry --skills-dir skills --output-dir dist --existing-index registry/index.json {{.CLI_ARGS}}
+      - go run ./cmd/generate-registry --skills-dir skills --output-dir dist --existing-index registry/index.json {{.CLI_ARGS}}
 
   registry:lint:
-    desc: Lint the generate-registry script
-    dir: scripts/generate-registry
+    desc: Lint the generate-registry tool
     cmds:
-      - golangci-lint run --config ../../.golangci.yml ./...
+      - golangci-lint run --config .golangci.yml ./cmd/generate-registry/...
 
   registry:fmt:
-    desc: Format the generate-registry script
-    dir: scripts/generate-registry
+    desc: Format the generate-registry tool
     cmds:
-      - golangci-lint fmt --config ../../.golangci.yml ./...
+      - golangci-lint fmt --config .golangci.yml ./cmd/generate-registry/...
 
   registry:clean:
     desc: Remove the dist/ output directory
     cmds:
       - rm -rf dist
 
-  # ── dependencies ────────────────────────────────────────────────────────────
-
-  cli:deps:
-    desc: Update Go dependencies in the rsk CLI module
-    dir: cli
-    cmds:
-      - go get -u ./...
-      - go mod tidy
-
-  tokens:deps:
-    desc: Update Go dependencies in the count-tokens script
-    dir: scripts/count-tokens
-    cmds:
-      - go get -u ./...
-      - go mod tidy
-
-  registry:deps:
-    desc: Update Go dependencies in the generate-registry script
-    dir: scripts/generate-registry
-    cmds:
-      - go get -u ./...
-      - go mod tidy
-
   # ── aggregate ─────────────────────────────────────────────────────────────
 
   lint:
-    desc: Lint all Go modules
-    deps:
-      - cli:lint
-      - tokens:lint
-      - registry:lint
+    desc: Lint everything
+    cmds:
+      - golangci-lint run --config .golangci.yml ./...
 
   fmt:
-    desc: Format all Go modules
-    deps:
-      - cli:fmt
-      - tokens:fmt
-      - registry:fmt
+    desc: Format everything
+    cmds:
+      - golangci-lint fmt --config .golangci.yml ./...
 
   build:
-    desc: Build all Go binaries
+    desc: Build all binaries
     deps:
       - cli:build
 
   deps:
-    desc: Update Go dependencies in all modules
-    deps:
-      - cli:deps
-      - tokens:deps
-      - registry:deps
+    desc: Update Go dependencies
+    cmds:
+      - go get -u ./...
+      - go mod tidy
+
+  test:
+    desc: Run all tests
+    cmds:
+      - go test ./...

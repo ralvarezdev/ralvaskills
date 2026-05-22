@@ -25,7 +25,7 @@
 | GitHub repo | `ralvarezdev/ralvaskills` |
 | Go module | `github.com/ralvarezdev/ralvaskills` |
 | CLI binary | `rsk` |
-| Install | `go install github.com/ralvarezdev/ralvaskills@latest` |
+| Install | `go install github.com/ralvarezdev/ralvaskills/cmd/rsk@latest` |
 
 ### Skill Sources
 
@@ -57,11 +57,11 @@ The CLI manages skills from two independent sources:
 ```
 ralvaskills/                          # current state — (📋) marks planned additions/moves
 │
-├── cli/                              # ✅ exists — Go CLI source (binary: rsk)
-│   ├── main.go
-│   ├── go.mod
-│   ├── go.sum
-│   ├── cmd/
+├── go.mod                            # ✅ single module: github.com/ralvarezdev/ralvaskills
+├── go.sum
+├── cmd/                              # ✅ all binaries live here
+│   ├── rsk/                          # ✅ Go CLI source (binary: rsk)
+│   │   ├── main.go
 │   │   ├── root.go                   # cobra root, version flag
 │   │   ├── init.go                   # rsk init [flags]            (prompts local-clone vs registry)
 │   │   ├── install.go                # rsk install [bundle...|--skill] [flags]   (bare form installs from rsk.mod)
@@ -72,26 +72,28 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── project.go                # rsk project init / remove
 │   │   ├── skill.go                  # rsk skill add / pin / unpin / list / upgrade
 │   │   └── resolve.go                # shared resolver helpers (skillResolver, target dirs, bundle resolution)
-│   └── internal/
-│       ├── config/
-│       │   ├── config.go             # load/save ~/.config/rsk/config.json
-│       │   └── bundles.go            # bundle & skill ref definitions (embeds catalog.toml)
-│       ├── manifest/                 # ✅ project-manifest layer (.rsk/rsk.mod, rsk.lock, CLAUDE.md)
-│       │   ├── mod.go                # rsk.mod TOML read/write
-│       │   ├── lock.go               # rsk.lock TOML read/write
-│       │   └── claudemd.go           # .rsk/CLAUDE.md pinned imports + ./CLAUDE.md import line
-│       ├── skill/
-│       │   ├── skill.go              # Skill, Bundle, SkillRef structs
-│       │   ├── registry.go           # walks skills/ root; any folder with SKILL.md is a skill (recursion stops); parses SKILL.md + STACK.md
-│       │   ├── linker.go             # symlink create/remove logic
-│       │   └── version.go            # semver comparison helpers
-│       ├── source/
-│       │   ├── local.go              # resolves skills from local repo clone
-│       │   ├── official.go           # fetches/caches from anthropics/skills
-│       │   ├── registry.go           # fetches from hosted registry (skills.ralvarez.dev)
-│       │   └── errors.go             # sentinel errors (ErrNotFound, ...)
-│       └── ui/
-│           └── output.go             # lipgloss-styled terminal output helpers
+│   ├── count-tokens/                 # ✅ scans SKILL.md files → docs/TOKEN_COUNTS.md
+│   └── generate-registry/            # ✅ packs skill tarballs + index.json for the publish workflow
+├── internal/                         # shared, repo-only Go packages
+│   ├── config/
+│   │   ├── config.go                 # load/save ~/.config/rsk/config.json
+│   │   └── bundles.go                # bundle & skill ref definitions (embeds catalog.toml)
+│   ├── manifest/                     # ✅ project-manifest layer (.rsk/rsk.mod, rsk.lock, CLAUDE.md)
+│   │   ├── mod.go                    # rsk.mod TOML read/write
+│   │   ├── lock.go                   # rsk.lock TOML read/write
+│   │   └── claudemd.go               # .rsk/CLAUDE.md pinned imports + ./CLAUDE.md import line
+│   ├── skill/
+│   │   ├── skill.go                  # Skill, Bundle, SkillRef structs
+│   │   ├── registry.go               # walks skills/ root; any folder with SKILL.md is a skill (recursion stops); parses SKILL.md + STACK.md
+│   │   ├── linker.go                 # symlink create/remove logic
+│   │   └── version.go                # semver comparison helpers
+│   ├── source/
+│   │   ├── local.go                  # resolves skills from local repo clone
+│   │   ├── official.go               # fetches/caches from anthropics/skills
+│   │   ├── registry.go               # fetches from hosted registry (skills.ralvarez.dev)
+│   │   └── errors.go                 # sentinel errors (ErrNotFound, ...)
+│   └── ui/
+│       └── output.go                 # lipgloss-styled terminal output helpers
 │
 ├── skills/                           # all reusable local skills
 │   ├── languages/
@@ -494,7 +496,7 @@ rsk status --global --for opencode                     # OpenCode global skills 
 
 ### User catalog (`~/.config/rsk/catalog.toml`)
 
-The bundle catalog is backed by TOML. The default catalog is embedded in the binary (`cli/internal/config/catalog.toml`). Users can extend or override it by creating `~/.config/rsk/catalog.toml` — no recompile required.
+The bundle catalog is backed by TOML. The default catalog is embedded in the binary (`internal/config/catalog.toml`). Users can extend or override it by creating `~/.config/rsk/catalog.toml` — no recompile required.
 
 **Merge rules:**
 - A user bundle whose `name` matches a default bundle **replaces it entirely**.

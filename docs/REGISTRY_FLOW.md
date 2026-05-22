@@ -24,7 +24,7 @@ You commit and push to `main`.
 ## 3. `generate-registry` runs
 
 ```
-go run ./scripts/generate-registry \
+go run ./cmd/generate-registry \
   --existing-index registry/index.json \
   --github-repo ralvarezdev/ralvaskills
 ```
