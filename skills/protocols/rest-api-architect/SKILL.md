@@ -45,23 +45,7 @@ Use the right code for the situation. The full table — every code, when to use
 
 ## 5. Pagination — cursor, not offset
 
-Cursor pagination is stable under concurrent writes and O(1) per page; offset is O(N) and reads can shift between pages.
-
-```
-GET /v1/orders?limit=20&cursor=eyJpZCI6IjAxOTI...
-
-200 OK
-{
-  "items": [ ... ],
-  "next_cursor": "eyJpZCI6IjAxOTI...",   // null = end of stream
-  "limit": 20
-}
-```
-
-- **Cursor is opaque** — usually a base64-encoded `{last_id, last_sort_key}` tuple. Clients pass it back unmodified.
-- **`limit` is a hint with a server-enforced max** (e.g. 100). Always advertise the max in OpenAPI.
-- **No total count by default.** Total counts on large tables are expensive — expose a separate `/count` endpoint only if a real consumer needs it.
-- **Stable sort key** is mandatory — usually `(created_at DESC, id DESC)` so equal timestamps don't oscillate.
+Cursor pagination is stable under concurrent writes and O(1) per page; offset is O(N) and reads can shift between pages. Request/response shape + rules in [PAYLOADS § 1](PAYLOADS.md#1-cursor-pagination).
 
 ## 6. Filtering, sorting, searching
 
@@ -72,36 +56,13 @@ GET /v1/orders?limit=20&cursor=eyJpZCI6IjAxOTI...
 
 ## 7. Error contracts — RFC 7807 Problem Details
 
-Every error response uses `application/problem+json` with this shape:
+Every error response uses `application/problem+json`. Canonical shape + rules in [PAYLOADS § 2](PAYLOADS.md#2-rfc-7807-problem-details); structured `422` validation shape in [PAYLOADS § 3](PAYLOADS.md#3-validation-errors-422).
 
-```json
-{
-  "type": "https://errors.myapp.io/order/already_cancelled",
-  "title": "Order is already cancelled",
-  "status": 409,
-  "detail": "Order 01J9X... was cancelled at 2026-05-19T14:23:00Z",
-  "instance": "/v1/orders/01J9X.../cancellation",
-  "correlation_id": "req_01J9..."
-}
-```
+Key rules:
 
-- **`type` is a stable URL** identifying the error class — clients switch on it. Never change a type URL once published.
-- **`title` is short, human-readable, fixed per type.** `detail` is the specific message for this instance.
-- **`instance`** is the request URI that produced the error.
-- **`correlation_id`** ties this response to server logs. Required on `5xx`.
-- **One shape for every error.** Don't mix RFC 7807 with framework-default `{"detail": "..."}` shapes.
-- **Validation errors (`422`)** include a structured field list:
-  ```json
-  {
-    "type": ".../validation",
-    "title": "Validation failed",
-    "status": 422,
-    "errors": [
-      { "field": "email", "code": "format", "message": "Must be a valid email" },
-      { "field": "age",   "code": "min",    "message": "Must be >= 18" }
-    ]
-  }
-  ```
+- **`type` is a stable URL** — clients switch on it. Never change once published.
+- **One shape for every error.** Don't mix RFC 7807 with framework defaults.
+- **`correlation_id` required on `5xx`** so support can match server logs.
 
 ## 8. Idempotency — `Idempotency-Key` mandatory
 
@@ -153,11 +114,7 @@ Framework-specific implementation:
 ## 14. Rate limiting
 
 - **`429 Too Many Requests`** when the limit is hit.
-- **Response headers** every request:
-  - `RateLimit-Limit: 1000`
-  - `RateLimit-Remaining: 873`
-  - `RateLimit-Reset: 60` (seconds until window resets, RFC 9331 draft)
-- **`Retry-After`** on 429 and 503 — seconds or HTTP-date. Clients use this for backoff.
+- **`RateLimit-Limit` / `RateLimit-Remaining` / `RateLimit-Reset`** on every response; **`Retry-After`** on `429` and `503`. Header reference in [PAYLOADS § 4](PAYLOADS.md#4-rate-limit-headers).
 - **Limit per *caller*** (API key, user id), not per IP — IPs aren't reliable identity.
 
 ## 15. OpenAPI as the source of truth

@@ -2,6 +2,72 @@
 
 Reference scaffolds extracted from [SKILL.md](SKILL.md). Use these as templates when bootstrapping a workspace or a new package; the rules and *why* stay in the skill body.
 
+## Workspace layout
+
+```
+my_robot_ws/
+├── pixi.toml                          # Pixi manifest: ROS distro + Python + tasks
+├── pixi.lock                          # cross-platform lockfile (committed)
+├── .gitignore                         # ignore build/ install/ log/ .pixi/
+├── src/                               # all source packages
+│   ├── my_robot_msgs/                 # custom interfaces (msg/srv/action)
+│   │   ├── package.xml
+│   │   ├── CMakeLists.txt
+│   │   ├── msg/
+│   │   ├── srv/
+│   │   └── action/
+│   ├── my_robot_drivers/              # C++ ament_cmake package
+│   │   ├── package.xml
+│   │   ├── CMakeLists.txt
+│   │   ├── include/my_robot_drivers/
+│   │   └── src/
+│   ├── my_robot_navigation/           # Python ament_python package
+│   │   ├── package.xml
+│   │   ├── setup.py
+│   │   ├── my_robot_navigation/
+│   │   └── launch/
+│   └── my_robot_bringup/              # launch + config only; no code
+│       ├── package.xml
+│       ├── launch/
+│       └── config/
+├── build/                             # colcon build outputs (gitignored)
+├── install/                           # colcon install dir (gitignored)
+└── log/                               # colcon logs (gitignored)
+```
+
+- `src/` holds packages, never code at the workspace root.
+- One package, one responsibility — drivers, navigation, perception, custom messages, bringup. Don't put everything in one `my_robot` package.
+- `_msgs` packages hold ONLY interfaces (msg/srv/action). Rebuilt rarely, consumed by everyone — keep code out.
+- `_bringup` packages hold launch files and config for assembling the full robot stack. No source code.
+
+## QoS — explicit profiles
+
+```cpp
+// rclcpp — explicit QoS for a camera feed
+auto qos = rclcpp::SensorDataQoS();   // best-effort, depth=5
+auto pub = create_publisher<sensor_msgs::msg::Image>("/camera/image", qos);
+```
+
+```python
+# rclpy — same idea
+from rclpy.qos import qos_profile_sensor_data
+self.pub = self.create_publisher(Image, '/camera/image', qos_profile_sensor_data)
+```
+
+Profile reference:
+
+| QoS profile | When |
+|---|---|
+| **Sensor data** (`SensorDataQoS`) | High-rate sensor topics (camera, IMU, lidar) — best-effort, keep-last, drop on overflow |
+| **System default** | Slow, important data — reliable, keep-last 10 |
+| **Parameters / services** (`ParametersQoS`) | Configuration, infrequent reliable delivery |
+| **Custom** | None of the above fit — declare every QoS attribute explicitly |
+
+- Reliable + KEEP_ALL on high-rate topics is a memory leak — a slow subscriber backs up the publisher's queue.
+- Best-effort + KEEP_LAST(N) is right for "tell me the latest, drop the rest" — sensor streams.
+- Reliable + KEEP_LAST(10) for low-rate state (`/robot/battery`, `/system/status`).
+- Mismatched QoS between publisher and subscriber means subscribers silently fail to connect (visible only in `ros2 topic info -v`).
+
 ## `pixi.toml` — workspace manifest
 
 Replace `<distro>` with `jazzy`, `kilted`, or `lyrical` consistently across the file. Pick once per workspace per [STACK.md](STACK.md#supported-distributions).

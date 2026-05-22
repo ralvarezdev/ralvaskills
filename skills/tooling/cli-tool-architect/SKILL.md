@@ -69,52 +69,31 @@ Every command, subcommand, and flag has documented help. Help is the API surface
 
 **Strict separation.** Always.
 
-```bash
-tool list > items.json       # writes data only to items.json
-tool list 2> tool.log         # writes logs only to tool.log
-tool list | jq '.[] | .name'  # pipes data into jq; logs still visible on the terminal
-```
-
 - **Data → stdout.** The thing the user wants — JSON, the filename created, the resource ID, the table.
 - **Logs, progress, errors → stderr.** Anything the user doesn't want piped into the next command.
 - **Errors that prevent producing data must exit non-zero** (see §8). Don't print an error to stdout and exit 0.
 
-This is non-negotiable. Tools that mix the streams break every shell pipeline.
+Non-negotiable. Tools that mix the streams break every shell pipeline. Concrete pipe examples in [RECIPES § Output discipline](RECIPES.md#output-discipline--stdoutstderr-separation).
 
 ## 7. Output formats — `--output json|yaml` mandatory on list/get
 
-Human-readable text is the default. Every command that returns structured data must also support `--output json` and `--output yaml`.
+Human-readable text is the default. Every command returning structured data must also support `--output json` and `--output yaml`.
 
-```
-tool list                          # tabular text
-tool list --output json            # machine-parseable
-tool list --output yaml            # machine-parseable, human-skimmable
-tool get user 01J9... -o json      # short form
-```
+- **`-o` short form is standard** (`kubectl`, `gh`, `oc`).
+- **JSON output is stable and documented** — clients depend on it. Schema changes are breaking.
+- **JSONL for list operations** — one line per record, so `tool list -o json | grep` works.
+- **YAML for human eyeballing** of nested data; rarely useful for pipes.
 
-- **`-o` short form is standard** (`kubectl`, `gh`, `oc`, etc.).
-- **JSON output is stable and documented** — clients depend on it. Schema changes to JSON output are breaking changes; bump the major version or add `--output json --schema=v2`.
-- **Don't pretty-print JSON by default** — emit a single line per record (JSONL) for list operations, so `tool list -o json | grep '"status":"failed"'` works.
-- **Use `--output yaml` for human eyeballing** of complex nested data; rarely useful for pipes.
+Invocation examples in [RECIPES § Output format flag examples](RECIPES.md#output-format-flag-examples).
 
 ## 8. Exit codes
 
-Standard semantics across the ecosystem:
+Standard semantics across the ecosystem — full table in [RECIPES § Exit-code reference](RECIPES.md#exit-code-reference). Key rules:
 
-| Code | Meaning |
-|---|---|
-| `0` | Success |
-| `1` | Generic / unspecified failure |
-| `2` | Misuse — bad flag, missing required arg, invalid subcommand |
-| `64`–`78` | sysexits.h categories — useful for shell scripts to dispatch on |
-| `126` | Command found but not executable (rare for user CLIs) |
-| `127` | Command not found |
-| `130` | Killed by SIGINT (Ctrl-C) — runtime handles this |
-| custom | Domain-specific (`tool deploy` could return `10` for "deploy refused: dirty tree", `11` for "deploy refused: missing approval") |
-
-- **Document every non-standard exit code** in `--help` or a dedicated `tool help exit-codes` page.
-- **Don't reuse codes** across categories within one tool — once `10` means "dirty tree", it can't later mean something else.
-- **Misuse vs failure:** parsing errors are 2; the tool worked but the operation failed is 1 or a custom non-zero.
+- **`0` success, `1` generic failure, `2` misuse, `130` SIGINT.** Anything custom is domain-specific and documented.
+- **Document every non-standard exit code** in `--help` or `tool help exit-codes`.
+- **Don't reuse codes** across categories within one tool.
+- **Misuse vs failure:** parsing errors are 2; tool worked but operation failed is 1 or a custom non-zero.
 
 ## 9. Color & TTY behavior
 
@@ -131,11 +110,8 @@ CLI logging is for the user's terminal, not log aggregation. Different style fro
 
 - **Default log level: `info`.** `-v` → `debug`, `-vv` → `trace`. `--quiet` / `-q` → `warn`.
 - **Log to stderr always.** No exceptions.
-- **Structured output** even for human reading — key=value pairs are scannable. Use `log/slog` (Go) or `structlog` (Python). Tools like `charmbracelet/log` (Go) and `rich` (Python) add pretty-printing for human consumption while preserving structure.
-- **Errors include the operation** that failed, the inputs that mattered, and any correlation id if cross-service:
-  ```
-  ERR  apply: deploy refused  reason="dirty working tree"  files=3  hint="commit or stash, then retry"
-  ```
+- **Structured output** even for human reading — key=value pairs are scannable. Use `log/slog` (Go) or `structlog` (Python). `charmbracelet/log` (Go) and `rich` (Python) add pretty-printing while preserving structure.
+- **Errors include the operation** that failed, the inputs that mattered, and any correlation id if cross-service. Format example in [RECIPES § Error message format](RECIPES.md#error-message-format).
 - **No stack traces in user-facing errors** (see §15).
 
 ## 11. Progress feedback
@@ -157,11 +133,7 @@ For long-running operations only — anything that takes more than ~2 seconds.
 ## 13. Versioning
 
 - **`tool --version` and `tool version`** both work; both print the same thing.
-- **Output format:**
-  ```
-  tool 1.2.3 (rev abc1234, built 2026-05-21, go1.26)
-  ```
-  Version + git short SHA + build date + runtime version. The SHA is critical for dev builds.
+- **Output format** is `tool <semver> (rev <sha>, built <date>, <runtime>)` — version + git short SHA + build date + runtime version. The SHA is critical for dev builds. Example in [RECIPES § Version output](RECIPES.md#version-output).
 - **Semver always.** Pre-1.0 if the API isn't stable; commit to backward compatibility once you ship 1.0.
 - **`tool version --output json`** for scripting.
 
@@ -179,15 +151,11 @@ For long-running operations only — anything that takes more than ~2 seconds.
 
 ## 15. Error messages
 
-- **Tell the user what failed, why, and what to try next.** Three-line format works:
-  ```
-  ERR  apply: deploy refused
-       reason: dirty working tree (3 uncommitted files)
-       hint:   commit or stash, then retry
-  ```
-- **No stack traces** in user-facing errors. Log them to stderr at `debug` level (visible with `-vv`) or write to a file with a correlation id printed in the error message.
-- **Suggest the fix** when the cause is unambiguous. `Did you mean: tool depoly → deploy?` for typos (use Levenshtein distance from known subcommands).
-- **Distinguish user errors from tool bugs.** "Invalid flag value" → user error, exit 2. "Internal: nil pointer in handler" → bug, exit 1 with a "please file an issue at <repo>/issues" hint.
+Tell the user what failed, why, and what to try next. Three-line format + structured example in [RECIPES § Error message format](RECIPES.md#error-message-format). Key rules:
+
+- **No stack traces** in user-facing errors. Log them at `debug` level (visible with `-vv`) or write to a file with a correlation id.
+- **Suggest the fix** when the cause is unambiguous. `Did you mean: tool depoly → deploy?` (Levenshtein distance from known subcommands).
+- **Distinguish user errors from tool bugs.** "Invalid flag value" → user error, exit 2. "Internal: nil pointer in handler" → bug, exit 1 with a "please file an issue" hint.
 
 ## 16. Language-specific recipes
 

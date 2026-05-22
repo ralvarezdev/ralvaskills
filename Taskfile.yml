@@ -7,6 +7,39 @@ tasks:
     cmds:
       - task --list
 
+  # ── CLI (rsk) ──────────────────────────────────────────────────────────────
+
+  cli:build:
+    desc: Build the rsk CLI binary to bin/rsk
+    dir: cli
+    sources:
+      - "**/*.go"
+      - go.mod
+    generates:
+      - ../bin/rsk
+    cmds:
+      - go build -o ../bin/rsk .
+
+  cli:run:
+    desc: "Run the rsk CLI — pass args after --  (e.g. task cli:run -- init)"
+    dir: cli
+    cmds:
+      - go run . {{.CLI_ARGS}}
+
+  cli:lint:
+    desc: Lint the rsk CLI module
+    dir: cli
+    cmds:
+      - golangci-lint run --config ../.golangci.yml ./...
+
+  cli:fmt:
+    desc: Format the rsk CLI module (goimports + golines)
+    dir: cli
+    cmds:
+      - golangci-lint fmt --config ../.golangci.yml ./...
+
+  # ── scripts/count-tokens ──────────────────────────────────────────────────
+
   tokens:
     desc: Re-generate docs/TOKEN_COUNTS.md with latest SKILL.md byte/token estimates
     sources:
@@ -16,3 +49,34 @@ tasks:
       - docs/TOKEN_COUNTS.md
     cmds:
       - go run ./scripts/count-tokens
+
+  tokens:lint:
+    desc: Lint the count-tokens script
+    dir: scripts/count-tokens
+    cmds:
+      - golangci-lint run --config ../../.golangci.yml ./...
+
+  tokens:fmt:
+    desc: Format the count-tokens script (goimports + golines)
+    dir: scripts/count-tokens
+    cmds:
+      - golangci-lint fmt --config ../../.golangci.yml ./...
+
+  # ── aggregate ─────────────────────────────────────────────────────────────
+
+  lint:
+    desc: Lint all Go modules
+    deps:
+      - cli:lint
+      - tokens:lint
+
+  fmt:
+    desc: Format all Go modules
+    deps:
+      - cli:fmt
+      - tokens:fmt
+
+  build:
+    desc: Build all Go binaries
+    deps:
+      - cli:build

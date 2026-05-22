@@ -51,7 +51,8 @@ func main() {
 	out := render(skills)
 
 	outPath := filepath.Join(root, "docs", "TOKEN_COUNTS.md")
-	if err := os.WriteFile(outPath, []byte(out), 0o644); err != nil {
+	err = os.WriteFile(outPath, []byte(out), 0o644)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "error writing", outPath, ":", err)
 		os.Exit(1)
 	}
@@ -65,7 +66,8 @@ func findRoot() (string, error) {
 		return "", err
 	}
 	for {
-		if _, err := os.Stat(filepath.Join(dir, "skills")); err == nil {
+		_, statErr := os.Stat(filepath.Join(dir, "skills"))
+		if statErr == nil {
 			return dir, nil
 		}
 		parent := filepath.Dir(dir)
@@ -80,19 +82,22 @@ func findRoot() (string, error) {
 // also picking up sibling STACK.md and RECIPES.md when present.
 func scan(skillsDir string) ([]skill, error) {
 	var skills []skill
-	err := filepath.WalkDir(skillsDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() || d.Name() != "SKILL.md" {
+	err := filepath.WalkDir(skillsDir, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return nil //nolint:nilerr // skip unreadable directory entries, continue walking
+		}
+		if d.IsDir() || d.Name() != "SKILL.md" {
 			return nil
 		}
 
 		data, readErr := os.ReadFile(path)
 		if readErr != nil {
-			return nil
+			return nil //nolint:nilerr // skip unreadable SKILL.md files
 		}
 
-		info, statErr := d.Info()
-		if statErr != nil {
-			return nil
+		info, infoErr := d.Info()
+		if infoErr != nil {
+			return nil //nolint:nilerr // skip entries whose metadata can't be read
 		}
 
 		skillDir := filepath.Dir(path)
@@ -109,10 +114,10 @@ func scan(skillsDir string) ([]skill, error) {
 			descTokens: int64(len(desc)) / bytesPerToken,
 		}
 
-		if si, err := os.Stat(filepath.Join(skillDir, "STACK.md")); err == nil {
+		if si, siErr := os.Stat(filepath.Join(skillDir, "STACK.md")); siErr == nil {
 			s.stackTokens = si.Size() / bytesPerToken
 		}
-		if ri, err := os.Stat(filepath.Join(skillDir, "RECIPES.md")); err == nil {
+		if ri, riErr := os.Stat(filepath.Join(skillDir, "RECIPES.md")); riErr == nil {
 			s.recipesTokens = ri.Size() / bytesPerToken
 		}
 
@@ -179,7 +184,8 @@ func render(skills []skill) string {
 	buf.WriteString("> Auto-generated. **Do not edit by hand.** Run `task tokens` to refresh.\n")
 	buf.WriteString(">\n")
 	buf.WriteString("> Estimate: ~4 bytes/token (Claude tokenizer, English markdown). Actual range ±15%.\n\n")
-	fmt.Fprintf(&buf, "_Last updated: %s · %d skills_\n\n", time.Now().UTC().Format("2006-01-02 15:04 UTC"), len(skills))
+	ts := time.Now().UTC().Format("2006-01-02 15:04 UTC")
+	fmt.Fprintf(&buf, "_Last updated: %s · %d skills_\n\n", ts, len(skills))
 
 	buf.WriteString("## Load model\n\n")
 	buf.WriteString("| What | When loaded | Estimated tokens |\n")
@@ -204,7 +210,10 @@ func render(skills []skill) string {
 	buf.WriteString("- **Body tokens** cost only when the skill is invoked in a session.\n")
 	buf.WriteString("- **Description tokens** cost on every single turn — keep descriptions short.\n")
 	buf.WriteString("- `STACK.md` and `RECIPES.md` are never auto-loaded; they cost 0 per turn.\n")
-	buf.WriteString("- For exact counts: run each file through [`tiktoken`](https://github.com/openai/tiktoken) with `cl100k_base`.\n")
+	buf.WriteString(
+		"- For exact counts: run each file through" +
+			" [`tiktoken`](https://github.com/openai/tiktoken) with `cl100k_base`.\n",
+	)
 
 	return buf.String()
 }

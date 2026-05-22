@@ -20,34 +20,9 @@ Targets **React 19** with **TypeScript strict**. Component library defaults to R
 
 ## 2. Project structure — feature-based
 
-Mirrors [fastapi-architect](../fastapi-architect/SKILL.md#1-project-structure--feature-based) and [gin-architect](../gin-architect/SKILL.md#1-project-structure--feature-based) — same shape, different language. One folder per bounded feature.
+Mirrors [fastapi-architect](../fastapi-architect/SKILL.md#1-project-structure--feature-based) and [gin-architect](../gin-architect/SKILL.md#1-project-structure--feature-based) — same shape, different language. One folder per bounded feature. Full tree in [RECIPES § Feature-based project structure](RECIPES.md#feature-based-project-structure).
 
-```
-src/
-├── App.tsx
-├── main.tsx                      # ReactDOM render / Vite entry
-├── config/                       # env loading via zod parse
-├── lib/                          # cross-feature utilities (api client, query client setup)
-├── components/                   # cross-feature primitives (Button, Modal, Form)
-├── hooks/                        # cross-feature hooks (useDebounce, useMediaQuery)
-├── features/
-│   ├── users/
-│   │   ├── api.ts                # TanStack Query keys + fetchers
-│   │   ├── components/
-│   │   │   ├── UserList.tsx
-│   │   │   ├── UserForm.tsx
-│   │   │   └── UserCard.tsx
-│   │   ├── hooks/
-│   │   │   └── useUsers.ts
-│   │   ├── schemas.ts            # Zod request/response schemas
-│   │   ├── types.ts              # User, UserCreate, UserUpdate types
-│   │   └── index.ts              # public exports
-│   └── orders/
-│       └── ...
-└── routes/                       # router-aware route components (App Router pages live in nextjs-architect)
-```
-
-- **A feature folder owns its UI, hooks, types, schemas, and API queries.** A component from `features/users/components/` is only imported within `features/users/`. Cross-feature reuse moves to `src/components/`.
+- **A feature folder owns its UI, hooks, types, schemas, and API queries.** Cross-feature reuse moves to `src/components/`.
 - **`schemas.ts` per feature** — Zod schemas for every request body and response shape. Parse at the API boundary; throw on parse failure.
 - **`index.ts` exports the public surface** of each feature. Importing from `features/users/components/UserList` is cheating; import from `features/users` and re-export deliberately.
 
@@ -88,17 +63,7 @@ Reach for the composition shape first; a 20-prop `<DataTable>` is a smell. Compa
 
 ### Built-in hooks
 
-| Hook | Use for |
-|---|---|
-| `useState` | Component-local state |
-| `useReducer` | Component-local state with non-trivial transitions or many setters |
-| `useContext` | Cross-tree state that's read often, written rarely (auth, theme, locale) |
-| `useEffect` | **Synchronization** with external systems (subscribe/unsubscribe to a non-React store, set up a non-React UI listener). **Not** for fetching — TanStack Query handles that. |
-| `useLayoutEffect` | DOM measurement before paint (rare; usually wrong) |
-| `useId` | Stable unique IDs for `htmlFor`/`aria-labelledby` |
-| `useTransition` | Mark non-urgent updates so urgent ones don't block |
-| `useDeferredValue` | Same idea, value-side |
-| `use` (React 19) | Unwrap a promise inside a component (with Suspense) — preferred over manual loading state where it fits |
+Full table of when to use each (`useState`, `useReducer`, `useContext`, `useEffect`, `useLayoutEffect`, `useId`, `useTransition`, `useDeferredValue`, `use`) in [RECIPES § Built-in hooks reference](RECIPES.md#built-in-hooks-reference). Key rule: **`useEffect` is for synchronization with non-React systems, not for fetching** — TanStack Query handles fetching.
 
 ### Custom hooks
 
