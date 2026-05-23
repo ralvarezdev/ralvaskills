@@ -175,18 +175,25 @@ func bumpLockEntries(cmd *cobra.Command, args []string, cfg config.Config) error
 	localSrc := newLocalSource(cfg)
 	officialSrc := source.NewOfficial(cfg.OfficialCache)
 
+	m, err := manifest.ReadMod(rskDir)
+	if err != nil {
+		return err
+	}
+	targets := projectSkillsDirs(filepath.Dir(rskDir), m)
+
 	lock, err := manifest.ReadLock(rskDir)
 	if err != nil {
 		return err
 	}
-	skillsDir := manifest.ProjectSkillsPath(rskDir)
 	for _, name := range names {
 		s, findErr := findSkillByName(ctx, name, localSrc, officialSrc)
 		if findErr != nil {
 			continue
 		}
-		if linkErr := skill.Link(s, skillsDir); linkErr != nil {
-			return linkErr
+		for _, target := range targets {
+			if linkErr := skill.Link(s, target); linkErr != nil {
+				return linkErr
+			}
 		}
 		lock = manifest.UpsertLockEntry(lock, manifest.LockEntry{
 			Name:    s.Name,

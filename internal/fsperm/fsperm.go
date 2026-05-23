@@ -3,6 +3,8 @@
 // a permission only ever requires editing one file.
 package fsperm
 
+import "os"
+
 const (
 	// Dir is the permission mode applied to every directory rsk creates
 	// (rwxr-x---). The group bits allow system-level tooling to read the
@@ -20,3 +22,8 @@ const (
 	// intended.
 	Mask = 0o777
 )
+
+// LinkModeMask is the file mode mask for detecting symlinks and junctions
+// (Unix symlinks or Windows directory junctions). Go 1.23+ reports junctions
+// with ModeIrregular, so both bits are checked.
+var LinkModeMask = os.ModeSymlink | os.ModeIrregular

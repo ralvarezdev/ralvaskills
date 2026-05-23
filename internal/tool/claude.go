@@ -1,6 +1,8 @@
 package tool
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -26,14 +28,21 @@ const (
 	// pinned skills for Claude Code to import.
 	ClaudeFileName = "CLAUDE.md"
 
+	// Settings.json configuration keys
+	claudeSettingsFileName   = "settings.json"
+	claudeSettingsPermKey    = "permissions"
+	claudeSettingsAllowKey   = "allow"
+	claudeSettingsDenyKey    = "deny"
+
 	claudeImportLine    = "@" + internal.ProjectFolderName + "/" + ClaudeFileName
 	claudeFileOpenFlags = os.O_APPEND | os.O_CREATE | os.O_WRONLY
 	rskTempPattern      = ".rsk-*.tmp"
 
 	// claudeSkillPathReference is the format string for one skill import line in
-	// .rsk/CLAUDE.md. Uses "/" (not filepath.Separator) because CLAUDE.md imports
-	// use Unix-style paths regardless of the host OS.
-	claudeSkillPathReference = "@" + skill.SkillsFolderName + "/%s/" + skill.SkillFileName + "\n"
+	// .rsk/CLAUDE.md. Path is relative to .rsk/, so ../.claude/skills/<name>/SKILL.md
+	// resolves to the project-local .claude/skills/ directory.
+	// Uses "/" (not filepath.Separator) because CLAUDE.md imports use Unix-style paths.
+	claudeSkillPathReference = "@../" + ClaudeFolderName + "/" + skill.SkillsFolderName + "/%s/" + skill.SkillFileName + "\n"
 )
 
 var (
@@ -42,24 +51,30 @@ var (
 	ProjectClaudeFilePath = filepath.Join(internal.ProjectFolderName, ClaudeFileName)
 )
 
-func init() { Register(&claudeTool{}) }
+func init() { Register(&ClaudeTool{}) }
 
-// claudeTool implements Tool for Claude Code.
-type claudeTool struct{}
+// ClaudeTool implements Tool for Claude Code.
+type ClaudeTool struct{}
 
 // ID returns ClaudeID.
-func (*claudeTool) ID() ID { return ClaudeID }
+func (*ClaudeTool) ID() ID { return ClaudeID }
 
 // SkillsDir returns the canonical path to the Claude Code global skills
 // directory (~/.claude/skills).
-func (*claudeTool) SkillsDir() string {
+func (*ClaudeTool) SkillsDir() string {
 	return filepath.Join(xdg.Home, ClaudeFolderName, skill.SkillsFolderName)
+}
+
+// ProjectSkillsDir returns the project-local skills directory (.claude/skills/).
+// Both Claude Code and OpenCode discover skills from this path.
+func (*ClaudeTool) ProjectSkillsDir(projectRoot string) string {
+	return filepath.Join(projectRoot, ClaudeFolderName, skill.SkillsFolderName)
 }
 
 // SyncPinned writes .rsk/CLAUDE.md atomically with one import line per pinned
 // skill and appends the import marker to the project's CLAUDE.md (idempotent).
 // projectDir is the project root (parent of .rsk/).
-func (*claudeTool) SyncPinned(projectDir string, pinnedNames []string) error {
+func (*ClaudeTool) SyncPinned(projectDir string, pinnedNames []string) error {
 	rskDir := filepath.Join(projectDir, internal.ProjectFolderName)
 	if err := writePinnedClaude(rskDir, pinnedNames); err != nil {
 		return fmt.Errorf("sync claude-code pins: %w", err)
@@ -72,7 +87,7 @@ func (*claudeTool) SyncPinned(projectDir string, pinnedNames []string) error {
 
 // RemovePinned removes the import marker from the project CLAUDE.md.
 // Returns nil if the file does not exist.
-func (*claudeTool) RemovePinned(projectDir string) error {
+func (*ClaudeTool) RemovePinned(projectDir string) error {
 	return removeClaudeImport(filepath.Join(projectDir, ClaudeFileName))
 }
 
@@ -132,4 +147,96 @@ func removeClaudeImport(claudeMDPath string) error {
 		_, writeErr := w.Write(payload)
 		return writeErr
 	})
+}
+
+// SettingsPath returns the path to the project's .claude/settings.json file.
+func (*ClaudeTool) SettingsPath(projectDir string) string {
+	return filepath.Join(projectDir, ClaudeFolderName, claudeSettingsFileName)
+}
+
+// ReadPermissions reads the tool permissions from .claude/settings.json.
+// Returns empty slices if the file does not exist. Permissions is a map with
+// "allow" and "deny" keys, each mapping to a []string of rules.
+func (ct *ClaudeTool) ReadPermissions(projectDir string) (allow, deny []string, err error) {
+	path := ct.SettingsPath(projectDir)
+	cfg, err := readClaudeConfig(path)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	perms, ok := cfg[claudeSettingsPermKey].(map[string]any)
+	if !ok {
+		return nil, nil, nil
+	}
+
+	allow = toStringSlice(perms[claudeSettingsAllowKey])
+	deny = toStringSlice(perms[claudeSettingsDenyKey])
+	return allow, deny, nil
+}
+
+// WritePermissions writes tool permissions to .claude/settings.json, preserving
+// other keys in the file. Creates the file if it does not exist.
+func (ct *ClaudeTool) WritePermissions(projectDir string, allow, deny []string) error {
+	path := ct.SettingsPath(projectDir)
+	cfg, err := readClaudeConfig(path)
+	if err != nil {
+		return err
+	}
+
+	perms := map[string]any{}
+	if len(allow) > 0 {
+		perms[claudeSettingsAllowKey] = allow
+	}
+	if len(deny) > 0 {
+		perms[claudeSettingsDenyKey] = deny
+	}
+
+	if len(perms) == 0 {
+		delete(cfg, claudeSettingsPermKey)
+	} else {
+		cfg[claudeSettingsPermKey] = perms
+	}
+
+	return writeClaudeConfig(path, cfg)
+}
+
+func readClaudeConfig(path string) (map[string]any, error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return make(map[string]any), nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", path, err)
+	}
+
+	cfg := make(map[string]any)
+	if err = json.Unmarshal(data, &cfg); err != nil {
+		return nil, fmt.Errorf("parse %s: %w", path, err)
+	}
+	return cfg, nil
+}
+
+func writeClaudeConfig(path string, cfg map[string]any) error {
+	return fsx.WriteAtomic(path, rskTempPattern, func(w io.Writer) error {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(cfg)
+	})
+}
+
+func toStringSlice(v any) []string {
+	if v == nil {
+		return nil
+	}
+	arr, ok := v.([]any)
+	if !ok {
+		return nil
+	}
+	result := make([]string, 0, len(arr))
+	for _, item := range arr {
+		if s, ok := item.(string); ok {
+			result = append(result, s)
+		}
+	}
+	return result
 }

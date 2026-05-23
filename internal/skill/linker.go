@@ -37,10 +37,14 @@ func Unlink(name, targetDir string) error {
 	return nil
 }
 
-// IsLinked reports whether a link named name exists in targetDir. Windows
-// directory junctions are reported with ModeSymlink set by Lstat since
-// Go 1.23, so the same check works on every platform.
+// IsLinked reports whether a link named name exists in targetDir.
 func IsLinked(name, targetDir string) bool {
 	fi, err := os.Lstat(filepath.Join(targetDir, name))
-	return err == nil && fi.Mode()&os.ModeSymlink != 0
+	return err == nil && IsLink(fi)
+}
+
+// IsLink reports whether fi describes a link created by Link — a Unix
+// symlink or a Windows directory junction.
+func IsLink(fi os.FileInfo) bool {
+	return fi != nil && fi.Mode()&fsperm.LinkModeMask != 0
 }

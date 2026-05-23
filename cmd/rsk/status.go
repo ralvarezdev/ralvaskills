@@ -107,7 +107,12 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
 	}
 	membership := bundleMembershipIndex(catalog)
-	sections := buildStatusSections(cfg, opts.global, opts.project, opts.forTool, rskDir)
+
+	var projectDirs []string
+	if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
+		projectDirs = projectSkillsDirs(filepath.Dir(rskDir), m)
+	}
+	sections := buildStatusSections(cfg, opts.global, opts.project, opts.forTool, rskDir, projectDirs)
 
 	pinnedSet := make(map[string]bool)
 	if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
@@ -175,7 +180,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	return nil
 }
 
-func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forTool, rskDir string) []statusSection {
+func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forTool, rskDir string, projectDirs []string) []statusSection {
 	var sections []statusSection
 
 	if !projectOnly {
@@ -199,12 +204,13 @@ func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forToo
 	}
 
 	if !globalOnly {
-		projectDir := manifest.ProjectSkillsPath(rskDir)
-		sections = append(sections, statusSection{
-			title:    "Project",
-			subtitle: projectDir,
-			dir:      projectDir,
-		})
+		for _, dir := range projectDirs {
+			sections = append(sections, statusSection{
+				title:    "Project",
+				subtitle: dir,
+				dir:      dir,
+			})
+		}
 	}
 
 	return sections
@@ -227,7 +233,7 @@ func scanLinked(
 	for _, e := range entries {
 		linkPath := filepath.Join(targetDir, e.Name())
 		fi, statErr := os.Lstat(linkPath)
-		if statErr != nil || fi.Mode()&os.ModeSymlink == 0 {
+		if statErr != nil || !skill.IsLink(fi) {
 			continue
 		}
 		symlinkTarget, readErr := os.Readlink(linkPath)

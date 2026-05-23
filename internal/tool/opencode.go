@@ -31,9 +31,10 @@ const (
 	OpenCodeInstructionsKey = "instructions"
 
 	// OpenCodeSkillsPrefix is the forward-slash path prefix for skill entries in
-	// opencode.json. Uses "/" rather than filepath.Separator because opencode.json
-	// stores Unix-style paths regardless of the host OS.
-	OpenCodeSkillsPrefix = internal.ProjectFolderName + "/" + skill.SkillsFolderName + "/"
+	// opencode.json. Points at .claude/skills/ because OpenCode discovers skills
+	// from the same directory as Claude Code. Uses "/" rather than filepath.Separator
+	// because opencode.json stores Unix-style paths regardless of the host OS.
+	OpenCodeSkillsPrefix = ClaudeFolderName + "/" + skill.SkillsFolderName + "/"
 )
 
 func init() { Register(&openCodeTool{}) }
@@ -48,6 +49,13 @@ func (*openCodeTool) ID() ID { return OpenCodeID }
 // (~/.config/opencode/skills).
 func (*openCodeTool) SkillsDir() string {
 	return filepath.Join(internal.ConfigHome(), OpenCodeFolderName, skill.SkillsFolderName)
+}
+
+// ProjectSkillsDir returns the project-local skills directory (.claude/skills/).
+// OpenCode discovers skills from .claude/skills/ in addition to .opencode/skills/,
+// so both tools share a single project-level directory.
+func (*openCodeTool) ProjectSkillsDir(projectRoot string) string {
+	return filepath.Join(projectRoot, ClaudeFolderName, skill.SkillsFolderName)
 }
 
 // SyncPinned updates opencode.json in projectDir so that the

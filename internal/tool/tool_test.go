@@ -47,7 +47,7 @@ func TestWritePinnedClaude_roundtrip(t *testing.T) {
 		t.Fatalf("read CLAUDE.md: %v", err)
 	}
 	got := string(content)
-	want := "@skills/go-architect/SKILL.md\n@skills/tdd/SKILL.md\n"
+	want := "@../.claude/skills/go-architect/SKILL.md\n@../.claude/skills/tdd/SKILL.md\n"
 	if got != want {
 		t.Errorf("CLAUDE.md content:\ngot:  %q\nwant: %q", got, want)
 	}

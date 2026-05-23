@@ -177,8 +177,7 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 			return err
 		}
 
-		projectSkillsDir := manifest.ProjectSkillsPath(rskDir)
-		if cleanErr := cleanupManifest(rskDir, projectSkillsDir, toRemove); cleanErr != nil {
+		if cleanErr := cleanupManifest(rskDir, toRemove); cleanErr != nil {
 			ui.Warn(out, fmt.Sprintf("update manifest: %v", cleanErr))
 		}
 	}
@@ -188,7 +187,7 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 
 // cleanupManifest removes uninstalled skills from rsk.mod, rsk.lock, and tool configs.
 // Returns nil without error if rsk.mod does not exist.
-func cleanupManifest(rskDir, projectSkillsDir string, removed []removeEntry) error {
+func cleanupManifest(rskDir string, removed []removeEntry) error {
 	m, err := manifest.ReadMod(rskDir)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
@@ -197,9 +196,11 @@ func cleanupManifest(rskDir, projectSkillsDir string, removed []removeEntry) err
 		return err
 	}
 
+	seen := make(map[string]bool, len(removed))
 	var toClean []string
 	for _, e := range removed {
-		if e.target == projectSkillsDir {
+		if !seen[e.name] {
+			seen[e.name] = true
 			toClean = append(toClean, e.name)
 		}
 	}

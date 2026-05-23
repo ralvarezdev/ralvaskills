@@ -137,7 +137,8 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   └── nextjs-architect/         # ✅ exists (v1.0.0 — Next 16, App Router only, RSC defaults, server actions, hybrid data access)
 │   ├── protocols/
 │   │   ├── rest-api-architect/       # ✅ exists (v1.0.0 — snake_case JSON, ISO 8601, RFC 7807 errors, mandatory Idempotency-Key & ETag)
-│   │   └── grpc-architect/           # ✅ exists (v1.0.0 — vanilla gRPC, status codes, interceptor chain, deadlines, bufconn testing)
+│   │   ├── grpc-architect/           # ✅ exists (v1.0.0 — vanilla gRPC, status codes, interceptor chain, deadlines, bufconn testing)
+│   │   └── mcp-architect/            # ✅ exists (v1.0.0 — MCP spec 2025-11-25; tools/resources/prompts, Streamable HTTP + stdio, OAuth 2.1 + RFC 8707, tool annotations, structured output, MCP Inspector; Python (FastMCP) + Go SDK recipes)
 │   ├── encoding/
 │   │   └── protobuf-architect/       # ✅ exists (v1.0.0 — proto3, Buf-style packages, protovalidate, breaking-change discipline)
 │   ├── messaging/
@@ -1125,6 +1126,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 |---|---|---|
 | `rest-api-architect` | ✅ | v1.0.0 — framework-agnostic REST conventions. Plural-noun URLs, URL-prefix versioning (`/v1/`), cursor pagination, `snake_case` JSON + ISO 8601 timestamps, RFC 7807 problem-details errors, **mandatory `Idempotency-Key`** on POST/PATCH, **mandatory `ETag` + `If-Match`** on PUT/PATCH, OpenAPI 3.1 generated from code |
 | `grpc-architect` | ✅ | v1.0.0 — vanilla gRPC over HTTP/2. Service definitions, `status.Error` + standard codes, domain→code mapping, mandatory interceptor chain (recovery, request-id, slog, auth, protovalidate, metrics), client-side deadlines, context propagation, reflection off in prod, `bufconn` testing. Language-agnostic protocol; Go-specific examples |
+| `mcp-architect` | ✅ | v1.0.0 — MCP spec 2025-11-25 (with 2026-07-28 RC callouts). Server primitives (tools/resources/prompts), tool annotations + structured output, Streamable HTTP transport with `Mcp-Session-Id` lifecycle, stdio for local servers, OAuth 2.1 + RFC 8707 audience binding, JSON-RPC vs tool-level error split, prompt-injection / SSRF / tool-poisoning defenses, MCP Inspector testing (pin ≥0.10 for CVE-2025-49596). Recipes for Python (official `mcp` + FastMCP) and Go (official `modelcontextprotocol/go-sdk`); brief client section. Pairs with `security-reviewer` and `rest-api-architect`/`grpc-architect` |
 
 #### Encoding
 | Skill | Status | Notes |

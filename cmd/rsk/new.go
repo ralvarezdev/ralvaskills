@@ -7,7 +7,6 @@ import (
 
 	"github.com/ralvarezdev/ralvaskills/internal"
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
@@ -19,8 +18,9 @@ var newProjectFor string
 var newCmd = &cobra.Command{
 	Use:   "new",
 	Short: "Initialize an rsk project in the current directory.",
-	Long: `Create .rsk/rsk.mod, .rsk/skills/, and tool-specific config in the current
-directory so this folder becomes an rsk project.
+	Long: `Create .rsk/rsk.mod and tool-specific config in the current directory so
+this folder becomes an rsk project. The .claude/skills/ directory is created
+lazily the first time a skill is installed.
 
 Use --for to select which tools to configure:
   --for claude-code  (default) Appends @.rsk/CLAUDE.md to ./CLAUDE.md
@@ -73,10 +73,6 @@ func runNew(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("rsk project already exists at %s", existing)
 	}
 	rskDir := filepath.Join(cwd, internal.ProjectFolderName)
-	skillsDir := manifest.ProjectSkillsPath(rskDir)
-	if err = os.MkdirAll(skillsDir, fsperm.Dir); err != nil {
-		return fmt.Errorf("create .rsk/skills: %w", err)
-	}
 
 	m := manifest.Mod{
 		Tools:  tools,

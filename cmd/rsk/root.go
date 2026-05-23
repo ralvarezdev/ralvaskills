@@ -38,6 +38,9 @@ Project pinning (auto-import into each tool's project config):
   rsk pin <name>                 Pin an installed skill
   rsk unpin <name>               Unpin a skill
 
+Tool configuration:
+  rsk claude tools               Manage Claude Code tool permissions
+
 Read-only views:
   rsk list                       Show installed skills (project / --global)
   rsk catalog                    Browse available skills and bundles

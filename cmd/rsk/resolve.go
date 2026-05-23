@@ -24,15 +24,39 @@ func newLocalSource(cfg config.Config) source.Resolver {
 	return source.NewRegistry(cfg.RegistryURL, cfg.RegistryCache())
 }
 
+// projectSkillsDirs returns deduplicated per-tool project skills directories for
+// all tools listed in m.Tools. In practice all tools share .claude/skills/ so
+// the result usually contains a single path.
+func projectSkillsDirs(projectRoot string, m manifest.Mod) []string {
+	seen := make(map[string]bool, len(m.Tools))
+	dirs := make([]string, 0, len(m.Tools))
+	for _, id := range m.Tools {
+		t, ok := tool.Get(id)
+		if !ok {
+			continue
+		}
+		dir := t.ProjectSkillsDir(projectRoot)
+		if !seen[dir] {
+			seen[dir] = true
+			dirs = append(dirs, dir)
+		}
+	}
+	return dirs
+}
+
 // resolveTargetDirs determines which skill directories an operation should act on.
-// Without --global it returns the project-local .claude/skills/ directory.
+// Without --global it returns the per-tool project-local skills directories.
 func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string, error) {
 	if !global {
 		rskDir, err := manifest.ProjectFolderPath()
 		if err != nil {
 			return nil, err
 		}
-		return []string{manifest.ProjectSkillsPath(rskDir)}, nil
+		m, err := manifest.ReadMod(rskDir)
+		if err != nil {
+			return nil, err
+		}
+		return projectSkillsDirs(filepath.Dir(rskDir), m), nil
 	}
 
 	if forTool != "" {
@@ -251,7 +275,9 @@ func allTargetDirs(cfg config.Config) []string {
 		dirs = append(dirs, dir)
 	}
 	if rskDir, err := manifest.ProjectFolderPath(); err == nil {
-		dirs = append(dirs, manifest.ProjectSkillsPath(rskDir))
+		if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
+			dirs = append(dirs, projectSkillsDirs(filepath.Dir(rskDir), m)...)
+		}
 	}
 	return dirs
 }

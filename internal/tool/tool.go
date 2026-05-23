@@ -45,6 +45,10 @@ type Tool interface {
 	// directory, resolved using the current XDG environment.
 	SkillsDir() string
 
+	// ProjectSkillsDir returns the path to the project-local skills directory
+	// that this tool discovers. projectRoot is the project root (parent of .rsk/).
+	ProjectSkillsDir(projectRoot string) string
+
 	// SyncPinned writes tool-specific skill imports so that the tool sees
 	// exactly the skills in pinnedNames. projectDir is the project root
 	// (the parent of .rsk/).

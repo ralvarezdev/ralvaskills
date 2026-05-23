@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
@@ -91,7 +92,7 @@ func runListProject(cmd *cobra.Command, opts listOpts) error {
 		return err
 	}
 
-	skillsDir := manifest.ProjectSkillsPath(rskDir)
+	projectDirs := projectSkillsDirs(filepath.Dir(rskDir), m)
 	pinnedSet := make(map[string]bool, len(m.Pinned))
 	for _, p := range m.Pinned {
 		pinnedSet[p] = true
@@ -108,7 +109,7 @@ func runListProject(cmd *cobra.Command, opts listOpts) error {
 		rows = append(rows, listedSkill{
 			Name:      name,
 			Version:   m.Skills[name],
-			Installed: skill.IsLinked(name, skillsDir),
+			Installed: isLinkedAnywhere(name, projectDirs),
 			Pinned:    pinnedSet[name],
 		})
 	}

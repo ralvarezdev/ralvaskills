@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"slices"
 	"sort"
 
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
+	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
@@ -180,8 +182,8 @@ func runInstallGlobal(
 	return nil
 }
 
-// runInstallProject links each resolved skill into the current project's
-// .rsk/skills/ directory and writes entries into rsk.mod and rsk.lock. If
+// runInstallProject links each resolved skill into each configured tool's
+// project skills directory and writes entries into rsk.mod and rsk.lock. If
 // --pin is set, the top-level argument names are pinned for every configured
 // tool.
 func runInstallProject(
@@ -194,8 +196,13 @@ func runInstallProject(
 	if err != nil {
 		return err
 	}
-	skillsDir := manifest.ProjectSkillsPath(rskDir)
-	targets := []string{skillsDir}
+	projectRoot := filepath.Dir(rskDir)
+
+	m, err := manifest.ReadMod(rskDir)
+	if err != nil {
+		return err
+	}
+	targets := projectSkillsDirs(projectRoot, m)
 
 	printInstallPreview(out, skills, targets, warnings, opts.dryRun)
 	if opts.dryRun {
@@ -207,10 +214,12 @@ func runInstallProject(
 	}
 	fmt.Fprintln(out)
 
-	m, err := manifest.ReadMod(rskDir)
-	if err != nil {
-		return err
+	for _, target := range targets {
+		if mkdirErr := os.MkdirAll(target, fsperm.Dir); mkdirErr != nil {
+			return fmt.Errorf("create %s: %w", target, mkdirErr)
+		}
 	}
+
 	lock, err := manifest.ReadLock(rskDir)
 	if err != nil {
 		return err
@@ -225,8 +234,14 @@ func runInstallProject(
 
 	var failed int
 	for _, s := range skills {
-		if linkErr := skill.Link(s, skillsDir); linkErr != nil {
-			ui.Failf(errOut, "link %s: %v", s.Name, linkErr)
+		linkFailed := false
+		for _, target := range targets {
+			if linkErr := skill.Link(s, target); linkErr != nil {
+				ui.Failf(errOut, "link %s → %s: %v", s.Name, target, linkErr)
+				linkFailed = true
+			}
+		}
+		if linkFailed {
 			failed++
 			continue
 		}
@@ -244,7 +259,7 @@ func runInstallProject(
 		ui.Success(out, fmt.Sprintf("%s  %s  %s",
 			ui.SkillName(s.Name),
 			ui.Arrow,
-			ui.MutedPath(filepath.Join(skillsDir, s.Name)),
+			ui.MutedPath(filepath.Join(targets[0], s.Name)),
 		))
 	}
 
@@ -342,7 +357,8 @@ func printInstallPreview(out io.Writer, skills []skill.Skill, targets, warnings 
 }
 
 // runInstallFromMod reads rsk.mod in the current project, resolves all skills,
-// symlinks them into .rsk/skills/, updates rsk.lock, and rewrites tool configs.
+// symlinks them into the per-tool project skills dirs, updates rsk.lock, and
+// rewrites tool configs.
 func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
@@ -371,7 +387,8 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 	localSrc := newLocalSource(cfg)
 	officialSrc := source.NewOfficial(cfg.OfficialCache)
 
-	skillsDir := manifest.ProjectSkillsPath(rskDir)
+	projectRoot := filepath.Dir(rskDir)
+	targets := projectSkillsDirs(projectRoot, m)
 
 	sortedNames := make([]string, 0, len(m.Skills))
 	for name := range m.Skills {
@@ -390,7 +407,7 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 		skills = append(skills, s)
 	}
 
-	printInstallPreview(out, skills, []string{skillsDir}, warnings, opts.dryRun)
+	printInstallPreview(out, skills, targets, warnings, opts.dryRun)
 	if opts.dryRun {
 		return nil
 	}
@@ -400,6 +417,12 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 	}
 	fmt.Fprintln(out)
 
+	for _, target := range targets {
+		if mkdirErr := os.MkdirAll(target, fsperm.Dir); mkdirErr != nil {
+			return fmt.Errorf("create %s: %w", target, mkdirErr)
+		}
+	}
+
 	lock, err := manifest.ReadLock(rskDir)
 	if err != nil {
 		return err
@@ -407,8 +430,14 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 
 	var failed int
 	for _, s := range skills {
-		if linkErr := skill.Link(s, skillsDir); linkErr != nil {
-			ui.Failf(errOut, "link %s: %v", s.Name, linkErr)
+		linkFailed := false
+		for _, target := range targets {
+			if linkErr := skill.Link(s, target); linkErr != nil {
+				ui.Failf(errOut, "link %s → %s: %v", s.Name, target, linkErr)
+				linkFailed = true
+			}
+		}
+		if linkFailed {
 			failed++
 			continue
 		}
@@ -421,7 +450,7 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 		ui.Success(out, fmt.Sprintf("%s  %s  %s",
 			ui.SkillName(s.Name),
 			ui.Arrow,
-			ui.MutedPath(filepath.Join(skillsDir, s.Name)),
+			ui.MutedPath(filepath.Join(targets[0], s.Name)),
 		))
 	}
 

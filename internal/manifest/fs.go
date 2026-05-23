@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/ralvarezdev/ralvaskills/internal"
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
 
 const (
@@ -35,12 +34,6 @@ func ProjectFolderPath() (string, error) {
 		return "", fmt.Errorf("no rsk.mod found — run 'rsk new' first")
 	}
 	return rskDir, nil
-}
-
-// ProjectSkillsPath returns the canonical path of the project-local skills
-// directory (.rsk/skills/).
-func ProjectSkillsPath(rskDir string) string {
-	return filepath.Join(rskDir, skill.SkillsFolderName)
 }
 
 // LockPath returns the canonical path of rsk.lock inside rskDir.
