@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -29,11 +28,10 @@ func newLocalSource(cfg config.Config) source.Resolver {
 // Without --global it returns the project-local .claude/skills/ directory.
 func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string, error) {
 	if !global {
-		cwd, err := os.Getwd()
+		rskDir, err := manifest.ProjectFolderPath()
 		if err != nil {
-			return nil, fmt.Errorf("get working directory: %w", err)
+			return nil, err
 		}
-		rskDir := filepath.Join(cwd, manifest.ProjectFolderName)
 		return []string{manifest.ProjectSkillsPath(rskDir)}, nil
 	}
 
@@ -252,8 +250,7 @@ func allTargetDirs(cfg config.Config) []string {
 	for _, dir := range cfg.GlobalTargets {
 		dirs = append(dirs, dir)
 	}
-	if cwd, err := os.Getwd(); err == nil {
-		rskDir := filepath.Join(cwd, manifest.ProjectFolderName)
+	if rskDir, err := manifest.ProjectFolderPath(); err == nil {
 		dirs = append(dirs, manifest.ProjectSkillsPath(rskDir))
 	}
 	return dirs

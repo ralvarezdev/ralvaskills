@@ -42,7 +42,7 @@ func TestWritePinnedClaude_roundtrip(t *testing.T) {
 		t.Fatalf("writePinnedClaude: %v", err)
 	}
 
-	content, err := os.ReadFile(filepath.Join(dir, claudeFileName))
+	content, err := os.ReadFile(filepath.Join(dir, ClaudeFileName))
 	if err != nil {
 		t.Fatalf("read CLAUDE.md: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestWritePinnedClaude_empty(t *testing.T) {
 	if err := writePinnedClaude(dir, nil); err != nil {
 		t.Fatalf("writePinnedClaude empty: %v", err)
 	}
-	info, err := os.Stat(filepath.Join(dir, claudeFileName))
+	info, err := os.Stat(filepath.Join(dir, ClaudeFileName))
 	if err != nil {
 		t.Fatalf("CLAUDE.md not created: %v", err)
 	}
@@ -68,7 +68,7 @@ func TestWritePinnedClaude_empty(t *testing.T) {
 }
 
 func TestAppendClaudeImport_idempotent(t *testing.T) {
-	path := filepath.Join(t.TempDir(), claudeFileName)
+	path := filepath.Join(t.TempDir(), ClaudeFileName)
 
 	if err := appendClaudeImport(path); err != nil {
 		t.Fatalf("first appendClaudeImport: %v", err)
@@ -87,7 +87,7 @@ func TestAppendClaudeImport_idempotent(t *testing.T) {
 }
 
 func TestRemoveClaudeImport(t *testing.T) {
-	path := filepath.Join(t.TempDir(), claudeFileName)
+	path := filepath.Join(t.TempDir(), ClaudeFileName)
 	os.WriteFile(path, []byte("# header\n"+claudeImportLine+"\n# footer\n"), fsperm.File)
 
 	if err := removeClaudeImport(path); err != nil {

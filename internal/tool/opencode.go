@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/adrg/xdg"
+	"github.com/ralvarezdev/ralvaskills/internal"
 	"github.com/ralvarezdev/ralvaskills/internal/fsx"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
@@ -18,10 +18,22 @@ const (
 	// OpenCodeID is the tool identifier for OpenCode.
 	OpenCodeID ID = "opencode"
 
-	openCodeFolderName      = "opencode"
-	openCodeFileName        = "opencode.json"
-	openCodeInstructionsKey = "instructions"
-	openCodeSkillsPrefix    = ".rsk/" + skill.SkillsFolderName + "/"
+	// OpenCodeFolderName is the name of the OpenCode configuration directory
+	// inside the XDG config home.
+	OpenCodeFolderName = "opencode"
+
+	// OpenCodeFileName is the name of the OpenCode configuration file written
+	// inside the project root by rsk.
+	OpenCodeFileName = "opencode.json"
+
+	// OpenCodeInstructionsKey is the key in opencode.json whose value is a list
+	// of paths to SKILL.md files that OpenCode should import as instructions.
+	OpenCodeInstructionsKey = "instructions"
+
+	// OpenCodeSkillsPrefix is the forward-slash path prefix for skill entries in
+	// opencode.json. Uses "/" rather than filepath.Separator because opencode.json
+	// stores Unix-style paths regardless of the host OS.
+	OpenCodeSkillsPrefix = internal.ProjectFolderName + "/" + skill.SkillsFolderName + "/"
 )
 
 func init() { Register(&openCodeTool{}) }
@@ -35,20 +47,20 @@ func (*openCodeTool) ID() ID { return OpenCodeID }
 // SkillsDir returns the canonical path to the OpenCode global skills directory
 // (~/.config/opencode/skills).
 func (*openCodeTool) SkillsDir() string {
-	return filepath.Join(xdg.ConfigHome, openCodeFolderName, skill.SkillsFolderName)
+	return filepath.Join(internal.ConfigHome(), OpenCodeFolderName, skill.SkillsFolderName)
 }
 
 // SyncPinned updates opencode.json in projectDir so that the
 // .rsk/skills/<name>/SKILL.md entries match pinnedNames exactly. Non-rsk
 // entries are preserved. Creates the file if it does not exist.
 func (*openCodeTool) SyncPinned(projectDir string, pinnedNames []string) error {
-	return updateOCInstructions(filepath.Join(projectDir, openCodeFileName), pinnedNames)
+	return updateOCInstructions(filepath.Join(projectDir, OpenCodeFileName), pinnedNames)
 }
 
 // RemovePinned removes all rsk-managed .rsk/skills/ entries from opencode.json
 // in projectDir. Returns nil if the file does not exist.
 func (*openCodeTool) RemovePinned(projectDir string) error {
-	return updateOCInstructions(filepath.Join(projectDir, openCodeFileName), nil)
+	return updateOCInstructions(filepath.Join(projectDir, OpenCodeFileName), nil)
 }
 
 // updateOCInstructions reads opencode.json, replaces the rsk-managed
@@ -60,15 +72,15 @@ func updateOCInstructions(path string, pinnedNames []string) error {
 		return err
 	}
 
-	kept := filterOCEntries(cfg[openCodeInstructionsKey])
+	kept := filterOCEntries(cfg[OpenCodeInstructionsKey])
 	for _, name := range pinnedNames {
-		kept = append(kept, openCodeSkillsPrefix+name+"/"+skill.SkillFileName)
+		kept = append(kept, OpenCodeSkillsPrefix+name+"/"+skill.SkillFileName)
 	}
 
 	if len(kept) == 0 {
-		delete(cfg, openCodeInstructionsKey)
+		delete(cfg, OpenCodeInstructionsKey)
 	} else {
-		cfg[openCodeInstructionsKey] = kept
+		cfg[OpenCodeInstructionsKey] = kept
 	}
 
 	return writeOCConfig(path, cfg)
@@ -83,7 +95,7 @@ func filterOCEntries(raw any) []any {
 	}
 	kept := make([]any, 0, len(existing))
 	for _, e := range existing {
-		if s, isStr := e.(string); isStr && strings.HasPrefix(s, openCodeSkillsPrefix) {
+		if s, isStr := e.(string); isStr && strings.HasPrefix(s, OpenCodeSkillsPrefix) {
 			continue
 		}
 		kept = append(kept, e)

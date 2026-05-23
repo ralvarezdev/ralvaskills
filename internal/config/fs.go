@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/adrg/xdg"
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/internal"
 )
 
 const (
@@ -26,32 +26,24 @@ const (
 	// DefaultRegistryURL is the base URL of the hosted skill registry used when
 	// no local repo clone is configured.
 	DefaultRegistryURL = "https://skills.ralvarez.dev"
-
-	// ClaudeFolderName is the name of the Claude Code configuration directory
-	// inside the user's home directory.
-	ClaudeFolderName = ".claude"
-
-	// OpenCodeFolderName is the name of the OpenCode configuration directory
-	// inside the XDG config home.
-	OpenCodeFolderName = "opencode"
 )
 
 // DefaultConfigFolderPath returns the canonical path of the rsk config folder
 // (~/.config/rsk).
 func DefaultConfigFolderPath() string {
-	return filepath.Join(xdg.ConfigHome, ConfigFolderName)
+	return filepath.Join(internal.ConfigHome(), ConfigFolderName)
 }
 
 // DefaultConfigFilePath returns the canonical path of the rsk config file
 // (~/.config/rsk/config.json).
 func DefaultConfigFilePath() string {
-	return filepath.Join(xdg.ConfigHome, ConfigFolderName, ConfigFileName)
+	return filepath.Join(internal.ConfigHome(), ConfigFolderName, ConfigFileName)
 }
 
 // DefaultCatalogPath returns the canonical path of the user skill catalog
 // (~/.config/rsk/catalog.toml).
 func DefaultCatalogPath() string {
-	return filepath.Join(xdg.ConfigHome, ConfigFolderName, CatalogFileName)
+	return filepath.Join(internal.ConfigHome(), ConfigFolderName, CatalogFileName)
 }
 
 // DefaultRegistryCachePath returns the directory used to cache skill downloads
@@ -65,16 +57,4 @@ func DefaultRegistryCachePath(officialCache string) string {
 		return filepath.Join(filepath.Dir(filepath.Clean(officialCache)), RegistryFolderName)
 	}
 	return filepath.Join(xdg.CacheHome, ConfigFolderName, RegistryFolderName)
-}
-
-// ClaudeSkillsDir returns the canonical path to the Claude Code global skills
-// directory (~/.claude/skills).
-func ClaudeSkillsDir() string {
-	return filepath.Join(xdg.Home, ClaudeFolderName, skill.SkillsFolderName)
-}
-
-// OpenCodeSkillsDir returns the canonical path to the OpenCode global skills
-// directory (~/.config/opencode/skills).
-func OpenCodeSkillsDir() string {
-	return filepath.Join(xdg.ConfigHome, OpenCodeFolderName, skill.SkillsFolderName)
 }

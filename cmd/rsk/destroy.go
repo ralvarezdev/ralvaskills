@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ralvarezdev/ralvaskills/internal"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
@@ -33,7 +34,7 @@ func runDestroy(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("get working directory: %w", err)
 	}
 
-	rskDir := filepath.Join(cwd, manifest.ProjectFolderName)
+	rskDir := filepath.Join(cwd, internal.ProjectFolderName)
 
 	// Read tools from mod before deleting .rsk/ so we know what to clean up.
 	tools := []tool.ID{tool.ClaudeID}

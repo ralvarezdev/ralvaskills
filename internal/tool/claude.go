@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/adrg/xdg"
+	"github.com/ralvarezdev/ralvaskills/internal"
 	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/fsx"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
@@ -17,18 +17,29 @@ const (
 	// ClaudeID is the tool identifier for Claude Code.
 	ClaudeID ID = "claude-code"
 
-	claudeHomeDir       = ".claude"
-	claudeImportLine    = "@.rsk/CLAUDE.md"
+	// ClaudeFolderName is the name of the Claude Code configuration directory
+	// inside the user's home directory or inside the project.
+	ClaudeFolderName = ".claude"
+
+	// ClaudeFileName is the name of the generated file inside .rsk/ that lists
+	// pinned skills for Claude Code to import.
+	ClaudeFileName = "CLAUDE.md"
+
+	claudeImportLine    = "@" + internal.ProjectFolderName + "/" + ClaudeFileName
 	claudeFileOpenFlags = os.O_APPEND | os.O_CREATE | os.O_WRONLY
-	claudeFileName      = "CLAUDE.md"
-	rskFolderName       = ".rsk"
 	rskTempPattern      = ".rsk-*.tmp"
+
+	// claudeSkillPathReference is the format string for one skill import line in
+	// .rsk/CLAUDE.md. Uses "/" (not filepath.Separator) because CLAUDE.md imports
+	// use Unix-style paths regardless of the host OS.
+	claudeSkillPathReference = "@" + skill.SkillsFolderName + "/%s/" + skill.SkillFileName + "\n"
 )
 
-// claudeSkillPathReference is the format string for one skill import line in
-// .rsk/CLAUDE.md. Uses "/" (not filepath.Separator) because CLAUDE.md imports
-// use Unix-style paths regardless of the host OS.
-var claudeSkillPathReference = "@" + skill.SkillsFolderName + "/%s/" + skill.SkillFileName + "\n"
+var (
+	// ProjectClaudeFilePath is the path of CLAUDE.md relative to the project
+	// root (.rsk/CLAUDE.md).
+	ProjectClaudeFilePath = filepath.Join(internal.ProjectFolderName, ClaudeFileName)
+)
 
 func init() { Register(&claudeTool{}) }
 
@@ -41,18 +52,18 @@ func (*claudeTool) ID() ID { return ClaudeID }
 // SkillsDir returns the canonical path to the Claude Code global skills
 // directory (~/.claude/skills).
 func (*claudeTool) SkillsDir() string {
-	return filepath.Join(xdg.Home, claudeHomeDir, skill.SkillsFolderName)
+	return filepath.Join(internal.ConfigHome(), ClaudeFolderName, skill.SkillsFolderName)
 }
 
 // SyncPinned writes .rsk/CLAUDE.md atomically with one import line per pinned
 // skill and appends the import marker to the project's CLAUDE.md (idempotent).
 // projectDir is the project root (parent of .rsk/).
 func (*claudeTool) SyncPinned(projectDir string, pinnedNames []string) error {
-	rskDir := filepath.Join(projectDir, rskFolderName)
+	rskDir := filepath.Join(projectDir, internal.ProjectFolderName)
 	if err := writePinnedClaude(rskDir, pinnedNames); err != nil {
 		return fmt.Errorf("sync claude-code pins: %w", err)
 	}
-	if err := appendClaudeImport(filepath.Join(projectDir, claudeFileName)); err != nil {
+	if err := appendClaudeImport(filepath.Join(projectDir, ClaudeFileName)); err != nil {
 		return fmt.Errorf("sync claude-code import: %w", err)
 	}
 	return nil
@@ -61,11 +72,11 @@ func (*claudeTool) SyncPinned(projectDir string, pinnedNames []string) error {
 // RemovePinned removes the import marker from the project CLAUDE.md.
 // Returns nil if the file does not exist.
 func (*claudeTool) RemovePinned(projectDir string) error {
-	return removeClaudeImport(filepath.Join(projectDir, claudeFileName))
+	return removeClaudeImport(ProjectClaudeFilePath)
 }
 
 func writePinnedClaude(rskDir string, pinnedNames []string) error {
-	path := filepath.Join(rskDir, claudeFileName)
+	path := filepath.Join(rskDir, ClaudeFileName)
 	return fsx.WriteAtomic(path, rskTempPattern, func(w io.Writer) error {
 		for _, name := range pinnedNames {
 			if _, err := fmt.Fprintf(w, claudeSkillPathReference, name); err != nil {
