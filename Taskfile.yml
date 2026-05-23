@@ -68,8 +68,45 @@ tasks:
       - dist/index.json
       - dist/new-versions.json
     cmds:
-      - mkdir -p dist
+      - mkdir -p dist registry
       - go run ./cmd/generate-registry --skills-dir skills --output-dir dist --existing-index registry/index.json {{.CLI_ARGS}}
+
+  registry:check:
+    desc: "Preview what would be published; validate version format and show current → new for each skill"
+    cmds:
+      - task: registry:generate
+      - |
+        count=$(jq 'length' dist/new-versions.json)
+        if [ "$count" -eq 0 ]; then
+          echo "Nothing to publish — all skill versions are already in the index."
+          exit 0
+        fi
+        echo ""
+        echo "$count skill(s) ready to publish:"
+        echo ""
+        jq -r '.[] | "\(.name) \(.version)"' dist/new-versions.json | while IFS=' ' read -r name ver; do
+          latest=$(jq -r --arg n "$name" '.skills[$n].latest // "(new)"' dist/index.json)
+          echo "  $name  $latest → v$ver"
+        done
+        echo ""
+        bad=$(jq -r '.[] | select(.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$") | not) | "  \(.name): \"\(.version)\" is not X.Y.Z"' dist/new-versions.json)
+        if [ -n "$bad" ]; then
+          echo "Invalid version format (expected X.Y.Z):"
+          echo "$bad"
+          exit 1
+        fi
+        echo "All version formats OK."
+
+  registry:sync-index:
+    desc: "Copy dist/index.json → registry/index.json (run after registry:generate; commit the result to bootstrap or repair the index)"
+    cmds:
+      - task: registry:generate
+      - cp dist/index.json registry/index.json
+      - |
+        echo ""
+        echo "registry/index.json updated. Commit it:"
+        echo "  git add registry/index.json"
+        echo "  git commit -m 'chore(registry): sync index'"
 
   registry:lint:
     desc: Lint the generate-registry tool
