@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-05-23T03:41:49Z",
+  "generated_at": "2026-05-23T19:19:40Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -268,6 +268,18 @@
         }
       }
     },
+    "mcp-architect": {
+      "name": "mcp-architect",
+      "description": "MCP (Model Context Protocol) 2025-11-25 server standards — tool/resource/prompt primitives, capability negotiation, Streamable HTTP transport with Mcp-Session-Id, OAuth 2.1 + RFC 8707 resource indicators, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server.",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-05-23T19:19:40Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/mcp-architect@v1.0.0/mcp-architect-v1.0.0.tar.gz"
+        }
+      }
+    },
     "nethttp-architect": {
       "name": "nethttp-architect",
       "description": "Framework-specific delta on rest-api-architect — Go stdlib net/http (Go 1.22+ ServeMux, no router) on Go 1.26. Feature layout, struct-tag validation, RFC 7807 errors, JWT or IdP auth, graceful shutdown, OpenAPI via kin-openapi. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a stdlib net/http service.",
@@ -492,14 +504,19 @@
     },
     "work-report-generator": {
       "name": "work-report-generator",
-      "description": "Generate formal daily work reports from unstructured input. Asks output language once, never infers tasks or hours, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{LOG,REPORT}.md`. Use on \"reporte de trabajo\", \"daily report\", or /work-report.",
+      "description": "Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{LOG,REPORT}.md`. Use on \"reporte de trabajo\", \"daily report\", or /work-report.",
       "personal": true,
-      "latest": "1.0.0",
+      "latest": "1.1.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/work-report-generator@v1.0.0/work-report-generator-v1.0.0.tar.gz"
+        },
+        "1.1.0": {
+          "version": "1.1.0",
+          "published_at": "2026-05-23T19:19:40Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/work-report-generator@v1.1.0/work-report-generator-v1.1.0.tar.gz"
         }
       }
     }
