@@ -109,7 +109,7 @@ src/myapp/userrepo/
 ## 10. Tooling
 
 - **Environment + packaging:** `uv` — replaces `pip`, `pip-tools`, `virtualenv`, `pyenv`. Single binary, fast.
-- **Lint + format:** `ruff` — replaces `black`, `isort`, `flake8`, `pyupgrade`. One config, one tool.
+- **Lint + format:** `ruff` — replaces `black`, `isort`, `flake8`, `pyupgrade`. One config, one tool. Drop-in template: [`assets/ruff.toml`](assets/ruff.toml) — copy to your project root as `ruff.toml` (or fold into `pyproject.toml` under `[tool.ruff]`) and set `known-first-party` to your package name.
 - **Type checking:** `mypy --strict` as the baseline. No `Any`-by-default escape hatches.
 - **Test:** `pytest 9` + `pytest-asyncio` for async paths.
 

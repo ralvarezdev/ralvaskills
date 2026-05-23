@@ -1,0 +1,139 @@
+# python-architect template — ruff config (lint + format).
+#
+# Drop in your project root as `ruff.toml`, or fold these tables into
+# pyproject.toml under [tool.ruff], [tool.ruff.lint], [tool.ruff.format], etc.
+# Replace `your_package` with your actual first-party package name.
+#
+# Pinned to ruff 0.15.x — track via STACK.md and bump in lockstep.
+# Pairs with mypy --strict (see python-architect §10) — ruff handles style
+# and bug-class rules; mypy owns the type system.
+
+target-version = "py314"
+line-length = 100
+src = ["src", "tests"]
+extend-exclude = [".venv", "build", "dist", "migrations/versions"]
+
+[lint]
+# Rule families (https://docs.astral.sh/ruff/rules/)
+select = [
+  "F",      # pyflakes — undefined names, unused imports
+  "E", "W", # pycodestyle errors / warnings
+  "I",      # isort — import ordering
+  "N",      # pep8-naming
+  "UP",     # pyupgrade — modern syntax (python-architect §1)
+  "FA",     # flake8-future-annotations
+  "ANN",    # flake8-annotations — typed signatures (mypy --strict baseline)
+  "ASYNC",  # asyncio anti-patterns (§4)
+  "B",      # flake8-bugbear — incl. B904 exception chaining (§6)
+  "A",      # flake8-builtins — no shadowing
+  "C4",     # flake8-comprehensions
+  "DTZ",    # flake8-datetimez — tz-aware datetimes
+  "G",      # flake8-logging-format
+  "INP",    # flake8-no-pep420 — no implicit namespace packages
+  "ISC",    # flake8-implicit-str-concat
+  "PIE",    # flake8-pie
+  "PT",     # flake8-pytest-style (§6)
+  "PTH",    # flake8-use-pathlib (§8)
+  "PYI",    # flake8-pyi — stub-file quality
+  "RET",    # flake8-return — control-flow simplification
+  "RSE",    # flake8-raise — raise X() not raise X
+  "RUF",    # ruff-specific (e.g. RUF012 mutable class attrs)
+  "S",      # flake8-bandit — security
+  "SIM",    # flake8-simplify
+  "SLF",    # flake8-self — private member access
+  "SLOT",   # flake8-slots — enforce __slots__ on immutable subclasses (§2)
+  "T20",    # flake8-print — no stray print()
+  "TC",     # flake8-type-checking — TYPE_CHECKING guards
+  "TID",    # flake8-tidy-imports
+  "TRY",    # tryceratops — exception anti-patterns
+  "PL",     # pylint subset
+  "PERF",   # perflint
+  "FURB",   # refurb — modernization
+  "D",      # pydocstyle (Google convention, §7)
+  "ERA",    # eradicate — no commented-out code
+]
+
+ignore = [
+  # Formatter conflicts — let `ruff format` own these
+  "E501",   # line too long
+  "ISC001", # single-line implicit concat
+  "COM812", # missing trailing comma
+
+  # Style decisions
+  "D203",   # one-blank-before-class (incompatible with D211)
+  "D213",   # multi-line-summary-second-line (incompatible with D212)
+  "ANN401", # allow `Any` at typed boundaries (e.g. **kwargs: Any)
+  "PLR0913",# too-many-arguments — defer to API design
+  "TRY003", # long messages outside exception class — too noisy in practice
+  "TRY300", # else-after-try-return — often less clear
+]
+
+fixable = ["ALL"]
+unfixable = [
+  "ERA",  # never auto-delete commented-out code
+  "F401", # never auto-strip unused imports
+  "F841", # never auto-strip unused locals
+]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = [
+  "S101",            # asserts are the point in tests
+  "S105", "S106", "S107", # hardcoded creds in fixtures
+  "ANN",             # don't require type hints in tests
+  "D",               # don't require docstrings in tests
+  "PLR2004",         # magic numbers are normal in assertions
+  "SLF001",          # private access is fine when testing internals
+  "INP001",          # tests don't need __init__.py
+]
+"**/conftest.py"   = ["ANN", "D"]
+"**/__init__.py"   = ["F401", "D104"]
+"**/migrations/**" = ["ALL"]
+"scripts/**"       = ["T20", "INP001"]
+
+[lint.isort]
+known-first-party = ["your_package"]
+combine-as-imports = true
+force-sort-within-sections = true
+split-on-trailing-comma = true
+
+[lint.pydocstyle]
+convention = "google"   # python-architect §7
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[lint.flake8-type-checking]
+strict = true
+# Pydantic models are evaluated at runtime — don't move their imports under TYPE_CHECKING.
+runtime-evaluated-base-classes = [
+  "pydantic.BaseModel",
+  "pydantic_settings.BaseSettings",
+]
+
+[lint.flake8-bugbear]
+# FastAPI dependency markers are called at import time but are conceptually immutable defaults.
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Query",
+  "fastapi.Path",
+  "fastapi.Body",
+  "fastapi.Header",
+]
+
+[lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[lint.pylint]
+max-args = 7
+max-branches = 12
+max-returns = 6
+max-statements = 50
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true
+docstring-code-line-length = 80
+skip-magic-trailing-comma = false
