@@ -134,7 +134,8 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── gin-architect/            # ✅ exists (v1.0.0 — Gin 1.12 on Go 1.26)
 │   │   ├── nethttp-architect/        # ✅ exists (v1.0.0 — stdlib net/http + Go 1.22+ enhanced ServeMux)
 │   │   ├── react-architect/          # ✅ exists (v1.0.0 — React 19, TS strict, TanStack Query for server state, zustand when justified)
-│   │   └── nextjs-architect/         # ✅ exists (v1.0.0 — Next 16, App Router only, RSC defaults, server actions, hybrid data access)
+│   │   ├── nextjs-architect/         # ✅ exists (v1.0.0 — Next 16, App Router only, RSC defaults, server actions, hybrid data access)
+│   │   └── hugo-architect/           # ✅ exists (v1.0.0 — Hugo Extended 0.161, Hugo Modules over submodules, Page Bundles, TOML front matter, Hugo Pipes, static-host CDN deploys)
 │   ├── protocols/
 │   │   ├── rest-api-architect/       # ✅ exists (v1.0.0 — snake_case JSON, ISO 8601, RFC 7807 errors, mandatory Idempotency-Key & ETag)
 │   │   ├── grpc-architect/           # ✅ exists (v1.0.0 — vanilla gRPC, status codes, interceptor chain, deadlines, bufconn testing)
@@ -1120,6 +1121,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | `nethttp-architect` | ✅ | v1.0.0 — stdlib `net/http` on Go 1.26 (no router framework). Enhanced ServeMux method patterns, middleware function-wrap chain, RFC 7807, mandatory production timeouts, kin-openapi for spec |
 | `react-architect` | ✅ | v1.0.0 — React 19 with TS strict. Feature-based folders, hooks-first composition, TanStack Query for server state, local state + Context default + zustand when justified, Suspense + ErrorBoundary at every async boundary, Vitest + RTL + Playwright + axe-core. Pairs with `nextjs-architect` for server-side concerns |
 | `nextjs-architect` | ✅ | v1.0.0 — Next.js 16, App Router only. Server components default + explicit `"use client"` boundaries, server actions for mutations, hybrid data access (RSC direct for reads, API routes for writes), streaming Suspense, edge vs node runtime, `next/image`/`next/font`/Metadata APIs, `output: "standalone"` Docker deploys |
+| `hugo-architect` | ✅ | v1.0.0 — Hugo Extended 0.161 (Go-templated SSG). Standard project layout, TOML front matter, template hierarchy (`baseof` → `single`/`list` → partials → shortcodes), **Hugo Modules over git submodules** for themes, **Page Bundles** over flat content, Hugo Pipes asset chain with mandatory fingerprinting, i18n strategies, Goldmark render hooks, static-host CDN deploys (Cloudflare Pages / GitHub Pages / S3+CloudFront). Standalone — not bundled |
 
 #### Protocols
 | Skill | Status | Notes |
