@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/adrg/xdg"
 	"github.com/ralvarezdev/ralvaskills/internal"
 	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/fsx"
@@ -52,7 +53,7 @@ func (*claudeTool) ID() ID { return ClaudeID }
 // SkillsDir returns the canonical path to the Claude Code global skills
 // directory (~/.claude/skills).
 func (*claudeTool) SkillsDir() string {
-	return filepath.Join(internal.ConfigHome(), ClaudeFolderName, skill.SkillsFolderName)
+	return filepath.Join(xdg.Home, ClaudeFolderName, skill.SkillsFolderName)
 }
 
 // SyncPinned writes .rsk/CLAUDE.md atomically with one import line per pinned
