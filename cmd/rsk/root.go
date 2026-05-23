@@ -2,10 +2,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime"
 
+	"github.com/ralvarezdev/ralvaskills/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -52,8 +54,12 @@ Use 'rsk <command> --help' for command-specific help.`,
 }
 
 // Execute runs the root command and exits on error.
+// A user cancellation (Ctrl+C during a prompt) exits 130 silently per SIGINT convention.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
+		if errors.Is(err, ui.ErrAborted) {
+			os.Exit(130)
+		}
 		fmt.Fprintln(os.Stderr, "rsk: "+err.Error())
 		os.Exit(1)
 	}

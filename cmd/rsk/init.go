@@ -1,13 +1,9 @@
 package main
 
 import (
-	"bufio"
-	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
@@ -55,28 +51,27 @@ func runInit(cmd *cobra.Command, force bool) error {
 		ui.Warn(out, fmt.Sprintf("overwriting existing config at %s", cfgPath))
 	}
 
-	r := bufio.NewReader(os.Stdin)
-
 	ui.Header(out, "rsk init")
 	fmt.Fprintln(out)
 
 	// 1. Skill source: local clone or hosted registry.
-	fmt.Fprintln(out, "How do you want to fetch local skills?")
-	fmt.Fprintln(out, "  [1] Local clone  (repo already on disk)")
-	fmt.Fprintln(out, "  [2] Registry     (download from skills.ralvarez.dev)")
-	modeStr, err := prompt(r, out, "Select", "1")
+	modeIdx, err := ui.Select(out, "How do you want to fetch skills?",
+		[]string{
+			"Local clone  (repo already on disk)",
+			"Registry     (download from skills.ralvarez.dev)",
+		}, 0)
 	if err != nil {
 		return err
 	}
 
 	var repoPath, registryURL string
-	if parseIntOrDefault(modeStr, 1) == 2 {
-		registryURL, err = prompt(r, out, "Registry URL", config.DefaultRegistryURL)
+	if modeIdx == 1 {
+		registryURL, err = ui.Ask(out, "Registry URL", config.DefaultRegistryURL)
 		if err != nil {
 			return err
 		}
 	} else {
-		repoPath, err = prompt(r, out, "Path to your local ralvaskills repo clone", "")
+		repoPath, err = ui.Ask(out, "Path to your local ralvaskills repo clone", "")
 		if err != nil {
 			return err
 		}
@@ -92,59 +87,50 @@ func runInit(cmd *cobra.Command, force bool) error {
 		}
 	}
 
-	// 2. AI tool selection
+	// 2. AI tool selection.
 	tools := tool.All()
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, "Which AI tools do you want to support?")
+	toolChoices := make([]string, len(tools))
 	for i, t := range tools {
-		fmt.Fprintf(out, "  [%d] %s  (default: %s)\n", i+1, t.ID(), t.SkillsDir())
+		toolChoices[i] = fmt.Sprintf("%s  (default: %s)", t.ID(), t.SkillsDir())
 	}
-	selStr, err := prompt(r, out, "Select (comma-separated)", "1,2")
+	allIndices := make([]int, len(tools))
+	for i := range tools {
+		allIndices[i] = i
+	}
+	selectedIndices, err := ui.MultiSelect(out, "Which AI tools do you want to support?", toolChoices, allIndices)
 	if err != nil {
 		return err
 	}
-	selected := parseMultiSelect(selStr, len(tools))
-	if len(selected) == 0 {
+	if len(selectedIndices) == 0 {
 		return fmt.Errorf("select at least one AI tool")
 	}
 
-	// 3. Global skills directories
-	globalTargets := make(map[string]string, len(selected))
-	fmt.Fprintln(out)
-	var (
-		dir      string
-		expanded string
-	)
-	for _, idx := range selected {
+	// 3. Global skills directories.
+	globalTargets := make(map[string]string, len(selectedIndices))
+	for _, idx := range selectedIndices {
 		t := tools[idx]
-		dir, err = prompt(r, out, fmt.Sprintf("Global skills dir for %s", t.ID()), t.SkillsDir())
+		dir, err := ui.Ask(out, fmt.Sprintf("Global skills dir for %s", t.ID()), t.SkillsDir())
 		if err != nil {
 			return err
 		}
-		expanded, err = expandPath(dir)
+		expanded, err := expandPath(dir)
 		if err != nil {
 			return fmt.Errorf("invalid path for %s: %w", t.ID(), err)
 		}
 		globalTargets[string(t.ID())] = expanded
 	}
 
-	// 4. Default target scope
-	scopeOptions := make([]string, 0, len(selected)+1)
+	// 4. Default target scope.
+	scopeOptions := make([]string, 0, len(selectedIndices)+1)
 	scopeOptions = append(scopeOptions, cmdx.ForAll)
-	for _, idx := range selected {
+	for _, idx := range selectedIndices {
 		scopeOptions = append(scopeOptions, string(tools[idx].ID()))
 	}
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, "Default scope when --global is passed without --for:")
-	for i, s := range scopeOptions {
-		fmt.Fprintf(out, "  [%d] %s\n", i+1, s)
-	}
-	scopeStr, err := prompt(r, out, "Select", "1")
+	scopeIdx, err := ui.Select(out, "Default scope when --global is passed without --for", scopeOptions, 0)
 	if err != nil {
 		return err
 	}
-	scopeIdx := clampInt(parseIntOrDefault(scopeStr, 1), 1, len(scopeOptions))
-	defaultScope := scopeOptions[scopeIdx-1]
+	defaultScope := scopeOptions[scopeIdx]
 
 	// Build and save config.
 	configDir := config.DefaultConfigFolderPath()
@@ -156,8 +142,7 @@ func runInit(cmd *cobra.Command, force bool) error {
 		OfficialCache:      filepath.Join(configDir, "cache", "anthropic"),
 		VersionsCache:      filepath.Join(configDir, "cache", "versions.json"),
 	}
-	err = config.Save(cfg)
-	if err != nil {
+	if err = config.Save(cfg); err != nil {
 		return fmt.Errorf("save config: %w", err)
 	}
 
@@ -169,58 +154,6 @@ func runInit(cmd *cobra.Command, force bool) error {
 	ui.Indent(out, "rsk new                       # initialize an rsk project in the current directory")
 	ui.Indent(out, "rsk install <name>            # install a bundle or skill (e.g. go-grpc, gin, fastapi)")
 	return nil
-}
-
-// prompt prints a labeled prompt to w and reads a trimmed line from r.
-// If the user presses enter with no input, defaultVal is returned.
-func prompt(r *bufio.Reader, w io.Writer, label, defaultVal string) (string, error) {
-	if defaultVal != "" {
-		fmt.Fprintf(w, "%s [%s]: ", label, defaultVal)
-	} else {
-		fmt.Fprintf(w, "%s: ", label)
-	}
-	line, err := r.ReadString('\n')
-	if err != nil && !errors.Is(err, io.EOF) {
-		return "", fmt.Errorf("read input: %w", err)
-	}
-	line = strings.TrimRight(line, "\r\n")
-	if line == "" {
-		return defaultVal, nil
-	}
-	return line, nil
-}
-
-// parseMultiSelect parses a comma-separated list of 1-based indices into 0-based indices.
-func parseMultiSelect(s string, count int) []int {
-	seen := make(map[int]bool)
-	var out []int
-	for _, part := range strings.Split(s, ",") {
-		n, err := strconv.Atoi(strings.TrimSpace(part))
-		if err != nil || n < 1 || n > count || seen[n] {
-			continue
-		}
-		seen[n] = true
-		out = append(out, n-1)
-	}
-	return out
-}
-
-func clampInt(n, lo, hi int) int {
-	if n < lo {
-		return lo
-	}
-	if n > hi {
-		return hi
-	}
-	return n
-}
-
-func parseIntOrDefault(s string, def int) int {
-	n, err := strconv.Atoi(strings.TrimSpace(s))
-	if err != nil {
-		return def
-	}
-	return n
 }
 
 // expandPath expands a leading ~ to the user home directory.
