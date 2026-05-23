@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
+	"github.com/ralvarezdev/ralvaskills/internal"
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
@@ -67,10 +69,10 @@ func runNew(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("get working directory: %w", err)
 	}
 
-	rskDir, err := manifest.ProjectFolderPath()
-	if err == nil {
-		return fmt.Errorf("rsk project already exists at %s", rskDir)
+	if existing, existErr := manifest.ProjectFolderPath(); existErr == nil {
+		return fmt.Errorf("rsk project already exists at %s", existing)
 	}
+	rskDir := filepath.Join(cwd, internal.ProjectFolderName)
 	skillsDir := manifest.ProjectSkillsPath(rskDir)
 	if err = os.MkdirAll(skillsDir, fsperm.Dir); err != nil {
 		return fmt.Errorf("create .rsk/skills: %w", err)

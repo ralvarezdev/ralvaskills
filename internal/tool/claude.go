@@ -73,7 +73,7 @@ func (*claudeTool) SyncPinned(projectDir string, pinnedNames []string) error {
 // RemovePinned removes the import marker from the project CLAUDE.md.
 // Returns nil if the file does not exist.
 func (*claudeTool) RemovePinned(projectDir string) error {
-	return removeClaudeImport(ProjectClaudeFilePath)
+	return removeClaudeImport(filepath.Join(projectDir, ClaudeFileName))
 }
 
 func writePinnedClaude(rskDir string, pinnedNames []string) error {
