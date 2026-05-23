@@ -21,12 +21,27 @@ var rootCmd = &cobra.Command{
 	Short: "Manage ralvaskills — install, update, and check AI skill bundles.",
 	Long: `rsk manages your local and official AI skills for Claude Code and OpenCode.
 
-  rsk init              Set up rsk for this machine
-  rsk install <bundle>  Install a bundle or skill
-  rsk update            Pull the latest skills
-  rsk status            Show installed skills and version drift
-  rsk list              Browse the skill catalog
-  rsk uninstall         Remove installed skills
+Machine setup:
+  rsk init                       Set up rsk for this machine
+
+Project lifecycle:
+  rsk new                        Initialize an rsk project in this directory
+  rsk destroy                    Remove .rsk/ and clean up tool configs
+
+Install / uninstall / update (use --global for system-wide):
+  rsk install                    Install everything tracked in rsk.mod
+  rsk install <name>             Install bundles or skills by name
+  rsk uninstall <name>           Remove installed bundles or skills
+  rsk update [name]              Pull latest and re-link
+
+Project pinning (auto-import into each tool's project config):
+  rsk pin <name>                 Pin an installed skill
+  rsk unpin <name>               Unpin a skill
+
+Read-only views:
+  rsk list                       Show installed skills (project / --global)
+  rsk catalog                    Browse available skills and bundles
+  rsk status                     Combined view across project + global
 
 Use 'rsk <command> --help' for command-specific help.`,
 	SilenceUsage:  true,

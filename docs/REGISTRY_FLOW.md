@@ -17,7 +17,7 @@ You commit and push to `main`.
 
 ## 2. CI detects the push
 
-`.github/workflows/publish-registry.yml` triggers because `skills/**` changed.
+`.github/workflows/publish-registry.yml` triggers when paths under `skills/**`, `cmd/generate-registry/**`, or `internal/**` change on `main`.
 
 ---
 
@@ -25,15 +25,17 @@ You commit and push to `main`.
 
 ```
 go run ./cmd/generate-registry \
+  --skills-dir skills \
+  --output-dir dist \
   --existing-index registry/index.json \
   --github-repo ralvarezdev/ralvaskills
 ```
 
 The script:
-- Walks `skills/`, reads every `SKILL.md` version
+- Walks `skills/`, reads each `SKILL.md` frontmatter (`version`, `description`) and flags any skill under `personal/` as personal
 - Compares against `registry/index.json`
 - Finds `go-architect` bumped from `1.0.0` → `1.1.0`
-- Creates `dist/go-architect-v1.1.0.tar.gz`
+- Creates `dist/go-architect-v1.1.0.tar.gz` (entries rooted at `go-architect/`)
 - Writes `dist/new-versions.json`: `[{name: "go-architect", version: "1.1.0", archive: "go-architect-v1.1.0.tar.gz"}]`
 - Writes `dist/index.json` with the new version entry and `archive_url` pointing at GitHub Releases
 
@@ -41,18 +43,19 @@ The script:
 
 ## 4. CI publishes
 
-Three things happen in sequence:
+A `Check for new versions` step counts entries in `dist/new-versions.json` and exports `count`. The three publish steps below are all gated on `count != '0'` — if no skill bumped its version, the job is a no-op:
 
 ```
 GitHub Releases                           ← PRIMARY
-  tag:   go-architect@v1.1.0
-  asset: go-architect-v1.1.0.tar.gz
+  gh release create go-architect@v1.1.0 dist/go-architect-v1.1.0.tar.gz
+  (already-existing tags are skipped, not failed)
 
 R2 private bucket                         ← BACKUP
-  s3://ralvaskills/go-architect/v1.1.0.tar.gz
+  aws s3 cp dist/go-architect-v1.1.0.tar.gz
+            s3://ralvaskills/go-architect/v1.1.0.tar.gz
 
 git commit registry/index.json [skip ci]  ← INDEX UPDATE
-  pushed back to main
+  cp dist/index.json registry/index.json && git push
 ```
 
 ---
@@ -71,35 +74,49 @@ Within ~30 seconds of the push. No deploy step needed.
 
 ## 6. User runs `rsk install go-architect`
 
+Registry mode (no `repo_path` configured). `<cache>` below resolves to `<dirname(official_cache)>/registry/` — i.e. the registry cache sits next to the official cache configured at `rsk init`.
+
 ```
-rsk
+rsk install go-architect
  │
  ├── load config (~/.config/rsk/config.json)
- │     registry_url: https://skills.ralvarez.dev
+ │     registry_url:   https://skills.ralvarez.dev
+ │     official_cache: ~/.cache/rsk/official    (example)
+ │     → registry cache: ~/.cache/rsk/registry/
  │
  ├── GET https://skills.ralvarez.dev/index.json
  │     → finds go-architect, latest: 1.1.0
  │     → archive_url: https://github.com/.../releases/download/
  │                    go-architect%40v1.1.0/go-architect-v1.1.0.tar.gz
  │
- ├── check cache: ~/.ralvaskills/cache/registry/go-architect/1.1.0/
+ ├── check cache: <cache>/go-architect/1.1.0/
  │     → not found, download needed
  │
  ├── GET archive_url
  │     → downloads go-architect-v1.1.0.tar.gz from GitHub Releases
  │
- ├── extract tarball → ~/.ralvaskills/cache/registry/go-architect/1.1.0/
+ ├── extract tarball → <cache>/go-architect/1.1.0/
  │     SKILL.md
- │     STACK.md
- │     RECIPES.md
+ │     (plus any other files the skill ships)
  │
- └── symlink ./.claude/skills/go-architect
-       → ~/.ralvaskills/cache/registry/go-architect/1.1.0/
+ ├── symlink ./.rsk/skills/go-architect  → <cache>/go-architect/1.1.0/
+ │     (or the configured global dir(s) when --global is passed,
+ │      e.g. ~/.claude/skills/, ~/.config/opencode/skills/)
+ │
+ └── update project manifest (project installs only)
+       .rsk/rsk.mod   ← add  go-architect = "*"
+       .rsk/rsk.lock  ← record name, version, source, path
 ```
 
 ---
 
 ## 7. User runs `rsk update`
+
+Two modes, picked by config:
+
+**Local-repo mode** (`repo_path` set): runs `git pull` in the local clone; symlinks pick up the new files automatically. `--official` also refreshes the `anthropics/skills` clone under `official_cache`.
+
+**Registry mode** (`registry_url` set):
 
 ```
 rsk update
@@ -107,14 +124,14 @@ rsk update
  ├── GET https://skills.ralvarez.dev/index.json
  │     → go-architect latest: 1.1.0
  │
- ├── scan symlinks in target dirs
- │     .claude/skills/go-architect → .../1.0.0/   ← outdated
+ ├── scan symlinks in target dirs (project .rsk/skills/, or --global dirs)
+ │     .rsk/skills/go-architect → <cache>/go-architect/1.0.0/   ← outdated
  │
  ├── download go-architect-v1.1.0.tar.gz
- │     extract → ~/.ralvaskills/cache/registry/go-architect/1.1.0/
+ │     extract → <cache>/go-architect/1.1.0/
  │
- └── re-link .claude/skills/go-architect
-       → ~/.ralvaskills/cache/registry/go-architect/1.1.0/
+ └── re-link .rsk/skills/go-architect
+       → <cache>/go-architect/1.1.0/
 ```
 
 ---
@@ -140,4 +157,5 @@ R2 bucket (private)
 | `registry/index.json` | Version catalog | CI (git commit) | GitHub Pages → `rsk` |
 | GitHub Releases | Versioned tarballs | CI (`gh release create`) | `rsk` |
 | R2 private | Tarball backup | CI (`aws s3 cp`) | Nobody (recovery only) |
-| `~/.ralvaskills/cache/registry/` | Extracted skills | `rsk install` | Symlinks |
+| `<dirname(official_cache)>/registry/<name>/<version>/` | Extracted skills | `rsk install` (registry mode) | Symlinks |
+| `.rsk/rsk.mod`, `.rsk/rsk.lock` | Project skill manifest + lock | `rsk install` (project) | `rsk install`, `rsk status` |

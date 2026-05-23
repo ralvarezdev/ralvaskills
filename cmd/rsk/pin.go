@@ -1,0 +1,109 @@
+package main
+
+import (
+	"fmt"
+	"slices"
+
+	"github.com/ralvarezdev/ralvaskills/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/internal/ui"
+	"github.com/spf13/cobra"
+)
+
+var (
+	pinCmd = &cobra.Command{
+		Use:   "pin <name>",
+		Short: "Pin a skill so it is imported into each tool's project config.",
+		Long: `Pin a skill that is already tracked in rsk.mod. Pinning imports the skill
+into every configured tool's project config (.rsk/CLAUDE.md for Claude Code,
+opencode.json for OpenCode) so it is auto-loaded by agents in this project.
+
+The skill must already be in rsk.mod — run 'rsk install <name>' first.`,
+		Args: cobra.ExactArgs(1),
+		RunE: runPin,
+	}
+
+	unpinCmd = &cobra.Command{
+		Use:   "unpin <name>",
+		Short: "Remove a skill from the pinned list.",
+		Long: `Remove a skill from the pinned list. The skill stays installed (still
+symlinked into .rsk/skills/) but is no longer auto-imported into each tool's
+project config.`,
+		Args: cobra.ExactArgs(1),
+		RunE: runUnpin,
+	}
+)
+
+func init() {
+	rootCmd.AddCommand(pinCmd)
+	rootCmd.AddCommand(unpinCmd)
+}
+
+func runPin(cmd *cobra.Command, args []string) error {
+	out := cmd.OutOrStdout()
+	name := args[0]
+
+	rskDir, err := manifest.ProjectFolderPath()
+	if err != nil {
+		return err
+	}
+
+	m, err := manifest.ReadMod(rskDir)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := m.Skills[name]; !ok {
+		return fmt.Errorf("skill %q is not in the manifest — run 'rsk install %s' first", name, name)
+	}
+
+	if slices.Contains(m.Pinned, name) {
+		ui.Info(out, fmt.Sprintf("%s is already pinned", name))
+		return nil
+	}
+
+	m.Pinned = append(m.Pinned, name)
+	if err = manifest.WriteMod(rskDir, m); err != nil {
+		return err
+	}
+	if err = syncPinnedAllTools(rskDir, m); err != nil {
+		return err
+	}
+
+	fmt.Fprintln(out)
+	ui.Success(out, fmt.Sprintf("pinned %s", ui.SkillName(name)))
+	fmt.Fprintln(out)
+	return nil
+}
+
+func runUnpin(cmd *cobra.Command, args []string) error {
+	out := cmd.OutOrStdout()
+	name := args[0]
+
+	rskDir, err := manifest.ProjectFolderPath()
+	if err != nil {
+		return err
+	}
+
+	m, err := manifest.ReadMod(rskDir)
+	if err != nil {
+		return err
+	}
+
+	if !slices.Contains(m.Pinned, name) {
+		ui.Info(out, fmt.Sprintf("%s is not pinned", name))
+		return nil
+	}
+
+	m.Pinned = slices.DeleteFunc(m.Pinned, func(v string) bool { return v == name })
+	if err = manifest.WriteMod(rskDir, m); err != nil {
+		return err
+	}
+	if err = syncPinnedAllTools(rskDir, m); err != nil {
+		return err
+	}
+
+	fmt.Fprintln(out)
+	ui.Success(out, fmt.Sprintf("unpinned %s", ui.SkillName(name)))
+	fmt.Fprintln(out)
+	return nil
+}

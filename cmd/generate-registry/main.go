@@ -82,15 +82,18 @@ func walkSkills(root string) ([]skillInfo, error) {
 		if err != nil || !d.IsDir() {
 			return err
 		}
+
 		skillMD := filepath.Join(path, skill.SkillFileName)
 		if _, statErr := os.Stat(skillMD); os.IsNotExist(statErr) {
 			return nil
 		}
+
 		version, description, parseErr := readFrontmatter(skillMD)
 		if parseErr != nil {
 			fmt.Fprintf(os.Stderr, "warn: skip %s — %v\n", path, parseErr)
 			return fs.SkipDir
 		}
+
 		rel, relErr := filepath.Rel(root, path)
 		if relErr != nil {
 			rel = path

@@ -2,21 +2,20 @@ package cmdx
 
 // Flag name constants used when registering and reading cobra flags.
 const (
-	FlagGlobal    = "global"
-	FlagDryRun    = "dry-run"
-	FlagFor       = "for"
-	FlagPersonal  = "personal"
-	FlagSkill     = "skill"
-	FlagVersion   = "version"
-	FlagSource    = "source"
-	FlagOutput    = "output"
-	FlagBundle    = "bundle"
-	FlagInstalled = "installed"
-	FlagStack     = "stack"
-	FlagRefresh   = "refresh"
-	FlagOfficial  = "official"
-	FlagPin       = "pin"
-	FlagForce     = "force"
+	FlagGlobal   = "global"
+	FlagDryRun   = "dry-run"
+	FlagFor      = "for"
+	FlagPersonal = "personal"
+	FlagVersion  = "version"
+	FlagSource   = "source"
+	FlagOutput   = "output"
+	FlagBundle   = "bundle"
+	FlagBundles  = "bundles"
+	FlagStack    = "stack"
+	FlagRefresh  = "refresh"
+	FlagOfficial = "official"
+	FlagPin      = "pin"
+	FlagForce    = "force"
 )
 
 // TargetScope is the typed value of the --for flag and the

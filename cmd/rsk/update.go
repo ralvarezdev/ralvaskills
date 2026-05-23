@@ -8,6 +8,7 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	rskgit "github.com/ralvarezdev/ralvaskills/internal/git"
+	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
@@ -20,24 +21,29 @@ const officialSkillsURL = "https://github.com/anthropics/skills"
 
 type updateOpts struct {
 	global, dryRun, personal, official bool
-	forTool, skill                     string
+	forTool                            string
 }
 
 var updateCmd = &cobra.Command{
-	Use:   "update [bundle...] [flags]",
-	Short: "Pull the latest skills and re-symlink.",
-	Long: `Update installed skills to their latest versions.
+	Use:   "update [name...] [flags]",
+	Short: "Pull the latest skills and re-link.",
+	Long: `Update installed bundles or skills to their latest versions.
 
-In local-repo mode: runs git pull on the ralvaskills clone (symlinks update automatically).
-In registry mode: fetches the latest index and re-downloads any skills with new versions.
+In local-repo mode: runs git pull on the ralvaskills clone (symlinks update
+automatically). In registry mode: fetches the latest index and re-downloads any
+skills with new versions.
+
+Names are resolved against the catalog: a name that matches a bundle expands
+to that bundle's skills; otherwise it's treated as a single skill.
 
 Use --official to also refresh the anthropics/skills cache.
 
 Examples:
-  rsk update
-  rsk update --official
-  rsk update docs
-  rsk update --skill grpc-architect`,
+  rsk update                       # local mode: git pull the local clone
+  rsk update --official            # also refresh the anthropics/skills cache
+  rsk update grpc-architect        # update one skill
+  rsk update docs                  # update everything in the docs bundle
+  rsk update go-grpc --global`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runUpdate(cmd, updateOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
@@ -45,7 +51,6 @@ Examples:
 			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
 			official: cmdx.Bool(cmd, cmdx.FlagOfficial),
 			forTool:  cmdx.String(cmd, cmdx.FlagFor),
-			skill:    cmdx.String(cmd, cmdx.FlagSkill),
 		}, args)
 	},
 }
@@ -53,17 +58,16 @@ Examples:
 func init() {
 	rootCmd.AddCommand(updateCmd)
 	f := updateCmd.Flags()
-	f.Bool(cmdx.FlagGlobal, false, "Target global skills dir(s)")
-	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
-	f.String(cmdx.FlagSkill, "", "Update a single skill by name")
+	f.Bool(cmdx.FlagGlobal, false, "Target the configured global skills dir(s)")
+	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
 	f.Bool(cmdx.FlagOfficial, false, "Also re-fetch the anthropics/skills cache")
 	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in update")
 	f.Bool(cmdx.FlagDryRun, false, "Show what would change without applying it")
 }
 
 func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {
-	if opts.skill != "" && len(args) > 0 {
-		return fmt.Errorf("use either positional bundle names or --skill <name>, not both")
+	if !opts.global && opts.forTool != "" {
+		return fmt.Errorf("--for requires --global")
 	}
 
 	cfg, err := config.Load()
@@ -83,12 +87,12 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 	ctx := cmd.Context()
 
 	needsOfficial := opts.official
-	if !needsOfficial && (len(args) > 0 || opts.skill != "") {
+	if !needsOfficial && len(args) > 0 {
 		catalog, catalogWarn := config.LoadCatalog("")
 		if catalogWarn != nil {
 			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
 		}
-		names, namesErr := skillNamesFromArgs(args, opts.skill, catalog)
+		names, namesErr := skillNamesFromArgs(args, catalog)
 		if namesErr != nil {
 			return namesErr
 		}
@@ -137,10 +141,61 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 		}
 	}
 
+	// If we're in a project and arg-targeted, also bump rsk.lock entries.
+	if !opts.global && len(args) > 0 {
+		if err := bumpLockEntries(cmd, args, cfg); err != nil {
+			ui.Warn(out, fmt.Sprintf("update rsk.lock: %v", err))
+		}
+	}
+
 	fmt.Fprintln(out)
 	ui.Success(out, "Update complete.")
 	ui.Info(out, "  Run 'rsk status' to see installed skill versions.")
 	return nil
+}
+
+// bumpLockEntries re-resolves each named skill (expanding bundle args) and
+// updates the project's rsk.lock entries. Used after a local-repo pull.
+func bumpLockEntries(cmd *cobra.Command, args []string, cfg config.Config) error {
+	ctx := cmd.Context()
+
+	rskDir, err := manifest.ProjectFolderPath()
+	if err != nil {
+		return err
+	}
+	catalog, catalogWarn := config.LoadCatalog("")
+	if catalogWarn != nil {
+		ui.Warn(cmd.OutOrStdout(), fmt.Sprintf("user catalog: %v", catalogWarn))
+	}
+	names, err := skillNamesFromArgs(args, catalog)
+	if err != nil {
+		return err
+	}
+
+	localSrc := newLocalSource(cfg)
+	officialSrc := source.NewOfficial(cfg.OfficialCache)
+
+	lock, err := manifest.ReadLock(rskDir)
+	if err != nil {
+		return err
+	}
+	skillsDir := manifest.ProjectSkillsPath(rskDir)
+	for _, name := range names {
+		s, findErr := findSkillByName(ctx, name, localSrc, officialSrc)
+		if findErr != nil {
+			continue
+		}
+		if linkErr := skill.Link(s, skillsDir); linkErr != nil {
+			return linkErr
+		}
+		lock = manifest.UpsertLockEntry(lock, manifest.LockEntry{
+			Name:    s.Name,
+			Version: s.Version,
+			Source:  s.Source,
+			Path:    s.Path,
+		})
+	}
+	return manifest.WriteLock(rskDir, lock)
 }
 
 // refreshOfficialCache clones or pulls the official anthropics/skills cache.
@@ -177,7 +232,6 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 
 	reg := source.NewRegistry(cfg.RegistryURL, cfg.RegistryCache())
 
-	// Fetch the registry index to find latest versions.
 	ui.Info(out, fmt.Sprintf("Fetching index from %s …", cfg.RegistryURL))
 	index, err := reg.Index(ctx)
 	if err != nil {
@@ -186,12 +240,12 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 
 	// Determine which skill names to check (all installed, or just the args).
 	var namesToCheck []string
-	if opts.skill != "" || len(args) > 0 {
+	if len(args) > 0 {
 		catalog, catalogWarn := config.LoadCatalog("")
 		if catalogWarn != nil {
 			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
 		}
-		namesToCheck, err = skillNamesFromArgs(args, opts.skill, catalog)
+		namesToCheck, err = skillNamesFromArgs(args, catalog)
 		if err != nil {
 			return err
 		}

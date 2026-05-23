@@ -69,16 +69,21 @@ Go to **GitHub → `ralvarezdev/ralvaskills` → Settings → Secrets and variab
 
 ## 5. Trigger the First Publish
 
-Push any change to `skills/**` or trigger the workflow manually:
+The workflow triggers on pushes to `main` that touch any of:
 
-**GitHub → Actions → Publish Registry → Run workflow**
+- `skills/**`
+- `cmd/generate-registry/**`
+- `internal/**`
+
+There is no `workflow_dispatch` trigger, so the "Run workflow" button won't appear in the Actions UI. To trigger the first publish, push a small change under one of those paths (e.g. bump a skill's `version:` or touch `skills/.keep`).
 
 The first run will:
 1. Read `registry/index.json` from the repo (starts empty)
 2. Create tarballs for every skill at its current version
-3. Create one GitHub Release per skill (e.g. `go-architect@v1.0.0`)
-4. Back up each tarball to the private R2 bucket
-5. Commit an updated `registry/index.json` back to `main`
+3. Count entries in `dist/new-versions.json` — if zero, the publish steps are skipped
+4. Create one GitHub Release per skill (e.g. `go-architect@v1.0.0`); already-existing tags are skipped, not failed
+5. Back up each tarball to the private R2 bucket
+6. Commit an updated `registry/index.json` back to `main` with `[skip ci]`
 
 Subsequent runs only publish skills whose `version:` field changed.
 

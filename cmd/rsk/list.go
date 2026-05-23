@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,46 +9,50 @@ import (
 
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
+	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
-	"github.com/ralvarezdev/ralvaskills/internal/source"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 	"github.com/spf13/cobra"
 )
 
-type outputFormat string
+type (
+	listOpts struct {
+		global  bool
+		forTool string
+		output  outputFormat
+	}
 
-const (
-	outputText outputFormat = "text"
-	outputJSON outputFormat = "json"
+	// listedSkill is one row in the list output — used for both project-manifest
+	// and global views and serialized as JSON when -o json is set.
+	listedSkill struct {
+		Name      string `json:"name"`
+		Version   string `json:"version,omitempty"`
+		Source    string `json:"source,omitempty"`
+		Installed bool   `json:"installed"`
+		Pinned    bool   `json:"pinned,omitempty"`
+		Path      string `json:"path,omitempty"`
+	}
 )
-
-func (o outputFormat) valid() bool { return o == outputText || o == outputJSON }
-
-type listOpts struct {
-	installed, personal bool
-	bundle, source      string
-	output              outputFormat
-}
 
 var listCmd = &cobra.Command{
 	Use:   "list [flags]",
-	Short: "Browse the skill catalog.",
-	Long: `List all available skills and bundles.
+	Short: "Show installed skills.",
+	Long: `List installed skills.
+
+Without --global, shows the skills tracked in the current project's rsk.mod
+(with install + pin marks). With --global, shows skills symlinked into the
+configured global skills directories.
 
 Examples:
-  rsk list
-  rsk list --bundle go-grpc
-  rsk list --source local
-  rsk list --installed
-  rsk list --personal
+  rsk list                              # project manifest contents
+  rsk list --global                     # globally installed skills (all tools)
+  rsk list --global --for claude-code   # one tool's global skills
   rsk list -o json`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		return runList(cmd, listOpts{
-			installed: cmdx.Bool(cmd, cmdx.FlagInstalled),
-			personal:  cmdx.Bool(cmd, cmdx.FlagPersonal),
-			bundle:    cmdx.String(cmd, cmdx.FlagBundle),
-			source:    cmdx.String(cmd, cmdx.FlagSource),
-			output:    outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
+			global:  cmdx.Bool(cmd, cmdx.FlagGlobal),
+			forTool: cmdx.String(cmd, cmdx.FlagFor),
+			output:  outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
 		})
 	},
 }
@@ -56,151 +60,162 @@ Examples:
 func init() {
 	rootCmd.AddCommand(listCmd)
 	f := listCmd.Flags()
-	f.String(cmdx.FlagBundle, "", "Show skills in a specific bundle")
-	f.String(cmdx.FlagSource, "", "Filter by source: local | official")
-	f.Bool(cmdx.FlagInstalled, false, "Show only installed skills")
-	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in listing")
+	f.Bool(cmdx.FlagGlobal, false, "List globally installed skills instead of the project manifest")
+	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
 	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text | json")
 }
 
 func runList(cmd *cobra.Command, opts listOpts) error {
-	out := cmd.OutOrStdout()
-	ctx := cmd.Context()
-
-	if opts.source != "" && opts.source != skill.SourceLocal.String() && opts.source != skill.SourceOfficial.String() {
-		return fmt.Errorf("--source must be '%s' or '%s'", skill.SourceLocal, skill.SourceOfficial)
-	}
 	if !opts.output.valid() {
 		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
 	}
+	if !opts.global && opts.forTool != "" {
+		return fmt.Errorf("--for requires --global")
+	}
+	if opts.global {
+		return runListGlobal(cmd, opts)
+	}
+	return runListProject(cmd, opts)
+}
+
+func runListProject(cmd *cobra.Command, opts listOpts) error {
+	out := cmd.OutOrStdout()
+
+	rskDir, err := manifest.ProjectFolderPath()
+	if err != nil {
+		return err
+	}
+
+	m, err := manifest.ReadMod(rskDir)
+	if err != nil {
+		return err
+	}
+
+	skillsDir := manifest.ProjectSkillsPath(rskDir)
+	pinnedSet := make(map[string]bool, len(m.Pinned))
+	for _, p := range m.Pinned {
+		pinnedSet[p] = true
+	}
+
+	names := make([]string, 0, len(m.Skills))
+	for n := range m.Skills {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+
+	rows := make([]listedSkill, 0, len(names))
+	for _, name := range names {
+		rows = append(rows, listedSkill{
+			Name:      name,
+			Version:   m.Skills[name],
+			Installed: skill.IsLinked(name, skillsDir),
+			Pinned:    pinnedSet[name],
+		})
+	}
+
+	if len(rows) == 0 {
+		fmt.Fprintln(out)
+		ui.Warn(out, "No skills in manifest. Run 'rsk install <name>' to add one.")
+		fmt.Fprintln(out)
+		return nil
+	}
+
+	if opts.output == outputJSON {
+		return writeJSON(out, rows)
+	}
+
+	fmt.Fprintln(out)
+	ui.Header(out, "Project skills:")
+	printProjectListTable(out, rows)
+	fmt.Fprintln(out)
+	return nil
+}
+
+func printProjectListTable(out io.Writer, rows []listedSkill) {
+	names := make([]string, len(rows))
+	for i, r := range rows {
+		names[i] = r.Name
+	}
+	nameWidth := ui.MaxWidth(names)
+
+	for _, r := range rows {
+		mark := ui.SuccessMark
+		if !r.Installed {
+			mark = ui.ErrorMark
+		}
+		pinnedTag := ""
+		if r.Pinned {
+			pinnedTag = "  [pinned]"
+		}
+		fmt.Fprintf(out, "  %s  %s  %s%s\n",
+			mark,
+			ui.PadRight(ui.SkillName(r.Name), nameWidth),
+			ui.SkillVersion(r.Version),
+			pinnedTag,
+		)
+	}
+}
+
+func runListGlobal(cmd *cobra.Command, opts listOpts) error {
+	out := cmd.OutOrStdout()
 
 	cfg, err := config.Load()
 	if err != nil {
 		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
 	}
 
-	localSrc := newLocalSource(cfg)
-	officialSrc := source.NewOfficial(cfg.OfficialCache)
+	targets, err := resolveTargetDirs(cfg, true, opts.forTool)
+	if err != nil {
+		return err
+	}
 
-	var all []skill.Skill
-
-	if opts.source == "" || opts.source == skill.SourceLocal.String() {
-		local, walkErr := localSrc.All(ctx)
-		if walkErr != nil {
-			ui.Warn(out, fmt.Sprintf("walk local skills: %v", walkErr))
-		} else {
-			all = append(all, local...)
+	var rows []listedSkill
+	for _, target := range targets {
+		entries, scanErr := scanLinked(target, cfg.RepoPath, cfg.OfficialCache, cfg.RegistryCache(), nil, false)
+		if scanErr != nil && !errors.Is(scanErr, os.ErrNotExist) {
+			ui.Warn(out, fmt.Sprintf("scan %s: %v", target, scanErr))
+			continue
+		}
+		for _, e := range entries {
+			rows = append(rows, listedSkill{
+				Name:      e.name,
+				Version:   e.version,
+				Source:    e.source.String(),
+				Installed: true,
+			})
 		}
 	}
 
-	if opts.source == "" || opts.source == skill.SourceOfficial.String() {
-		official, walkErr := officialSrc.All(ctx)
-		if walkErr != nil {
-			if !os.IsNotExist(walkErr) {
-				ui.Warn(out, fmt.Sprintf("walk official skills: %v", walkErr))
-			}
-		} else {
-			all = append(all, official...)
-		}
-	}
-
-	// --bundle filter: keep only skills that appear in that bundle.
-	if opts.bundle != "" {
-		catalog, catalogWarn := config.LoadCatalog("")
-		if catalogWarn != nil {
-			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
-		}
-		bundle, ok := config.FindBundle(catalog, opts.bundle)
-		if !ok {
-			return fmt.Errorf("bundle %q not found — run 'rsk list' to see all bundles", opts.bundle)
-		}
-		want := make(map[string]bool, len(bundle.Skills))
-		for _, ref := range bundle.Skills {
-			want[ref.Name] = true
-		}
-		all = filterSkills(all, func(s skill.Skill) bool { return want[s.Name] })
-	}
-
-	// --personal filter: drop personal skills unless opted in.
-	if !opts.personal {
-		all = filterSkills(all, func(s skill.Skill) bool { return !s.IsPersonal })
-	}
-
-	// --installed filter: keep only skills linked in any configured target dir.
-	if opts.installed {
-		targets := allTargetDirs(cfg)
-		all = filterSkills(all, func(s skill.Skill) bool {
-			for _, t := range targets {
-				if skill.IsLinked(s.Name, t) {
-					return true
-				}
-			}
-			return false
-		})
-	}
-
-	// Stable sort: official before local, then alphabetical within each.
-	sort.Slice(all, func(i, j int) bool {
-		if all[i].Source != all[j].Source {
-			return all[i].Source < all[j].Source
-		}
-		return all[i].Name < all[j].Name
-	})
-
-	if len(all) == 0 {
-		ui.Info(out, "No skills found.")
+	if len(rows) == 0 {
+		ui.Info(out, "No global skills installed.")
 		return nil
 	}
 
-	if opts.output == outputJSON {
-		return writeJSON(out, skillsToEntries(all))
-	}
-	return printListTable(out, all)
-}
+	sort.Slice(rows, func(i, j int) bool { return rows[i].Name < rows[j].Name })
 
-func printListTable(out io.Writer, skills []skill.Skill) error {
-	names := make([]string, len(skills))
-	for i, s := range skills {
-		names[i] = s.Name
+	if opts.output == outputJSON {
+		return writeJSON(out, rows)
 	}
-	nameWidth := ui.MaxWidth(names)
 
 	fmt.Fprintln(out)
-	for _, s := range skills {
-		fmt.Fprintf(out, "  %s  %s  %s\n",
-			ui.SourceLabel(s.Source),
-			ui.PadRight(ui.SkillName(s.Name), nameWidth),
-			ui.SkillVersion(s.Version),
-		)
-	}
+	ui.Header(out, "Global skills:")
+	printGlobalListTable(out, rows)
 	fmt.Fprintln(out)
 	return nil
 }
 
-type skillEntry struct {
-	Name     string `json:"name"`
-	Version  string `json:"version"`
-	Source   string `json:"source"`
-	Personal bool   `json:"personal,omitempty"`
-	Path     string `json:"path"`
-}
-
-func skillsToEntries(skills []skill.Skill) []skillEntry {
-	out := make([]skillEntry, len(skills))
-	for i, s := range skills {
-		out[i] = skillEntry{
-			Name:     s.Name,
-			Version:  s.Version,
-			Source:   s.Source.String(),
-			Personal: s.IsPersonal,
-			Path:     s.Path,
-		}
+func printGlobalListTable(out io.Writer, rows []listedSkill) {
+	names := make([]string, len(rows))
+	for i, r := range rows {
+		names[i] = r.Name
 	}
-	return out
-}
+	nameWidth := ui.MaxWidth(names)
 
-func writeJSON(w io.Writer, v any) error {
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(v)
+	for _, r := range rows {
+		fmt.Fprintf(out, "  %s  %s  %s\n",
+			ui.SourceLabel(skill.Source(r.Source)),
+			ui.PadRight(ui.SkillName(r.Name), nameWidth),
+			ui.SkillVersion(r.Version),
+		)
+	}
 }

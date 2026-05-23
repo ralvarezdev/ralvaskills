@@ -35,7 +35,11 @@ func NewOfficial(cacheDir string) *Official {
 }
 
 // All walks the official cache and returns every discovered skill.
+// Returns an empty slice without error if the cache has not been fetched yet.
 func (o *Official) All(ctx context.Context) ([]skill.Skill, error) {
+	if _, err := os.Stat(o.fs.root); os.IsNotExist(err) {
+		return nil, nil
+	}
 	return o.fs.all(ctx)
 }
 

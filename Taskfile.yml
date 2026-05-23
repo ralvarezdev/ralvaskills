@@ -7,7 +7,7 @@ tasks:
     cmds:
       - task --list
 
-  # ── CLI (rsk) ──────────────────────────────────────────────────────────────
+  # CLI (rsk)
 
   cli:build:
     desc: Build the rsk CLI binary to bin/rsk
@@ -35,7 +35,7 @@ tasks:
     cmds:
       - golangci-lint fmt --config .golangci.yml ./cmd/rsk/... ./internal/...
 
-  # ── cmd/count-tokens ──────────────────────────────────────────────────────
+  # cmd/count-tokens
 
   tokens:
     desc: Re-generate docs/TOKEN_COUNTS.md with latest SKILL.md byte/token estimates
@@ -57,7 +57,7 @@ tasks:
     cmds:
       - golangci-lint fmt --config .golangci.yml ./cmd/count-tokens/...
 
-  # ── cmd/generate-registry ─────────────────────────────────────────────────
+  # cmd/generate-registry
 
   registry:generate:
     desc: "Build registry tarballs and updated index.json into dist/ (merges against registry/index.json)"
@@ -86,7 +86,7 @@ tasks:
     cmds:
       - rm -rf dist
 
-  # ── aggregate ─────────────────────────────────────────────────────────────
+  # aggregate
 
   lint:
     desc: Lint everything

@@ -41,7 +41,7 @@ jobs:
           count=$(jq 'length' dist/new-versions.json)
           echo "count=$count" >> "$GITHUB_OUTPUT"
 
-      # ── Primary: GitHub Releases ─────────────────────────────────────────
+      # Primary: GitHub Releases
 
       - name: Create GitHub releases
         if: steps.check.outputs.count != '0'
@@ -61,7 +61,7 @@ jobs:
               || echo "Release $tag already exists — skipped."
           done
 
-      # ── Backup: private R2 ───────────────────────────────────────────────
+      # Backup: private R2
 
       - name: Back up tarballs to R2
         if: steps.check.outputs.count != '0'
@@ -81,7 +81,7 @@ jobs:
               --content-type application/gzip
           done
 
-      # ── Commit updated index back to main ────────────────────────────────
+      # Commit updated index back to main
 
       - name: Commit updated index
         if: steps.check.outputs.count != '0'

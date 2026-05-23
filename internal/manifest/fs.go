@@ -54,7 +54,7 @@ func ProjectFolderPath() (string, error) {
 
 	rskDir := filepath.Join(cwd, ProjectFolderName)
 	if _, statErr := os.Stat(ModPath(rskDir)); os.IsNotExist(statErr) {
-		return "", fmt.Errorf("no rsk.mod found — run 'rsk project init' first")
+		return "", fmt.Errorf("no rsk.mod found — run 'rsk new' first")
 	}
 	return rskDir, nil
 }

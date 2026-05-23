@@ -538,7 +538,7 @@ func render(skills []skill, bundles []bundle) string {
 	if len(unbundledSkills) > 0 {
 		buf.WriteString("## Personal / unbundled skills\n\n")
 		buf.WriteString("These skills are not part of any bundle. " +
-			"They are installed individually with `rsk install --skill <name> --personal` " +
+			"They are installed individually with `rsk install <name> --personal` " +
 			"and their desc tokens are only paid when explicitly installed.\n\n")
 		buf.WriteString("| Skill | Category | ~Body tkns | ~Desc tkns | ~Side tkns |\n")
 		buf.WriteString("|---|---|---:|---:|---:|\n")

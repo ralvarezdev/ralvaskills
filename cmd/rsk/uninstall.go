@@ -23,18 +23,25 @@ type (
 
 	uninstallOpts struct {
 		global, dryRun, personal bool
-		forTool, skill           string
+		forTool                  string
 	}
 )
 
 var uninstallCmd = &cobra.Command{
-	Use:   "uninstall [bundle...] [flags]",
-	Short: "Remove installed skills.",
-	Long: `Remove symlinks for one or more bundles or a single skill.
+	Use:   "uninstall <name...> [flags]",
+	Short: "Remove installed bundles or skills.",
+	Long: `Remove symlinks for one or more bundles or skills.
+
+Names are resolved against the catalog: a name that matches a bundle expands
+to that bundle's skills; otherwise the name is treated as a single skill.
+
+By default operates on the current project (.rsk/skills/) and cleans up
+.rsk/rsk.mod, .rsk/rsk.lock, and pinned skill imports. With --global the
+operation targets the configured global skills directories instead.
 
 Examples:
   rsk uninstall go-grpc
-  rsk uninstall --skill go-architect
+  rsk uninstall go-architect
   rsk uninstall global --global
   rsk uninstall go-grpc --dry-run`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -43,7 +50,6 @@ Examples:
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
 			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
 			forTool:  cmdx.String(cmd, cmdx.FlagFor),
-			skill:    cmdx.String(cmd, cmdx.FlagSkill),
 		}, args)
 	},
 }
@@ -51,9 +57,8 @@ Examples:
 func init() {
 	rootCmd.AddCommand(uninstallCmd)
 	f := uninstallCmd.Flags()
-	f.Bool(cmdx.FlagGlobal, false, "Target global skills dir(s)")
-	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
-	f.String(cmdx.FlagSkill, "", "Remove a single skill by name")
+	f.Bool(cmdx.FlagGlobal, false, "Target the configured global skills dir(s)")
+	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
 	f.Bool(cmdx.FlagPersonal, false, "Allow removing personal/ skills")
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be removed without doing it")
 }
@@ -62,11 +67,8 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
 
-	if opts.skill != "" && len(args) > 0 {
-		return fmt.Errorf("use either positional bundle names or --skill <name>, not both")
-	}
-	if opts.skill == "" && len(args) == 0 {
-		return fmt.Errorf("specify at least one bundle name or use --skill <name>")
+	if len(args) == 0 {
+		return fmt.Errorf("specify at least one bundle or skill name")
 	}
 	if !opts.global && opts.forTool != "" {
 		return fmt.Errorf("--for requires --global")
@@ -86,7 +88,7 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	if catalogWarn != nil {
 		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
 	}
-	names, err := skillNamesFromArgs(args, opts.skill, catalog)
+	names, err := skillNamesFromArgs(args, catalog)
 	if err != nil {
 		return err
 	}

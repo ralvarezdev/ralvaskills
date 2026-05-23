@@ -13,6 +13,7 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
+	"github.com/ralvarezdev/ralvaskills/internal/tool"
 )
 
 // newLocalSource returns the appropriate source.Resolver for local skills based
@@ -85,9 +86,46 @@ func findSkillByName(ctx context.Context, name string, localSrc, officialSrc sou
 	}
 
 	return skill.Skill{}, fmt.Errorf(
-		"skill %q not found in local repo or official cache\n  Run 'rsk list' to browse available skills",
+		"skill %q not found in local repo or official cache\n  Run 'rsk catalog' to browse available skills",
 		name,
 	)
+}
+
+// resolveNames takes a list of bundle-or-skill names and returns the resolved
+// skills (deduplicated) along with any soft warnings (skills inside a bundle
+// that couldn't be resolved). A name that matches a bundle expands to that
+// bundle's skills; otherwise the name is treated as a skill.
+func resolveNames(
+	ctx context.Context,
+	names []string,
+	catalog []config.Bundle,
+	localSrc, officialSrc source.Resolver,
+) ([]skill.Skill, []string, error) {
+	var skills []skill.Skill
+	var warnings []string
+
+	for _, raw := range names {
+		bareName, _, err := parseNameVersion(raw)
+		if err != nil {
+			return nil, nil, err
+		}
+		if bundle, ok := config.FindBundle(catalog, bareName); ok {
+			ss, ws, resolveErr := resolveBundleSkills(ctx, bundle, localSrc, officialSrc)
+			if resolveErr != nil {
+				return nil, nil, resolveErr
+			}
+			skills = append(skills, ss...)
+			warnings = append(warnings, ws...)
+			continue
+		}
+		s, findErr := findSkillByName(ctx, bareName, localSrc, officialSrc)
+		if findErr != nil {
+			return nil, nil, findErr
+		}
+		skills = append(skills, s)
+	}
+
+	return skills, warnings, nil
 }
 
 // resolveBundleSkills resolves a bundle's skill refs into concrete Skill values.
@@ -137,6 +175,17 @@ func filterSkills(in []skill.Skill, keep func(skill.Skill) bool) []skill.Skill {
 	return out
 }
 
+// isLinkedAnywhere reports whether a skill named name is symlinked into any of
+// the given target directories.
+func isLinkedAnywhere(name string, targets []string) bool {
+	for _, t := range targets {
+		if skill.IsLinked(name, t) {
+			return true
+		}
+	}
+	return false
+}
+
 func dedupSkills(skills []skill.Skill) []skill.Skill {
 	seen := make(map[string]bool, len(skills))
 	result := make([]skill.Skill, 0, len(skills))
@@ -149,24 +198,29 @@ func dedupSkills(skills []skill.Skill) []skill.Skill {
 	return result
 }
 
-// skillNamesFromArgs resolves bundle or --skill args to a deduplicated list of skill names.
-// It does not require skills to exist on disk — it only reads the catalog.
-func skillNamesFromArgs(bundleArgs []string, skillFlag string, catalog []config.Bundle) ([]string, error) {
-	if skillFlag != "" {
-		return []string{skillFlag}, nil
-	}
+// skillNamesFromArgs resolves bundle-or-skill args to a deduplicated list of
+// skill names by reading the catalog. A name matching a bundle expands to that
+// bundle's skill names; otherwise the name is treated as a skill name.
+func skillNamesFromArgs(args []string, catalog []config.Bundle) ([]string, error) {
 	seen := make(map[string]bool)
 	var names []string
-	for _, bundleName := range bundleArgs {
-		b, ok := config.FindBundle(catalog, bundleName)
-		if !ok {
-			return nil, fmt.Errorf("bundle %q not found — run 'rsk list' to see available bundles", bundleName)
+	for _, raw := range args {
+		bareName, _, err := parseNameVersion(raw)
+		if err != nil {
+			return nil, err
 		}
-		for _, ref := range b.Skills {
-			if !seen[ref.Name] {
-				seen[ref.Name] = true
-				names = append(names, ref.Name)
+		if b, ok := config.FindBundle(catalog, bareName); ok {
+			for _, ref := range b.Skills {
+				if !seen[ref.Name] {
+					seen[ref.Name] = true
+					names = append(names, ref.Name)
+				}
 			}
+			continue
+		}
+		if !seen[bareName] {
+			seen[bareName] = true
+			names = append(names, bareName)
 		}
 	}
 	return names, nil
@@ -222,4 +276,35 @@ func joinKeys(m map[string]string) string {
 		keys = append(keys, k)
 	}
 	return strings.Join(keys, ", ")
+}
+
+// parseNameVersion splits a "name" or "name@version" argument. Returns an
+// error if the name half is empty.
+func parseNameVersion(arg string) (name, version string, err error) {
+	if idx := strings.Index(arg, "@"); idx >= 0 {
+		name = arg[:idx]
+		version = arg[idx+1:]
+	} else {
+		name = arg
+	}
+	if name == "" {
+		return "", "", fmt.Errorf("skill name must not be empty (got %q)", arg)
+	}
+	return name, version, nil
+}
+
+// syncPinnedAllTools writes pinned skill entries for every tool listed in
+// m.Tools. rskDir is the .rsk/ directory; the project root is its parent.
+func syncPinnedAllTools(rskDir string, m manifest.Mod) error {
+	projectDir := filepath.Dir(rskDir)
+	for _, id := range m.Tools {
+		t, ok := tool.Get(id)
+		if !ok {
+			return fmt.Errorf("unknown tool %q in rsk.mod", id)
+		}
+		if err := t.SyncPinned(projectDir, m.Pinned); err != nil {
+			return err
+		}
+	}
+	return nil
 }

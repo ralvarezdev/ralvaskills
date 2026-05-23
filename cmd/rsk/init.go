@@ -166,7 +166,8 @@ func runInit(cmd *cobra.Command, force bool) error {
 	fmt.Fprintln(out)
 	ui.Info(out, "Next steps:")
 	ui.Indent(out, "rsk install global --global   # install universal skills machine-wide")
-	ui.Indent(out, "rsk install <bundle>          # install skills for a project (e.g. go-grpc, gin, fastapi)")
+	ui.Indent(out, "rsk new                       # initialize an rsk project in the current directory")
+	ui.Indent(out, "rsk install <name>            # install a bundle or skill (e.g. go-grpc, gin, fastapi)")
 	return nil
 }
 
