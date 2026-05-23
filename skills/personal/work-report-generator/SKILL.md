@@ -1,7 +1,7 @@
 ---
 name: work-report-generator
-version: 1.0.0
-description: Generate formal daily work reports from unstructured input. Asks output language once, never infers tasks or hours, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{LOG,REPORT}.md`. Use on "reporte de trabajo", "daily report", or /work-report.
+version: 1.1.0
+description: Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{LOG,REPORT}.md`. Use on "reporte de trabajo", "daily report", or /work-report.
 ---
 
 # Work Report Generator
@@ -42,10 +42,13 @@ Ask: **"¿En qué idioma quieres el reporte?"** (default question in Spanish; sw
 
 - Store the answer for the rest of the session. Do not re-ask for subsequent reports in the same session.
 - If the user changes language mid-session, honor the new choice for new reports only — do not retroactively rewrite past ones unless asked.
+- **Scope of the language choice:** governs `REPORT.md` only. `LOG.md` keeps the raw input verbatim in its source language — never translate the LOG, never normalize its formatting. Translation rules (§7) apply only when emitting the report.
 
 ### 3.2 Date
 
 Ask: **"¿Para qué fecha es el reporte?"** Accept `YYYY-MM-DD`, "today", "yesterday", or a relative reference. Convert to absolute `YYYY-MM-DD` and confirm before continuing.
+
+**One date per invocation.** If the user wants to backfill several days, run the full flow (§3.1 onward) once per date — do not batch multiple days in a single session, do not interleave inputs for different dates. The reason: per-day artifacts (`LOG.md`, `REPORT.md`) and per-project hours must stay scoped to a single calendar day.
 
 ### 3.3 Project catalog review
 
@@ -58,21 +61,27 @@ Ask: **"¿Para qué fecha es el reporte?"** Accept `YYYY-MM-DD`, "today", "yeste
 Ask the user to paste:
 
 - Free-form comments about what they did (any order, any granularity).
-- Optionally, commit subjects/SHAs (only as *input* — see §6).
+- Optionally, commits as `<sha> <subject>\n\n<body>` — **full body, not just the subject line** (only as *input* — see §6).
+- Optionally, issue/ticket excerpts — title **and** body, not titles alone.
 
-Append everything verbatim to `LOG.md` under a `## Raw input` section.
+Append everything **verbatim** to `LOG.md` under a `## Raw input` section. Preserve the original formatting, language, indentation, and line breaks of what the user pasted. Do not reformat, translate, summarize, or de-duplicate at this stage.
 
 ### 3.5 Task extraction and project grouping
 
-Walk through the raw input and split it into discrete tasks. For each candidate task, ask **one question**:
+This is the **preliminary analysis phase**. Its only valid output is a list of candidate tasks surfaced *as questions* for the user. Specifically:
+
+- **Enumerate, don't author.** Walk through the raw input and split it into discrete candidate tasks. Each candidate is a question to confirm, never a finished bullet.
+- **Never merge on your own.** Merging two raw items into one task requires the user's explicit instruction ("junta esos dos"). Don't merge because items look related, share a verb, or touch the same file.
+- **Never split on your own.** Splitting one raw item into multiple tasks also requires explicit instruction. When ambiguous (one task or two?), ask.
+- **Never invent.** If raw input doesn't describe a task, do not add one to "round things out".
+
+For each candidate task, ask **one question**:
 
 - **Project assignment:** *"¿A qué proyecto pertenece esta tarea?"* Show the current catalog. If the user names a new project, add it to `projects.md` and confirm the short description.
 
 Do **not** ask hours per task. Hours are tracked at the project level (§3.6).
 
-Record tasks under a `## Tasks by project` section in `LOG.md`, grouped by project, one bullet per task.
-
-If an item is ambiguous (could be one task or several), **ask** — do not guess. If the user says "junta esos dos", merge into a single bullet.
+Record confirmed tasks under a `## Tasks by project` section in `LOG.md`, grouped by project, one bullet per task. Use the user's wording from the clarification, not your paraphrase.
 
 ### 3.6 Per-project hours
 
@@ -84,22 +93,39 @@ Record under a `## Hours` section in `LOG.md`.
 
 Never estimate, round, or derive hours from the number/size of tasks. Ask.
 
-### 3.7 Report generation
+### 3.7 Confirmation before close
 
-Only after every project with tasks today has a recorded hours figure, generate `REPORT.md` (§4).
+Before generating `REPORT.md`, ask explicitly: **"¿Algo más que agregar antes de cerrar el día?"** Wait for an affirmative close — "listo", "ciérralo", "no, genera", "all done", or equivalent — before proceeding to §3.8.
 
-### 3.8 Final review
+- If the user adds more raw input, return to §3.4 and re-run §3.5–§3.6 on the new input only. Re-ask hours only for projects whose task list changed.
+- **Pause-and-resume is allowed.** The flow does not need to finish in a single uninterrupted exchange. If the user steps away and returns later in the same session (or a future session for the same date), re-read `LOG.md` for that date and resume from the last completed step. Never skip the §3.7 confirmation just because earlier steps already ran.
+
+### 3.8 Report generation
+
+Only after the explicit close confirmation from §3.7 **and** after every project with tasks today has a recorded hours figure, generate `REPORT.md` (§4).
+
+### 3.9 Final review
 
 Print the report path and a one-line summary of project totals + day total. Ask if the user wants edits before closing.
 
 ## 4. Report format
 
-The report must be readable as raw text. **No tables, no HTML, no emojis, no bold/italic decorators, no code fences, no horizontal rules.** Only:
+The report must be readable as raw text. **No tables, no HTML, no emojis, no bold/italic decorators, no code fences, no horizontal rules, no nested bullets, no sub-headings.** Only:
 
 - Plain paragraphs.
 - Numbered top-level sections: `1. Título`, `2. Título`, etc.
 - Single-level bullets under each section with a `- ` prefix.
 - One `Tiempo del proyecto` line per section; one `Tiempo total del día` line at the very end.
+
+**Section header content.** The header after each `N.` is the **project name verbatim** from `projects.md`. Nothing else on that line — no parenthetical decoration (`(5h)`, `(crítico)`, `(Q2)`), no trailing summary, no duplicated descriptor. Example: `1. Detector de Anomalías Online` — not `1. Detector de Anomalías Online (4h 30min)`.
+
+**Task bullets describe the result, not the source artifact.** Each bullet says *what the work accomplished*, in formal prose. Never reference commits, tickets, issues, PRs, or branches as the subject of the bullet — those are inputs to the report, not its content. The user can request explicit commit references via §6, in which case they land in a dedicated `Referencias` section at the end of the report, never inline in task bullets.
+
+- ✗ `- Cerró el ticket OPS-142.`
+- ✗ `- Mergeó el commit que arregla el bug del worker.`
+- ✗ `- Completó el PR de refactor.`
+- ✓ `- Resolvió el timeout en el worker de despacho de la cola de publicaciones.`
+- ✓ `- Refactorizó el módulo de despacho para separar la capa de transporte.`
 
 Full template, tone examples, hours-arithmetic rules in [RECIPES § 1–2](RECIPES.md#1-reportmd-template).
 
@@ -121,15 +147,19 @@ The user's hard rule: **never infer what was done**. Concretely:
 
 When in doubt, ask one specific question. Better to ask twice than to fabricate once.
 
+**Boundary with §3.5.** The preliminary analysis phase (§3.5) *enumerates candidate tasks as questions*. That is not inference — surfacing "is this one task or two?" is the legitimate way to extract structure from raw input. Inference is filling in an answer the user never gave: inventing a task, merging two items because they look related, picking a project because it was the most recent one, or paraphrasing a commit subject into a finished bullet.
+
 ## 6. Commits are input-only by default
 
 Commits help the user remember what they did, but they do not appear in the report unless explicitly requested ("incluye los commits", "list the commits", "agrega los SHAs").
 
-- Always paste commits into `LOG.md` under a `## Commits` subsection for traceability.
-- Use commit subjects only as memory aids when asking clarification questions.
-- If the user asks to include them, append a `Referencias` section at the very end of `REPORT.md`, listing `<short-sha> <subject>` one per line, no decoration.
+- Always paste commits into `LOG.md` under a `## Commits` subsection for traceability. Include the **full message** — subject, blank line, body — not the subject line alone. Same rule for issue/ticket dumps: title + body.
+- Use commit subjects and bodies only as memory aids when asking clarification questions in §3.5. Never write a task bullet directly from a commit message.
+- If the user asks to include them, append a `Referencias` section at the very end of `REPORT.md`, listing `<short-sha> <subject>` one per line, no decoration. References live only in that section — never inline inside task bullets.
 
 ## 7. Language and technical translation
+
+**Scope.** These rules govern `REPORT.md` only. `LOG.md` is verbatim source-language input and is never translated, normalized, or rewritten — translating the LOG would destroy the audit trail.
 
 The report is written in the language chosen in §3.1. Technical English terms follow four rules:
 
