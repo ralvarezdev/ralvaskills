@@ -8,8 +8,9 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 )
 
-// Link creates a symlink at targetDir/<skill.Name> pointing to skill.Path,
-// replacing any existing symlink at that location.
+// Link creates a link at targetDir/<skill.Name> pointing to skill.Path,
+// replacing any existing link at that location. On Unix the link is a
+// symlink; on Windows it is a directory junction (see createLink).
 func Link(s Skill, targetDir string) error {
 	if err := os.MkdirAll(targetDir, fsperm.Dir); err != nil {
 		return fmt.Errorf("create target dir %s: %w", targetDir, err)
@@ -20,13 +21,13 @@ func Link(s Skill, targetDir string) error {
 		return fmt.Errorf("remove existing link %s: %w", linkPath, err)
 	}
 
-	if err := os.Symlink(s.Path, linkPath); err != nil {
-		return fmt.Errorf("symlink %s → %s: %w", linkPath, s.Path, err)
+	if err := createLink(s.Path, linkPath); err != nil {
+		return fmt.Errorf("link %s → %s: %w", linkPath, s.Path, err)
 	}
 	return nil
 }
 
-// Unlink removes the symlink at targetDir/<name>. Returns nil if the symlink
+// Unlink removes the link at targetDir/<name>. Returns nil if the link
 // does not exist.
 func Unlink(name, targetDir string) error {
 	linkPath := filepath.Join(targetDir, name)
@@ -36,7 +37,9 @@ func Unlink(name, targetDir string) error {
 	return nil
 }
 
-// IsLinked reports whether a symlink named name exists in targetDir.
+// IsLinked reports whether a link named name exists in targetDir. Windows
+// directory junctions are reported with ModeSymlink set by Lstat since
+// Go 1.23, so the same check works on every platform.
 func IsLinked(name, targetDir string) bool {
 	fi, err := os.Lstat(filepath.Join(targetDir, name))
 	return err == nil && fi.Mode()&os.ModeSymlink != 0
