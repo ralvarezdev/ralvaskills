@@ -59,7 +59,17 @@ func toolsFromFlag(flag string) ([]tool.ID, error) {
 func runNew(cmd *cobra.Command, _ []string) error {
 	out := cmd.OutOrStdout()
 
-	tools, err := toolsFromFlag(newProjectFor)
+	forFlag := newProjectFor
+	if !cmd.Flags().Changed(cmdx.FlagFor) {
+		choices := []string{string(tool.ClaudeID), string(tool.OpenCodeID), cmdx.ForAll}
+		idx, err := ui.Select(out, "Tools to configure", choices, 0)
+		if err != nil {
+			return err
+		}
+		forFlag = choices[idx]
+	}
+
+	tools, err := toolsFromFlag(forFlag)
 	if err != nil {
 		return err
 	}

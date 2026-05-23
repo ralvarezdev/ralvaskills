@@ -68,7 +68,14 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	errOut := cmd.ErrOrStderr()
 
 	if len(args) == 0 {
-		return fmt.Errorf("specify at least one bundle or skill name")
+		name, err := ui.Ask(out, "Skill or bundle to remove", "")
+		if err != nil {
+			return err
+		}
+		if name == "" {
+			return fmt.Errorf("specify at least one bundle or skill name")
+		}
+		args = []string{name}
 	}
 	if !opts.global && opts.forTool != "" {
 		return fmt.Errorf("--for requires --global")

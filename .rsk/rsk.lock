@@ -1,0 +1,25 @@
+version = 1
+
+[[skills]]
+  name = "skill-builder"
+  version = "1.0.0"
+  source = "registry"
+  path = "C:\\Users\\ralva\\.config\\rsk\\cache\\registry\\skill-builder\\1.0.0"
+
+[[skills]]
+  name = "go-architect"
+  version = "1.0.0"
+  source = "registry"
+  path = "C:\\Users\\ralva\\.config\\rsk\\cache\\registry\\go-architect\\1.0.0"
+
+[[skills]]
+  name = "cli-tool-architect"
+  version = "1.0.0"
+  source = "registry"
+  path = "C:\\Users\\ralva\\.config\\rsk\\cache\\registry\\cli-tool-architect\\1.0.0"
+
+[[skills]]
+  name = "logic-cleaner"
+  version = "1.0.0"
+  source = "registry"
+  path = "C:\\Users\\ralva\\.config\\rsk\\cache\\registry\\logic-cleaner\\1.0.0"

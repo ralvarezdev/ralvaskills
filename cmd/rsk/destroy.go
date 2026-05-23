@@ -47,6 +47,35 @@ func runDestroy(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	hasSkills := len(installedNames) > 0
+
+	fmt.Fprintln(out)
+	ui.Header(out, "This will remove:")
+	fmt.Fprintf(out, "  %s\n", ui.MutedStyle.Render(rskDir))
+	for _, id := range tools {
+		t, ok := tool.Get(id)
+		if !ok {
+			continue
+		}
+		fmt.Fprintf(out, "  %s  %s\n",
+			ui.MutedStyle.Render(string(id)),
+			ui.MutedStyle.Render("pinned skill imports"),
+		)
+		if hasSkills {
+			fmt.Fprintf(out, "  %s  %s\n",
+				ui.MutedStyle.Render(t.ProjectSkillsDir(cwd)),
+				ui.MutedStyle.Render("skill symlinks"),
+			)
+		}
+	}
+	fmt.Fprintln(out)
+
+	if !ui.ConfirmYN(out, "Proceed?") {
+		fmt.Fprintln(out, "Aborted.")
+		return nil
+	}
+	fmt.Fprintln(out)
+
 	seenDirs := make(map[string]bool)
 	for _, id := range tools {
 		t, ok := tool.Get(id)

@@ -89,7 +89,14 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 	}
 
 	if opts.global && len(args) == 0 {
-		return fmt.Errorf("specify at least one bundle or skill name")
+		name, err := ui.Ask(out, "Skill or bundle name", "")
+		if err != nil {
+			return err
+		}
+		if name == "" {
+			return fmt.Errorf("specify at least one bundle or skill name")
+		}
+		args = []string{name}
 	}
 
 	cfg, err := config.Load()

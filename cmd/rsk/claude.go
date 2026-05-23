@@ -83,34 +83,31 @@ Examples:
 	}
 
 	claudeToolsAllowCmd = &cobra.Command{
-		Use:   "allow <rule>",
+		Use:   "allow [rule]",
 		Short: "Allow a tool in this project.",
 		Long: `Add a tool rule to the permissions.allow list in .claude/settings.json.
 The rule format is Tool(specifier), for example:
   Bash(npm run *)
   Read(~/docs/**)
   WebFetch(domain:example.com)`,
-		Args: cobra.ExactArgs(1),
 		RunE: runClaudeToolsAllow,
 	}
 
 	claudeToolsDenyCmd = &cobra.Command{
-		Use:   "deny <rule>",
+		Use:   "deny [rule]",
 		Short: "Deny a tool in this project.",
 		Long: `Add a tool rule to the permissions.deny list in .claude/settings.json.
 The rule format is Tool(specifier), for example:
   Write(**)
   Bash
   WebFetch`,
-		Args: cobra.ExactArgs(1),
 		RunE: runClaudeToolsDeny,
 	}
 
 	claudeToolsRemoveCmd = &cobra.Command{
-		Use:   "remove <rule>",
+		Use:   "remove [rule]",
 		Short: "Remove a tool rule from permissions.",
 		Long:  `Remove a tool rule from either the allow or deny list.`,
-		Args:  cobra.ExactArgs(1),
 		RunE:  runClaudeToolsRemove,
 	}
 )
@@ -189,7 +186,10 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 
 func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
-	rule := args[0]
+	rule, err := nameFromArgsOrPrompt(cmd, args, "Tool rule (e.g. Bash(npm run *))")
+	if err != nil {
+		return err
+	}
 
 	cwd, err := manifest.ProjectFolderPath()
 	if err != nil {
@@ -226,7 +226,10 @@ func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {
 
 func runClaudeToolsDeny(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
-	rule := args[0]
+	rule, err := nameFromArgsOrPrompt(cmd, args, "Tool rule (e.g. Write(**) or Bash)")
+	if err != nil {
+		return err
+	}
 
 	cwd, err := manifest.ProjectFolderPath()
 	if err != nil {
@@ -263,7 +266,10 @@ func runClaudeToolsDeny(cmd *cobra.Command, args []string) error {
 
 func runClaudeToolsRemove(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
-	rule := args[0]
+	rule, err := nameFromArgsOrPrompt(cmd, args, "Tool rule to remove")
+	if err != nil {
+		return err
+	}
 
 	cwd, err := manifest.ProjectFolderPath()
 	if err != nil {

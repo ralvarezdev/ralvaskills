@@ -11,24 +11,22 @@ import (
 
 var (
 	pinCmd = &cobra.Command{
-		Use:   "pin <name>",
+		Use:   "pin [name]",
 		Short: "Pin a skill so it is imported into each tool's project config.",
 		Long: `Pin a skill that is already tracked in rsk.mod. Pinning imports the skill
 into every configured tool's project config (.rsk/CLAUDE.md for Claude Code,
 opencode.json for OpenCode) so it is auto-loaded by agents in this project.
 
 The skill must already be in rsk.mod — run 'rsk install <name>' first.`,
-		Args: cobra.ExactArgs(1),
 		RunE: runPin,
 	}
 
 	unpinCmd = &cobra.Command{
-		Use:   "unpin <name>",
+		Use:   "unpin [name]",
 		Short: "Remove a skill from the pinned list.",
 		Long: `Remove a skill from the pinned list. The skill stays installed (still
 symlinked into .rsk/skills/) but is no longer auto-imported into each tool's
 project config.`,
-		Args: cobra.ExactArgs(1),
 		RunE: runUnpin,
 	}
 )
@@ -40,7 +38,10 @@ func init() {
 
 func runPin(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
-	name := args[0]
+	name, err := nameFromArgsOrPrompt(cmd, args, "Skill to pin")
+	if err != nil {
+		return err
+	}
 
 	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
@@ -77,7 +78,10 @@ func runPin(cmd *cobra.Command, args []string) error {
 
 func runUnpin(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
-	name := args[0]
+	name, err := nameFromArgsOrPrompt(cmd, args, "Skill to unpin")
+	if err != nil {
+		return err
+	}
 
 	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
