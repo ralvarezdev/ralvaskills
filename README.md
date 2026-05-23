@@ -115,9 +115,31 @@ A Go CLI is in development to manage skill installation across projects without 
 
 ```
 go install github.com/ralvarezdev/ralvaskills/cmd/rsk@latest
-rsk init
-rsk install <bundle>
-rsk update
+
+# Machine setup (once)
+rsk init                                  # configure source, tools, global dirs
+
+# Per-project workflow
+rsk new                                   # initialize .rsk/ in this project
+rsk install <name>                        # install a bundle or skill (auto-resolved)
+rsk install <name> --pin                  # install + auto-load in this project
+rsk install                               # re-install from rsk.mod (after git clone)
+
+# Global / machine-wide
+rsk install <name> --global               # link into ~/.claude/skills/, ~/.config/opencode/skills/
+rsk install <name> --global --for claude-code
+
+# Browse & inspect
+rsk catalog                               # what's available (skills + bundles)
+rsk list                                  # what's installed in this project
+rsk list --global                         # what's installed system-wide
+rsk status                                # combined view + drift
+
+# Updates and removal
+rsk update [name]                         # pull latest and re-link
+rsk uninstall <name>                      # remove (cleans manifest in project scope)
+rsk pin <name> / rsk unpin <name>         # toggle auto-load in CLAUDE.md / opencode.json
+rsk destroy                               # remove .rsk/ and tool config entries
 ```
 
 Until shipped, use the manual installation steps below.

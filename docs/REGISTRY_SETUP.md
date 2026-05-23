@@ -18,11 +18,12 @@ R2 is write-only from CI — it exists so you can recover or migrate without Git
 ## 1. Enable GitHub Pages
 
 1. Go to **GitHub → `ralvarezdev/ralvaskills` → Settings → Pages**
-2. Source: **Deploy from a branch**
-3. Branch: `main` — Folder: `/registry`
-4. Click **Save**
+2. **Source:** `GitHub Actions`
+3. (No branch/folder picker — the workflow uploads `registry/` as the site root.)
 
-After the next push, `https://skills.ralvarez.dev/index.json` will serve `registry/index.json` from the repo.
+The `Publish Registry` workflow runs on pushes that touch `skills/**`, `cmd/generate-registry/**`, or `internal/**`. On every run it generates the index, then uploads `registry/` via `actions/upload-pages-artifact` + `actions/deploy-pages`. After the first successful run, `https://skills.ralvarez.dev/index.json` serves the current index.
+
+> **Why GitHub Actions, not "Deploy from a branch"?** The branch-folder source only allows `/` or `/docs` as the publish folder — `/registry` cannot be selected. Deploying via Actions side-steps that restriction and keeps `registry/index.json` where it already lives.
 
 > **Custom domain:** Add `skills.ralvarez.dev` in the Pages settings. Since `ralvarez.dev` is on Cloudflare, add a CNAME record pointing `skills` at `<username>.github.io`. GitHub provisions TLS automatically.
 
@@ -80,12 +81,13 @@ There is no `workflow_dispatch` trigger, so the "Run workflow" button won't appe
 The first run will:
 1. Read `registry/index.json` from the repo (starts empty)
 2. Create tarballs for every skill at its current version
-3. Count entries in `dist/new-versions.json` — if zero, the publish steps are skipped
+3. Count entries in `dist/new-versions.json` — if zero, the publish steps below are skipped
 4. Create one GitHub Release per skill (e.g. `go-architect@v1.0.0`); already-existing tags are skipped, not failed
 5. Back up each tarball to the private R2 bucket
 6. Commit an updated `registry/index.json` back to `main` with `[skip ci]`
+7. Deploy `registry/` to GitHub Pages — this step runs on every workflow execution, not just when new versions are published
 
-Subsequent runs only publish skills whose `version:` field changed.
+Subsequent runs only publish skills whose `version:` field changed, but the Pages deploy always refreshes from the current `registry/`.
 
 ---
 

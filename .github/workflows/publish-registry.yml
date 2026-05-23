@@ -13,6 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # gh release create + git push index
+      pages: write # deploy registry index to GitHub Pages
+      id-token: write # OIDC token used by actions/deploy-pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -93,3 +98,22 @@ jobs:
           git diff --staged --quiet \
             || git commit -m "chore(registry): update index [skip ci]"
           git push
+
+      # Publish registry/index.json to GitHub Pages
+      #
+      # Runs every workflow execution (not gated on `count != '0'`) so a manual
+      # re-trigger republishes the current index even when no skill versions
+      # changed. The deploy uploads just `registry/` as the site root, so the
+      # index is served at https://skills.ralvarez.dev/index.json.
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: registry
+
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
