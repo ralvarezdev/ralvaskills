@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -22,6 +23,8 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/fsx"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
+
+var semverRe = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
 
 const (
 	descriptionField    = "description:"
@@ -242,7 +245,13 @@ func main() {
 		"github-repo", gitHubRepoDefault,
 		"GitHub repo (owner/name) used to build release asset URLs",
 	)
+	check := flag.Bool("check", false, "Preview what would be published and validate versions; no files written")
 	flag.Parse()
+
+	if *check {
+		runCheck(*skillsDir, *existingIndex)
+		return
+	}
 
 	index := loadIndex(*existingIndex)
 
@@ -313,4 +322,62 @@ func main() {
 	}
 
 	fmt.Printf("index: %d skills total, %d new versions\n", len(index.Skills), len(newVersions))
+}
+
+// runCheck previews what would be published without creating any files or
+// tarballs. Prints a current → new line for each unpublished version and exits
+// with code 1 if any version string is not in X.Y.Z format.
+func runCheck(skillsDir, existingIndex string) {
+	index := loadIndex(existingIndex)
+
+	skills, err := walkSkills(skillsDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error walking skills: %v\n", err)
+		os.Exit(1)
+	}
+
+	type pendingEntry struct {
+		name    string
+		current string
+		next    string
+	}
+	var pending []pendingEntry
+
+	for _, s := range skills {
+		entry := index.Skills[s.Name]
+		if entry != nil {
+			if _, published := entry.Versions[s.Version]; published {
+				continue
+			}
+		}
+		current := "(new)"
+		if entry != nil && entry.Latest != "" {
+			current = "v" + entry.Latest
+		}
+		pending = append(pending, pendingEntry{s.Name, current, s.Version})
+	}
+
+	if len(pending) == 0 {
+		fmt.Println("Nothing to publish — all skill versions are already in the index.")
+		return
+	}
+
+	fmt.Printf("\n%d skill(s) ready to publish:\n\n", len(pending))
+
+	invalid := false
+	for _, p := range pending {
+		marker := "+"
+		if !semverRe.MatchString(p.next) {
+			marker = "!"
+			invalid = true
+		}
+		fmt.Printf("  %s  %-40s %s  →  v%s\n", marker, p.name, p.current, p.next)
+	}
+
+	fmt.Println()
+	if invalid {
+		fmt.Fprintln(os.Stderr, "One or more versions are not in X.Y.Z format.")
+		os.Exit(1)
+	}
+	fmt.Println("All version formats OK.")
 }

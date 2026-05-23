@@ -25,6 +25,20 @@ tasks:
     cmds:
       - go run ./cmd/rsk {{.CLI_ARGS}}
 
+  cli:tag:
+    desc: "Tag and push a CLI release — triggers the Release CLI workflow (e.g. task cli:tag VERSION=0.1.0)"
+    requires:
+      vars: [VERSION]
+    vars:
+      TAG: v{{.VERSION}}
+    cmds:
+      - platforms: [windows]
+        cmd: pwsh -NoProfile -Command "if ('{{.VERSION}}' -notmatch '^\d+\.\d+\.\d+$') { Write-Error 'Invalid version {{.VERSION}} — expected X.Y.Z'; exit 1 }"
+      - platforms: [linux, darwin]
+        cmd: echo '{{.VERSION}}' | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "Invalid version {{.VERSION}} — expected X.Y.Z"; exit 1; }
+      - git tag {{.TAG}}
+      - git push origin {{.TAG}}
+
   cli:lint:
     desc: Lint the rsk CLI
     cmds:
@@ -74,39 +88,20 @@ tasks:
   registry:check:
     desc: "Preview what would be published; validate version format and show current → new for each skill"
     cmds:
-      - task: registry:generate
-      - |
-        count=$(jq 'length' dist/new-versions.json)
-        if [ "$count" -eq 0 ]; then
-          echo "Nothing to publish — all skill versions are already in the index."
-          exit 0
-        fi
-        echo ""
-        echo "$count skill(s) ready to publish:"
-        echo ""
-        jq -r '.[] | "\(.name) \(.version)"' dist/new-versions.json | while IFS=' ' read -r name ver; do
-          latest=$(jq -r --arg n "$name" '.skills[$n].latest // "(new)"' dist/index.json)
-          echo "  $name  $latest → v$ver"
-        done
-        echo ""
-        bad=$(jq -r '.[] | select(.version | test("^[0-9]+\\.[0-9]+\\.[0-9]+$") | not) | "  \(.name): \"\(.version)\" is not X.Y.Z"' dist/new-versions.json)
-        if [ -n "$bad" ]; then
-          echo "Invalid version format (expected X.Y.Z):"
-          echo "$bad"
-          exit 1
-        fi
-        echo "All version formats OK."
+      - mkdir -p registry
+      - go run ./cmd/generate-registry --skills-dir skills --existing-index registry/index.json --check
 
   registry:sync-index:
     desc: "Copy dist/index.json → registry/index.json (run after registry:generate; commit the result to bootstrap or repair the index)"
     cmds:
       - task: registry:generate
-      - cp dist/index.json registry/index.json
-      - |
-        echo ""
-        echo "registry/index.json updated. Commit it:"
-        echo "  git add registry/index.json"
-        echo "  git commit -m 'chore(registry): sync index'"
+      - platforms: [windows]
+        cmd: pwsh -NoProfile -Command "Copy-Item dist/index.json registry/index.json -Force"
+      - platforms: [linux, darwin]
+        cmd: cp dist/index.json registry/index.json
+      - echo ""
+      - echo "registry/index.json updated. Commit it:"
+      - echo "  git add registry/index.json"
 
   registry:lint:
     desc: Lint the generate-registry tool
@@ -121,7 +116,10 @@ tasks:
   registry:clean:
     desc: Remove the dist/ output directory
     cmds:
-      - rm -rf dist
+      - platforms: [windows]
+        cmd: pwsh -NoProfile -Command "Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue"
+      - platforms: [linux, darwin]
+        cmd: rm -rf dist
 
   # aggregate
 
