@@ -71,29 +71,55 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── list.go                   # rsk list [flags]            (text|json output)
 │   │   ├── project.go                # rsk project init / remove
 │   │   ├── skill.go                  # rsk skill add / pin / unpin / list / upgrade
-│   │   └── resolve.go                # shared resolver helpers (skillResolver, target dirs, bundle resolution)
+│   │   └── resolve.go                # shared resolver helpers (source.Resolver, target dirs, bundle resolution)
 │   ├── count-tokens/                 # ✅ scans SKILL.md files → docs/TOKEN_COUNTS.md
 │   └── generate-registry/            # ✅ packs skill tarballs + index.json for the publish workflow
 ├── internal/                         # shared, repo-only Go packages
+│   ├── cmdx/                         # cobra flag helpers and flag-name constants
+│   │   ├── flagnames.go              # FlagXxx constants, TargetScope type, ScopeAll sentinel
+│   │   └── flags.go                  # Bool/String typed flag readers
 │   ├── config/
-│   │   ├── config.go                 # load/save ~/.config/rsk/config.json
+│   │   ├── config.go                 # load/save ~/.config/rsk/config.json (schema-versioned)
+│   │   ├── fs.go                     # XDG path helpers (ConfigDir, ConfigPath, RegistryCache)
 │   │   └── bundles.go                # bundle & skill ref definitions (embeds catalog.toml)
+│   ├── fsperm/
+│   │   └── fsperm.go                 # filesystem permission constants (Dir=0o750, File=0o644, Mask=0o777)
+│   ├── fsx/
+│   │   └── atomic.go                 # WriteAtomic — write-to-temp-then-rename helper
+│   ├── git/
+│   │   └── git.go                    # Pull / Clone wrappers (used by rsk update)
 │   ├── manifest/                     # ✅ project-manifest layer (.rsk/rsk.mod, rsk.lock, CLAUDE.md)
-│   │   ├── mod.go                    # rsk.mod TOML read/write
-│   │   ├── lock.go                   # rsk.lock TOML read/write
-│   │   └── claudemd.go               # .rsk/CLAUDE.md pinned imports + ./CLAUDE.md import line
+│   │   ├── fs.go                     # path constants: ProjectFolderName, LockFileName, ModFileName, ProjectSkillsPath
+│   │   ├── mod.go                    # rsk.mod TOML read/write (schema-versioned)
+│   │   └── lock.go                   # rsk.lock TOML read/write (schema-versioned)
+│   ├── schema/
+│   │   └── schema.go                 # schema.Version type + Check(); per-file version constants (Config, Mod, Lock, Catalog)
 │   ├── skill/
-│   │   ├── skill.go                  # Skill, Bundle, SkillRef structs
+│   │   ├── skill.go                  # Skill struct and core types
+│   │   ├── fs.go                     # SkillsFolderName, SkillFileName, VersionPrefix constants
+│   │   ├── source.go                 # Source string enum (local/official/registry) + ParseSource + MarshalText/UnmarshalText
 │   │   ├── registry.go               # walks skills/ root; any folder with SKILL.md is a skill (recursion stops); parses SKILL.md + STACK.md
 │   │   ├── linker.go                 # symlink create/remove logic
+│   │   ├── util.go                   # FindByName helper
 │   │   └── version.go                # semver comparison helpers
 │   ├── source/
+│   │   ├── resolver.go               # Resolver interface (All/Find)
+│   │   ├── fs.go                     # fsSource shared base (used by local.go and official.go)
 │   │   ├── local.go                  # resolves skills from local repo clone
 │   │   ├── official.go               # fetches/caches from anthropics/skills
 │   │   ├── registry.go               # fetches from hosted registry (skills.ralvarez.dev)
-│   │   └── errors.go                 # sentinel errors (ErrNotFound, ...)
+│   │   └── errors.go                 # ErrNotFound sentinel
+│   ├── tool/                         # AI tool registry (claude-code, opencode)
+│   │   ├── tool.go                   # Tool interface, ID type, Register/Get/All/Names/ParseID registry
+│   │   ├── claude.go                 # claudeTool: SkillsDir, SyncPinned, RemovePinned for Claude Code
+│   │   └── opencode.go               # openCodeTool: SkillsDir, SyncPinned, RemovePinned for OpenCode
 │   └── ui/
-│       └── output.go                 # lipgloss-styled terminal output helpers
+│       ├── style.go                  # lipgloss style vars (BrandStyle, SuccessStyle, ErrorStyle, …)
+│       ├── output.go                 # skill table printing and header helpers
+│       ├── confirm.go                # interactive Proceed? [y/N] prompt
+│       ├── divider.go                # section divider renderer
+│       ├── mark.go                   # ✓ / ✗ status marks
+│       └── table.go                  # column-aligned table renderer
 │
 ├── skills/                           # all reusable local skills
 │   ├── languages/
@@ -466,6 +492,7 @@ Pass `--force` to overwrite an existing config without aborting.
 `config.json` shape:
 ```json
 {
+  "version": 1,
   "repo_path": "/home/user/ralvaskills",
   "registry_url": "",
   "global_targets": {
@@ -553,7 +580,7 @@ The project-manifest layer mirrors `go.mod`: a declarative `rsk.mod` in `<projec
 #### `rsk.mod` shape
 
 ```toml
-version = "1"
+version = 1
 pinned = ["go-architect", "rest-api-architect"]
 
 [skills]
@@ -570,6 +597,8 @@ sql-architect      = "*"
 #### `rsk.lock` shape
 
 ```toml
+version = 1
+
 [[skills]]
 name    = "go-architect"
 version = "1.0.0"

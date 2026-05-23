@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -47,19 +48,23 @@ func init() {
 	projectCmd.AddCommand(projectInitCmd)
 	projectCmd.AddCommand(projectRemoveCmd)
 
-	projectInitCmd.Flags().StringVar(&projectInitFor, internal.FlagFor, string(internal.ToolClaudeCode), "Tools to configure: claude-code | opencode | all")
+	projectInitCmd.Flags().StringVar(
+		&projectInitFor, cmdx.FlagFor, string(tool.ClaudeID),
+		"Tools to configure: claude-code | opencode | all",
+	)
 }
 
-func toolsFromFlag(flag string) ([]internal.ToolID, error) {
+func toolsFromFlag(flag string) ([]tool.ID, error) {
 	switch flag {
-	case string(internal.ToolClaudeCode):
-		return []internal.ToolID{internal.ToolClaudeCode}, nil
-	case string(internal.ToolOpenCode):
-		return []internal.ToolID{internal.ToolOpenCode}, nil
-	case internal.ForAll:
-		return []internal.ToolID{internal.ToolClaudeCode, internal.ToolOpenCode}, nil
+	case string(tool.ClaudeID):
+		return []tool.ID{tool.ClaudeID}, nil
+	case string(tool.OpenCodeID):
+		return []tool.ID{tool.OpenCodeID}, nil
+	case cmdx.ForAll:
+		return []tool.ID{tool.ClaudeID, tool.OpenCodeID}, nil
 	default:
-		return nil, fmt.Errorf("--for must be %s, %s, or %s; got %q", internal.ToolClaudeCode, internal.ToolOpenCode, internal.ForAll, flag)
+		return nil, fmt.Errorf("--for must be %s, %s, or %s; got %q",
+			tool.ClaudeID, tool.OpenCodeID, cmdx.ForAll, flag)
 	}
 }
 
@@ -76,31 +81,31 @@ func runProjectInit(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("get working directory: %w", err)
 	}
 
-	rskDir := filepath.Join(cwd, manifest.LocalConfigFolderName)
-	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
-	if err := os.MkdirAll(skillsDir, manifest.LocalDirPermission); err != nil {
+	rskDir := filepath.Join(cwd, manifest.ProjectFolderName)
+	skillsDir := manifest.ProjectSkillsPath(rskDir)
+	if err = os.MkdirAll(skillsDir, fsperm.Dir); err != nil {
 		return fmt.Errorf("create .rsk/skills: %w", err)
 	}
 
 	m := manifest.Mod{
-		Version: "1",
-		Tools:   tools,
-		Skills:  make(map[string]string),
-		Pinned:  []string{},
+		Tools:  tools,
+		Skills: make(map[string]string),
+		Pinned: []string{},
 	}
-	if err := manifest.WriteMod(rskDir, m); err != nil {
+	if err = manifest.WriteMod(rskDir, m); err != nil {
 		return err
 	}
 
-	if slices.Contains(tools, internal.ToolClaudeCode) {
-		if err := manifest.WritePinned(rskDir, nil); err != nil {
-			return err
+	// Initialize per-tool project config. Empty pinned list on first init.
+	for _, id := range tools {
+		t, ok := tool.Get(id)
+		if !ok {
+			continue
 		}
-		if err := manifest.AppendImport(filepath.Join(cwd, "CLAUDE.md")); err != nil {
+		if err = t.SyncPinned(cwd, nil); err != nil {
 			return err
 		}
 	}
-	// OpenCode: opencode.json is managed lazily on first pin — nothing to do at init.
 
 	fmt.Fprintln(out)
 	ui.Success(out, fmt.Sprintf("initialized .rsk/ for %s", projectInitFor))
@@ -117,26 +122,25 @@ func runProjectRemove(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("get working directory: %w", err)
 	}
 
-	rskDir := filepath.Join(cwd, manifest.LocalConfigFolderName)
+	rskDir := filepath.Join(cwd, manifest.ProjectFolderName)
 
 	// Read tools from mod before deleting .rsk/ so we know what to clean up.
-	tools := []internal.ToolID{internal.ToolClaudeCode} // safe default if mod is unreadable
+	tools := []tool.ID{tool.ClaudeID}
 	if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
 		tools = m.Tools
 	}
 
-	if slices.Contains(tools, internal.ToolClaudeCode) {
-		if err := manifest.RemoveImport(filepath.Join(cwd, "CLAUDE.md")); err != nil {
-			return err
+	for _, id := range tools {
+		t, ok := tool.Get(id)
+		if !ok {
+			continue
 		}
-	}
-	if slices.Contains(tools, internal.ToolOpenCode) {
-		if err := manifest.RemoveOpenCodeInstructions(cwd); err != nil {
+		if err = t.RemovePinned(cwd); err != nil {
 			return err
 		}
 	}
 
-	if err := os.RemoveAll(rskDir); err != nil {
+	if err = os.RemoveAll(rskDir); err != nil {
 		return fmt.Errorf("remove .rsk: %w", err)
 	}
 

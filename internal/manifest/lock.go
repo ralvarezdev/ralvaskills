@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-
+	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/internal/fsx"
+	"github.com/ralvarezdev/ralvaskills/internal/schema"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
 
@@ -18,41 +20,51 @@ type (
 		Name    string       `toml:"name"`
 		Version string       `toml:"version"`
 		Source  skill.Source `toml:"source"`
-		Path    string       `toml:"path"` // resolved symlink target
+		Path    string       `toml:"path"`
 	}
 
 	// Lock is the in-memory representation of rsk.lock.
 	Lock struct {
-		Skills []LockEntry `toml:"skills"`
+		// SchemaVersion identifies the file format version. Version 0 is
+		// accepted as legacy (pre-versioning) and treated as version 1.
+		SchemaVersion schema.Version `toml:"version,omitempty"`
+		Skills        []LockEntry    `toml:"skills"`
 	}
 )
 
-// ReadLock decodes rsk.lock from rskDir. Returns an empty Lock if the file does not exist.
+// ReadLock decodes rsk.lock from rskDir. Returns an empty Lock if the file
+// does not exist.
 func ReadLock(rskDir string) (Lock, error) {
 	path := LockPath(rskDir)
-	var l Lock
 	if _, statErr := os.Stat(path); errors.Is(statErr, os.ErrNotExist) {
 		return Lock{}, nil
 	}
-	
+
+	var l Lock
 	if _, err := toml.DecodeFile(path, &l); err != nil {
 		return Lock{}, fmt.Errorf("read %s: %w", path, err)
+	}
+	if err := schema.Check(l.SchemaVersion, schema.Lock); err != nil {
+		return Lock{}, fmt.Errorf("rsk.lock: %w", err)
 	}
 	return l, nil
 }
 
-// WriteLock encodes l as TOML to rskDir/rsk.lock atomically, creating parent dirs as needed.
+// WriteLock encodes l as TOML to rskDir/rsk.lock atomically, creating parent
+// directories as needed.
 func WriteLock(rskDir string, l Lock) error {
+	l.SchemaVersion = schema.Lock
 	path := LockPath(rskDir)
-	if err := os.MkdirAll(filepath.Dir(path), LocalDirPermission); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), fsperm.Dir); err != nil {
 		return fmt.Errorf("create dir: %w", err)
 	}
-	return writeFileAtomic(path, func(w io.Writer) error {
+	return fsx.WriteAtomic(path, TempFilePattern, func(w io.Writer) error {
 		return toml.NewEncoder(w).Encode(l)
 	})
 }
 
-// UpsertLockEntry adds or replaces the entry matching entry.Name in l.
+// UpsertLockEntry adds entry to l if no entry with the same name exists,
+// or replaces the existing entry in place.
 func UpsertLockEntry(l Lock, entry LockEntry) Lock {
 	for i, e := range l.Skills {
 		if e.Name == entry.Name {
@@ -64,9 +76,10 @@ func UpsertLockEntry(l Lock, entry LockEntry) Lock {
 	return l
 }
 
-// RemoveLockEntry removes the entry with the given name from l (no-op if absent).
+// RemoveLockEntry removes the entry with the given name from l. No-op if
+// the name is not present.
 func RemoveLockEntry(l Lock, name string) Lock {
-	kept := l.Skills[:0]
+	kept := make([]LockEntry, 0, len(l.Skills))
 	for _, e := range l.Skills {
 		if e.Name != name {
 			kept = append(kept, e)

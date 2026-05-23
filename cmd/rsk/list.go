@@ -7,7 +7,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
@@ -15,10 +15,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type outputFormat string
+
+const (
+	outputText outputFormat = "text"
+	outputJSON outputFormat = "json"
+)
+
+func (o outputFormat) valid() bool { return o == outputText || o == outputJSON }
+
 type listOpts struct {
 	installed, personal bool
 	bundle, source      string
-	output              internal.OutputFormat
+	output              outputFormat
 }
 
 var listCmd = &cobra.Command{
@@ -35,11 +44,11 @@ Examples:
   rsk list -o json`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		return runList(cmd, listOpts{
-			installed: internal.FlagBool(cmd, internal.FlagInstalled),
-			personal:  internal.FlagBool(cmd, internal.FlagPersonal),
-			bundle:    internal.FlagString(cmd, internal.FlagBundle),
-			source:    internal.FlagString(cmd, internal.FlagSource),
-			output:    internal.OutputFormat(internal.FlagString(cmd, internal.FlagOutput)),
+			installed: cmdx.Bool(cmd, cmdx.FlagInstalled),
+			personal:  cmdx.Bool(cmd, cmdx.FlagPersonal),
+			bundle:    cmdx.String(cmd, cmdx.FlagBundle),
+			source:    cmdx.String(cmd, cmdx.FlagSource),
+			output:    outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
 		})
 	},
 }
@@ -47,11 +56,11 @@ Examples:
 func init() {
 	rootCmd.AddCommand(listCmd)
 	f := listCmd.Flags()
-	f.String(internal.FlagBundle, "", "Show skills in a specific bundle")
-	f.String(internal.FlagSource, "", "Filter by source: local | official")
-	f.Bool(internal.FlagInstalled, false, "Show only installed skills")
-	f.Bool(internal.FlagPersonal, false, "Include personal/ skills in listing")
-	f.StringP(internal.FlagOutput, "o", string(internal.OutputText), "Output format: text | json")
+	f.String(cmdx.FlagBundle, "", "Show skills in a specific bundle")
+	f.String(cmdx.FlagSource, "", "Filter by source: local | official")
+	f.Bool(cmdx.FlagInstalled, false, "Show only installed skills")
+	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in listing")
+	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text | json")
 }
 
 func runList(cmd *cobra.Command, opts listOpts) error {
@@ -61,8 +70,8 @@ func runList(cmd *cobra.Command, opts listOpts) error {
 	if opts.source != "" && opts.source != skill.SourceLocal.String() && opts.source != skill.SourceOfficial.String() {
 		return fmt.Errorf("--source must be '%s' or '%s'", skill.SourceLocal, skill.SourceOfficial)
 	}
-	if !opts.output.Valid() {
-		return fmt.Errorf("--output must be '%s' or '%s'", internal.OutputText, internal.OutputJSON)
+	if !opts.output.valid() {
+		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
 	}
 
 	cfg, err := config.Load()
@@ -143,7 +152,7 @@ func runList(cmd *cobra.Command, opts listOpts) error {
 		return nil
 	}
 
-	if opts.output == internal.OutputJSON {
+	if opts.output == outputJSON {
 		return writeJSON(out, skillsToEntries(all))
 	}
 	return printListTable(out, all)

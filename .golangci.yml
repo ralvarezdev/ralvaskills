@@ -150,7 +150,7 @@ linters:
       threshold: 250
 
     nestif:
-      min-complexity: 4
+      min-complexity: 6
 
     nilnil:
       only-two: true
@@ -213,6 +213,8 @@ linters:
       disabled-checks:
         - commentFormatting
         - whyNoLint
+        - hugeParam
+        - sloppyReassign
 
   exclusions:
     warn-unused: true

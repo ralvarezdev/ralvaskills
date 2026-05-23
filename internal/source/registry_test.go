@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/internal/config"
+	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
 
-// buildTarball builds an in-memory .tar.gz with the given entries.
-// Each entry is (name, content); directories end with "/".
+// buildTarball creates an in-memory .tar.gz from the given entries.
+// Each entry is (name, content); a name ending with "/" is written as a directory.
 func buildTarball(t *testing.T, entries []struct{ name, content string }) []byte {
 	t.Helper()
 	var buf bytes.Buffer
@@ -21,11 +21,11 @@ func buildTarball(t *testing.T, entries []struct{ name, content string }) []byte
 	tw := tar.NewWriter(gw)
 
 	for _, e := range entries {
-		if len(e.name) > 0 && e.name[len(e.name)-1] == '/' {
+		if e.name != "" && e.name[len(e.name)-1] == '/' {
 			tw.WriteHeader(&tar.Header{
 				Typeflag: tar.TypeDir,
 				Name:     e.name,
-				Mode:     config.ConfigDirPermission,
+				Mode:     fsperm.Dir,
 			})
 			continue
 		}
@@ -34,7 +34,7 @@ func buildTarball(t *testing.T, entries []struct{ name, content string }) []byte
 			Typeflag: tar.TypeReg,
 			Name:     e.name,
 			Size:     int64(len(body)),
-			Mode:     config.ConfigFilePermission,
+			Mode:     fsperm.File,
 		})
 		tw.Write(body)
 	}
@@ -74,7 +74,7 @@ func TestExtractTarball_zipSlip(t *testing.T) {
 		Typeflag: tar.TypeReg,
 		Name:     "skill/../../evil.txt",
 		Size:     int64(len(body)),
-		Mode:     config.ConfigFilePermission,
+		Mode:     fsperm.File,
 	})
 	tw.Write(body)
 	tw.Close()
@@ -85,7 +85,6 @@ func TestExtractTarball_zipSlip(t *testing.T) {
 		t.Fatal("expected error for zip-slip path, got nil")
 	}
 
-	// Confirm the file was NOT written outside dest.
 	parent := filepath.Dir(dest)
 	if _, statErr := os.Stat(filepath.Join(parent, "evil.txt")); statErr == nil {
 		t.Error("zip-slip: evil.txt was written outside destination directory")

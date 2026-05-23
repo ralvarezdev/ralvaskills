@@ -3,7 +3,7 @@ package ui
 var (
 	// SuccessMark prints a green ✓ line.
 	SuccessMark = SuccessStyle.Render("✓")
-	
+
 	// WarnMark prints an amber ⚠ line.
 	WarnMark = WarnStyle.Render("⚠")
 

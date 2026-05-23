@@ -64,22 +64,22 @@ func TestVersion_Compare(t *testing.T) {
 }
 
 func TestVersion_BeforeAfter(t *testing.T) {
-	old := Version{1, 0, 0}
-	new := Version{2, 0, 0}
+	older := Version{1, 0, 0}
+	newer := Version{2, 0, 0}
 
-	if !old.Before(new) {
-		t.Errorf("expected %v.Before(%v)", old, new)
+	if !older.Before(newer) {
+		t.Errorf("expected %v.Before(%v)", older, newer)
 	}
-	if old.After(new) {
-		t.Errorf("unexpected %v.After(%v)", old, new)
+	if older.After(newer) {
+		t.Errorf("unexpected %v.After(%v)", older, newer)
 	}
-	if new.Before(old) {
-		t.Errorf("unexpected %v.Before(%v)", new, old)
+	if newer.Before(older) {
+		t.Errorf("unexpected %v.Before(%v)", newer, older)
 	}
-	if !new.After(old) {
-		t.Errorf("expected %v.After(%v)", new, old)
+	if !newer.After(older) {
+		t.Errorf("expected %v.After(%v)", newer, older)
 	}
-	if old.Before(old) || old.After(old) {
+	if older.Before(older) || older.After(older) {
 		t.Errorf("equal version should be neither Before nor After itself")
 	}
 }

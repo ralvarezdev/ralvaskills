@@ -8,22 +8,26 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/internal/fsx"
+	"github.com/ralvarezdev/ralvaskills/internal/schema"
+	"github.com/ralvarezdev/ralvaskills/internal/tool"
 )
 
 // Mod is the in-memory representation of rsk.mod.
 type Mod struct {
-	Version string             `toml:"version"`
-	Tools   []internal.ToolID  `toml:"tools"`
-	Pinned  []string           `toml:"pinned"`
-	Skills  map[string]string  `toml:"skills"`
+	// SchemaVersion identifies the file format version. Version 0 is accepted
+	// as legacy (pre-versioning) and treated as version 1.
+	SchemaVersion schema.Version    `toml:"version,omitempty"`
+	Tools         []tool.ID         `toml:"tools"`
+	Pinned        []string          `toml:"pinned"`
+	Skills        map[string]string `toml:"skills"`
 }
 
-// normalize fills nil/empty fields with safe defaults.
+// normalize fills nil/empty fields with safe zero-value defaults.
 func (m *Mod) normalize() {
 	if len(m.Tools) == 0 {
-		m.Tools = []internal.ToolID{internal.ToolClaudeCode}
+		m.Tools = []tool.ID{tool.ClaudeID}
 	}
 	if m.Skills == nil {
 		m.Skills = make(map[string]string)
@@ -40,18 +44,23 @@ func ReadMod(rskDir string) (Mod, error) {
 	if _, err := toml.DecodeFile(path, &m); err != nil {
 		return Mod{}, fmt.Errorf("read %s: %w", path, err)
 	}
+	if err := schema.Check(m.SchemaVersion, schema.Mod); err != nil {
+		return Mod{}, fmt.Errorf("rsk.mod: %w", err)
+	}
 	m.normalize()
 	return m, nil
 }
 
-// WriteMod encodes m as TOML to rskDir/rsk.mod atomically, creating parent dirs as needed.
+// WriteMod encodes m as TOML to rskDir/rsk.mod atomically, creating parent
+// directories as needed.
 func WriteMod(rskDir string, m Mod) error {
 	m.normalize()
+	m.SchemaVersion = schema.Mod
 	path := ModPath(rskDir)
-	if err := os.MkdirAll(filepath.Dir(path), LocalDirPermission); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), fsperm.Dir); err != nil {
 		return fmt.Errorf("create dir: %w", err)
 	}
-	return writeFileAtomic(path, func(w io.Writer) error {
+	return fsx.WriteAtomic(path, TempFilePattern, func(w io.Writer) error {
 		return toml.NewEncoder(w).Encode(m)
 	})
 }

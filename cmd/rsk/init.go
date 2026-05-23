@@ -10,8 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
+	"github.com/ralvarezdev/ralvaskills/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -31,13 +32,13 @@ Examples:
   rsk init
   rsk init --force`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runInit(cmd, internal.FlagBool(cmd, internal.FlagForce))
+		return runInit(cmd, cmdx.Bool(cmd, cmdx.FlagForce))
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(initCmd)
-	initCmd.Flags().Bool(internal.FlagForce, false, "Overwrite existing config without prompting")
+	initCmd.Flags().Bool(cmdx.FlagForce, false, "Overwrite existing config without prompting")
 }
 
 func runInit(cmd *cobra.Command, force bool) error {
@@ -92,11 +93,11 @@ func runInit(cmd *cobra.Command, force bool) error {
 	}
 
 	// 2. AI tool selection
-	tools := internal.SupportedTools()
+	tools := tool.All()
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, "Which AI tools do you want to support?")
 	for i, t := range tools {
-		fmt.Fprintf(out, "  [%d] %s  (default: %s)\n", i+1, t.ID, t.DefaultDir)
+		fmt.Fprintf(out, "  [%d] %s  (default: %s)\n", i+1, t.ID(), t.SkillsDir())
 	}
 	selStr, err := prompt(r, out, "Select (comma-separated)", "1,2")
 	if err != nil {
@@ -116,22 +117,22 @@ func runInit(cmd *cobra.Command, force bool) error {
 	)
 	for _, idx := range selected {
 		t := tools[idx]
-		dir, err = prompt(r, out, fmt.Sprintf("Global skills dir for %s", t.ID), t.DefaultDir)
+		dir, err = prompt(r, out, fmt.Sprintf("Global skills dir for %s", t.ID()), t.SkillsDir())
 		if err != nil {
 			return err
 		}
 		expanded, err = expandPath(dir)
 		if err != nil {
-			return fmt.Errorf("invalid path for %s: %w", t.ID, err)
+			return fmt.Errorf("invalid path for %s: %w", t.ID(), err)
 		}
-		globalTargets[string(t.ID)] = expanded
+		globalTargets[string(t.ID())] = expanded
 	}
 
 	// 4. Default target scope
 	scopeOptions := make([]string, 0, len(selected)+1)
-	scopeOptions = append(scopeOptions, internal.ForAll)
+	scopeOptions = append(scopeOptions, cmdx.ForAll)
 	for _, idx := range selected {
-		scopeOptions = append(scopeOptions, string(tools[idx].ID))
+		scopeOptions = append(scopeOptions, string(tools[idx].ID()))
 	}
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, "Default scope when --global is passed without --for:")
@@ -142,7 +143,7 @@ func runInit(cmd *cobra.Command, force bool) error {
 	if err != nil {
 		return err
 	}
-	scopeIdx := internal.ClampInt(parseIntOrDefault(scopeStr, 1), 1, len(scopeOptions))
+	scopeIdx := clampInt(parseIntOrDefault(scopeStr, 1), 1, len(scopeOptions))
 	defaultScope := scopeOptions[scopeIdx-1]
 
 	// Build and save config.
@@ -201,6 +202,16 @@ func parseMultiSelect(s string, count int) []int {
 		out = append(out, n-1)
 	}
 	return out
+}
+
+func clampInt(n, lo, hi int) int {
+	if n < lo {
+		return lo
+	}
+	if n > hi {
+		return hi
+	}
+	return n
 }
 
 func parseIntOrDefault(s string, def int) int {

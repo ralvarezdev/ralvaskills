@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
@@ -55,12 +55,12 @@ Examples:
   rsk status --stack --refresh`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runStatus(cmd, statusOpts{
-			global:   internal.FlagBool(cmd, internal.FlagGlobal),
-			project:  internal.FlagBool(cmd, "project"),
-			stack:    internal.FlagBool(cmd, internal.FlagStack),
-			refresh:  internal.FlagBool(cmd, internal.FlagRefresh),
-			personal: internal.FlagBool(cmd, internal.FlagPersonal),
-			forTool:  internal.FlagString(cmd, internal.FlagFor),
+			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
+			project:  cmdx.Bool(cmd, "project"),
+			stack:    cmdx.Bool(cmd, cmdx.FlagStack),
+			refresh:  cmdx.Bool(cmd, cmdx.FlagRefresh),
+			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
+			forTool:  cmdx.String(cmd, cmdx.FlagFor),
 		})
 	},
 }
@@ -68,12 +68,12 @@ Examples:
 func init() {
 	rootCmd.AddCommand(statusCmd)
 	f := statusCmd.Flags()
-	f.Bool(internal.FlagGlobal, false, "Show global skills only")
-	f.String(internal.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
+	f.Bool(cmdx.FlagGlobal, false, "Show global skills only")
+	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
 	f.Bool("project", false, "Show project skills only")
-	f.Bool(internal.FlagStack, false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
-	f.Bool(internal.FlagRefresh, false, "With --stack: bypass the 24h cache and force a re-fetch")
-	f.Bool(internal.FlagPersonal, false, "Include personal/ skills in output")
+	f.Bool(cmdx.FlagStack, false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
+	f.Bool(cmdx.FlagRefresh, false, "With --stack: bypass the 24h cache and force a re-fetch")
+	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in output")
 }
 
 func runStatus(cmd *cobra.Command, opts statusOpts) error {
@@ -97,7 +97,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
 	}
 
-	rskDir, err := manifest.LocalConfigFolderPath()
+	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
 		return err
 	}
@@ -128,12 +128,12 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 		sections[i].skills = entries
 	}
 
-	any := false
+	hasAny := false
 	for _, sec := range sections {
 		if len(sec.skills) == 0 {
 			continue
 		}
-		any = true
+		hasAny = true
 		fmt.Fprintln(out)
 		ui.SectionHeader(out, sec.title, sec.subtitle)
 
@@ -167,7 +167,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 
 	fmt.Fprintln(out)
 
-	if !any {
+	if !hasAny {
 		ui.Warn(out, "No skills installed.")
 		ui.Indent(out, "Run 'rsk install <bundle>' to get started.")
 	}
@@ -199,7 +199,7 @@ func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forToo
 	}
 
 	if !globalOnly {
-		projectDir := manifest.LocalConfigSkillsPath(rskDir)
+		projectDir := manifest.ProjectSkillsPath(rskDir)
 		sections = append(sections, statusSection{
 			title:    "Project",
 			subtitle: projectDir,
@@ -210,7 +210,11 @@ func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forToo
 	return sections
 }
 
-func scanLinked(targetDir, repoPath, officialCachePath, registryCachePath string, membership map[string][]string, includePersonal bool) ([]linkedEntry, error) {
+func scanLinked(
+	targetDir, repoPath, officialCachePath, registryCachePath string,
+	membership map[string][]string,
+	includePersonal bool,
+) ([]linkedEntry, error) {
 	entries, err := os.ReadDir(targetDir)
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -233,11 +237,14 @@ func scanLinked(targetDir, repoPath, officialCachePath, registryCachePath string
 		if !includePersonal && skill.IsPersonalPath(symlinkTarget) {
 			continue
 		}
-		version, _ := skill.ReadVersion(symlinkTarget)
+		skillVersion, readVersionErr := skill.ReadVersion(symlinkTarget)
+		if readVersionErr != nil {
+			skillVersion = ""
+		}
 		src := detectSkillSource(symlinkTarget, repoPath, officialCachePath, registryCachePath)
 		result = append(result, linkedEntry{
 			name:    e.Name(),
-			version: version,
+			version: skillVersion,
 			source:  src,
 			bundles: membership[e.Name()],
 		})

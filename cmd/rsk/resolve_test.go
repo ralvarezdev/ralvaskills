@@ -95,7 +95,7 @@ func TestParseNameVersion(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
-			name, version, err := parseNameVersion(tc.input)
+			name, pinVersion, err := parseNameVersion(tc.input)
 			if tc.wantErr {
 				if err == nil {
 					t.Errorf("parseNameVersion(%q): expected error, got nil", tc.input)
@@ -108,8 +108,8 @@ func TestParseNameVersion(t *testing.T) {
 			if name != tc.wantName {
 				t.Errorf("name = %q, want %q", name, tc.wantName)
 			}
-			if version != tc.wantVersion {
-				t.Errorf("version = %q, want %q", version, tc.wantVersion)
+			if pinVersion != tc.wantVersion {
+				t.Errorf("version = %q, want %q", pinVersion, tc.wantVersion)
 			}
 		})
 	}

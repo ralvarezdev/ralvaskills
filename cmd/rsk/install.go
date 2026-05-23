@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
@@ -37,12 +37,12 @@ Examples:
   rsk install go-grpc --dry-run`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runInstall(cmd, installOpts{
-			global:   internal.FlagBool(cmd, internal.FlagGlobal),
-			dryRun:   internal.FlagBool(cmd, internal.FlagDryRun),
-			personal: internal.FlagBool(cmd, internal.FlagPersonal),
-			forTool:  internal.FlagString(cmd, internal.FlagFor),
-			skill:    internal.FlagString(cmd, internal.FlagSkill),
-			version:  internal.FlagString(cmd, internal.FlagVersion),
+			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
+			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
+			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
+			forTool:  cmdx.String(cmd, cmdx.FlagFor),
+			skill:    cmdx.String(cmd, cmdx.FlagSkill),
+			version:  cmdx.String(cmd, cmdx.FlagVersion),
 		}, args)
 	},
 }
@@ -50,12 +50,12 @@ Examples:
 func init() {
 	rootCmd.AddCommand(installCmd)
 	f := installCmd.Flags()
-	f.Bool(internal.FlagGlobal, false, "Install to global skills dir(s)")
-	f.String(internal.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
-	f.String(internal.FlagSkill, "", "Install a single skill by name (skips bundle resolution)")
-	f.Bool(internal.FlagPersonal, false, "Allow installing personal/ skills")
-	f.String(internal.FlagVersion, "", "Pin to a specific repo tag (local skills only)")
-	f.Bool(internal.FlagDryRun, false, "Show what would be installed without doing it")
+	f.Bool(cmdx.FlagGlobal, false, "Install to global skills dir(s)")
+	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
+	f.String(cmdx.FlagSkill, "", "Install a single skill by name (skips bundle resolution)")
+	f.Bool(cmdx.FlagPersonal, false, "Allow installing personal/ skills")
+	f.String(cmdx.FlagVersion, "", "Pin to a specific repo tag (local skills only)")
+	f.Bool(cmdx.FlagDryRun, false, "Show what would be installed without doing it")
 }
 
 func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
@@ -220,7 +220,7 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 	errOut := cmd.ErrOrStderr()
 	ctx := cmd.Context()
 
-	rskDir, err := manifest.LocalConfigFolderPath()
+	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
 		return err
 	}
@@ -243,7 +243,7 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 	localSrc := newLocalSource(cfg)
 	officialSrc := source.NewOfficial(cfg.OfficialCache)
 
-	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
+	skillsDir := manifest.ProjectSkillsPath(rskDir)
 
 	sortedNames := make([]string, 0, len(m.Skills))
 	for name := range m.Skills {
@@ -331,10 +331,10 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 		return fmt.Errorf("%d skill(s) failed to install", failed)
 	}
 
-	if err := manifest.WriteLock(rskDir, lock); err != nil {
+	if err = manifest.WriteLock(rskDir, lock); err != nil {
 		return err
 	}
-	if err := syncPinnedAllTools(rskDir, m); err != nil {
+	if err = syncPinnedAllTools(rskDir, m); err != nil {
 		return err
 	}
 

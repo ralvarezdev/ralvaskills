@@ -13,21 +13,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
 
 const (
-	// DefaultHTTPTimeout is the timeout for HTTP requests to the registry.
+	// DefaultHTTPTimeout is the timeout applied to all HTTP requests made to
+	// the hosted registry.
 	DefaultHTTPTimeout = 30 * time.Second
 
-	// IndexFileName is the name of the registry index file.
+	// IndexFileName is the filename of the registry skill index.
 	IndexFileName = "index.json"
 
-	// FilePermissionMask is the permission bits mask for extracted files (tar header mode & FilePermission).
-	FilePermissionMask = 0o777
-
-	// FileOpenFlags are the flags used when creating files during tarball extraction.
-	FileOpenFlags = os.O_CREATE | os.O_WRONLY | os.O_TRUNC
+	// TarballOpenFlags are the open flags used when writing extracted tarball
+	// entries to disk.
+	TarballOpenFlags = os.O_CREATE | os.O_WRONLY | os.O_TRUNC
 )
 
 type (
@@ -50,7 +50,7 @@ type (
 	}
 
 	// Registry resolves skills from the hosted registry at baseURL.
-	// Skills are downloaded as tarballs and cached in cacheDir.
+	// Downloaded tarballs are extracted and cached in cacheDir.
 	Registry struct {
 		baseURL  string
 		cacheDir string
@@ -58,7 +58,8 @@ type (
 	}
 )
 
-// NewRegistry returns a Registry backed by baseURL, caching extractions in cacheDir.
+// NewRegistry returns a Registry backed by baseURL, caching extractions in
+// cacheDir.
 func NewRegistry(baseURL, cacheDir string) *Registry {
 	return &Registry{
 		baseURL:  baseURL,
@@ -67,15 +68,16 @@ func NewRegistry(baseURL, cacheDir string) *Registry {
 	}
 }
 
-// Index fetches and returns the registry index.
+// Index fetches and returns the registry skill index.
 func (r *Registry) Index(ctx context.Context) (map[string]*indexSkillEntry, error) {
 	url := r.baseURL + "/" + IndexFileName
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("build index request: %w", err)
 	}
-	resp, err := r.client.Do(req)
 
+	var resp *http.Response
+	resp, err = r.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch index: %w", err)
 	}
@@ -86,13 +88,13 @@ func (r *Registry) Index(ctx context.Context) (map[string]*indexSkillEntry, erro
 	}
 
 	var idx registryIndex
-	if err := json.NewDecoder(resp.Body).Decode(&idx); err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(&idx); err != nil {
 		return nil, fmt.Errorf("decode index: %w", err)
 	}
 	return idx.Skills, nil
 }
 
-// All fetches the index and returns every non-personal skill at its latest version.
+// All fetches the index and returns every skill at its latest version.
 func (r *Registry) All(ctx context.Context) ([]skill.Skill, error) {
 	index, err := r.Index(ctx)
 	if err != nil {
@@ -112,12 +114,13 @@ func (r *Registry) All(ctx context.Context) ([]skill.Skill, error) {
 }
 
 // Find returns the skill at its latest version, downloading and caching the
-// tarball if it is not already present in cacheDir.
+// tarball if not already present in cacheDir.
 func (r *Registry) Find(ctx context.Context, name string) (skill.Skill, error) {
 	return r.FindVersion(ctx, name, "")
 }
 
-// FindVersion returns the skill at a specific version (empty string = latest).
+// FindVersion returns the skill at a specific version. An empty version string
+// selects the latest version.
 func (r *Registry) FindVersion(ctx context.Context, name, version string) (skill.Skill, error) {
 	index, err := r.Index(ctx)
 	if err != nil {
@@ -152,19 +155,21 @@ func (r *Registry) FindVersion(ctx context.Context, name, version string) (skill
 }
 
 // ensureCached downloads and extracts the tarball for name@version if not
-// already present in cacheDir. Returns the path to the extracted skill directory.
+// already present in cacheDir. Returns the path to the extracted skill
+// directory.
 func (r *Registry) ensureCached(ctx context.Context, name, version, archiveURL string) (string, error) {
 	skillDir := filepath.Join(r.cacheDir, name, version)
-	if _, err := os.Stat(skillDir); err == nil {
-		return skillDir, nil // already cached
+	if _, statErr := os.Stat(skillDir); statErr == nil {
+		return skillDir, nil
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, archiveURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, archiveURL, http.NoBody)
 	if err != nil {
 		return "", fmt.Errorf("build download request: %w", err)
 	}
 
-	resp, err := r.client.Do(req)
+	var resp *http.Response
+	resp, err = r.client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("download %s: %w", archiveURL, err)
 	}
@@ -174,25 +179,25 @@ func (r *Registry) ensureCached(ctx context.Context, name, version, archiveURL s
 		return "", fmt.Errorf("download %s: HTTP %d", archiveURL, resp.StatusCode)
 	}
 
-	if err := os.MkdirAll(skillDir, skill.DirPermission); err != nil {
+	if err = os.MkdirAll(skillDir, fsperm.Dir); err != nil {
 		return "", fmt.Errorf("create cache dir: %w", err)
 	}
 
-	if err := extractTarball(resp.Body, skillDir, name); err != nil {
-		_ = os.RemoveAll(skillDir) // clean up partial extraction
+	if err = extractTarball(resp.Body, skillDir, name); err != nil {
+		_ = os.RemoveAll(skillDir)
 		return "", fmt.Errorf("extract tarball: %w", err)
 	}
 
 	return skillDir, nil
 }
 
-// extractTarball extracts a .tar.gz stream into destDir.
-// Entries rooted at skillName/ are stripped of that prefix so the skill files
-// land directly in destDir.
+// extractTarball extracts a .tar.gz stream into destDir. Archive entries
+// rooted at skillName/ have that prefix stripped so files land directly in
+// destDir.
 //
-// Only regular files and directories are extracted. Symlinks and hard links are
-// rejected to prevent link-based escape attacks. All resolved paths are
-// validated to remain inside destDir (zip-slip protection).
+// Only regular files and directories are accepted; symlinks, hard links, and
+// other entry types are rejected to prevent escape attacks. All resolved paths
+// are validated to remain inside destDir (zip-slip protection).
 func extractTarball(r io.Reader, destDir, skillName string) error {
 	gr, err := gzip.NewReader(r)
 	if err != nil {
@@ -200,30 +205,26 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 	}
 	defer gr.Close()
 
-	// destDir must be absolute and clean so the HasPrefix check below is reliable.
 	destDir = filepath.Clean(destDir)
 	safeRoot := destDir + string(filepath.Separator)
 
 	prefix := skillName + "/"
 	tr := tar.NewReader(gr)
 	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
+		hdr, nextErr := tr.Next()
+		if nextErr == io.EOF {
 			break
 		}
-		if err != nil {
-			return err
+		if nextErr != nil {
+			return nextErr
 		}
 
 		switch hdr.Typeflag {
 		case tar.TypeDir, tar.TypeReg:
-			// allowed
 		default:
-			// Reject symlinks, hard links, devices, etc.
 			return fmt.Errorf("unsupported tar entry type %d for %q", hdr.Typeflag, hdr.Name)
 		}
 
-		// Strip the leading skillName/ prefix from archive paths.
 		rel := hdr.Name
 		if len(rel) > len(prefix) && rel[:len(prefix)] == prefix {
 			rel = rel[len(prefix):]
@@ -233,25 +234,23 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 		}
 
 		target := filepath.Join(destDir, filepath.FromSlash(rel))
-
-		// Zip-slip guard: resolved path must stay inside destDir.
 		if target != destDir && !strings.HasPrefix(target, safeRoot) {
 			return fmt.Errorf("archive entry %q escapes destination directory", hdr.Name)
 		}
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, skill.DirPermission); err != nil {
-				return err
+			if mkdirErr := os.MkdirAll(target, fsperm.Dir); mkdirErr != nil {
+				return mkdirErr
 			}
 		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(target), skill.DirPermission); err != nil {
-				return err
+			if mkdirErr := os.MkdirAll(filepath.Dir(target), fsperm.Dir); mkdirErr != nil {
+				return mkdirErr
 			}
 
-			f, err := os.OpenFile(target, FileOpenFlags, os.FileMode(hdr.Mode)&FilePermissionMask)
-			if err != nil {
-				return err
+			f, openErr := os.OpenFile(target, TarballOpenFlags, os.FileMode(hdr.Mode)&fsperm.Mask)
+			if openErr != nil {
+				return openErr
 			}
 
 			_, copyErr := io.Copy(f, tr)
@@ -259,7 +258,6 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 			if copyErr != nil {
 				return copyErr
 			}
-
 			if closeErr != nil {
 				return closeErr
 			}

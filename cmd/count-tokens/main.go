@@ -44,15 +44,15 @@ const (
 	sessionDescBudget int64 = 2200
 
 	// File and directory names.
-	skillMarkdownFile      = "SKILL.md"
-	stackMarkdownFile      = "STACK.md"
-	recipesMarkdownFile    = "RECIPES.md"
-	gitDir                 = ".git"
-	skillsDir              = "skills"
-	catalogFilePath        = "internal/config/catalog.toml"
-	docsDir                = "docs"
-	tokenCountsFile        = "TOKEN_COUNTS.md"
-	tokenCountsJSONFile    = "TOKEN_COUNTS.json"
+	skillMarkdownFile   = "SKILL.md"
+	stackMarkdownFile   = "STACK.md"
+	recipesMarkdownFile = "RECIPES.md"
+	gitDir              = ".git"
+	skillsDir           = "skills"
+	catalogFilePath     = "internal/config/catalog.toml"
+	docsDir             = "docs"
+	tokenCountsFile     = "TOKEN_COUNTS.md"
+	tokenCountsJSONFile = "TOKEN_COUNTS.json"
 
 	// Global bundle name.
 	globalBundleName = "global"
@@ -188,7 +188,7 @@ func loadCatalog(path string) ([]bundle, error) {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
 	var cat catalogFile
-	if _, err := toml.Decode(string(raw), &cat); err != nil {
+	if _, err = toml.Decode(string(raw), &cat); err != nil {
 		return nil, fmt.Errorf("parse %s: %w", path, err)
 	}
 	return cat.Bundle, nil
@@ -249,7 +249,10 @@ func scan(skillsDir string) ([]skill, error) {
 			descTokens: roundDiv(int64(len(desc)), descBytesPerToken),
 		}
 
-		siblings, _ := filepath.Glob(filepath.Join(skillDir, "*.md"))
+		siblings, globErr := filepath.Glob(filepath.Join(skillDir, "*.md"))
+		if globErr != nil {
+			siblings = nil
+		}
 		for _, sib := range siblings {
 			if filepath.Base(sib) == skillMarkdownFile {
 				continue
@@ -408,7 +411,7 @@ func render(skills []skill, bundles []bundle) string {
 	})
 
 	// Per-bundle totals. Skills referenced by a bundle but not present in the
-	// local scan are categorised: official-source skills (docx, xlsx, etc.)
+	// local scan are categorized: official-source skills (docx, xlsx, etc.)
 	// live outside this repo and are intentionally external; local-source
 	// skills not found in the scan are genuinely missing.
 	type bundleTotals struct {
@@ -454,17 +457,30 @@ func render(skills []skill, bundles []bundle) string {
 	buf.WriteString("# SKILL.md Token Estimates\n\n")
 	buf.WriteString("> Auto-generated. **Do not edit by hand.** Run `task tokens` to refresh.\n")
 	buf.WriteString(">\n")
-	buf.WriteString("> Estimate: ~4 bytes/token for bodies, ~3 bytes/token for descriptions (Claude tokenizer). Actual range ±15%.\n\n")
+	buf.WriteString(
+		"> Estimate: ~4 bytes/token for bodies, ~3 bytes/token for descriptions" +
+			" (Claude tokenizer). Actual range ±15%.\n\n",
+	)
 	ts := time.Now().UTC().Format("2006-01-02")
 	fmt.Fprintf(&buf, "_Last updated: %s · %d skills · %d bundles_\n\n", ts, len(skills), len(bundles))
 
 	buf.WriteString("## Load model\n\n")
-	buf.WriteString("Description tokens hit **every turn** for installed skills. Body tokens are paid only when a skill is actually invoked. Side files are never auto-loaded.\n\n")
+	buf.WriteString(
+		"Description tokens hit **every turn** for installed skills." +
+			" Body tokens are paid only when a skill is actually invoked." +
+			" Side files are never auto-loaded.\n\n",
+	)
 	buf.WriteString("| What | When loaded | Estimated tokens |\n")
 	buf.WriteString("|---|---|---:|\n")
 	fmt.Fprintf(&buf, "| All `SKILL.md` bodies | Only when invoked | ~%d |\n", totalBodyTokens)
-	fmt.Fprintf(&buf, "| All side files (`STACK` + `RECIPES` + topic files) | On-demand only | ~%d |\n", totalSideTokens)
-	fmt.Fprintf(&buf, "| All `description:` fields (every skill) | Every turn, if all installed | ~%d |\n\n", totalDescTokens)
+	fmt.Fprintf(
+		&buf, "| All side files (`STACK` + `RECIPES` + topic files) | On-demand only | ~%d |\n",
+		totalSideTokens,
+	)
+	fmt.Fprintf(
+		&buf, "| All `description:` fields (every skill) | Every turn, if all installed | ~%d |\n\n",
+		totalDescTokens,
+	)
 
 	// Session profiles: global baseline, plus what each project bundle adds.
 	if globalTotals != nil {
@@ -560,11 +576,17 @@ func render(skills []skill, bundles []bundle) string {
 	}
 
 	buf.WriteString("## Per skill\n\n")
-	buf.WriteString("| # | Skill | Category | Body bytes | ~Body tkns | ~Desc tkns | ~Stack tkns | ~Recipes tkns | ~Topic tkns |\n")
+	buf.WriteString(
+		"| # | Skill | Category | Body bytes | ~Body tkns | ~Desc tkns" +
+			" | ~Stack tkns | ~Recipes tkns | ~Topic tkns |\n",
+	)
 	buf.WriteString("|---|---|---|---:|---:|---:|---:|---:|---:|\n")
 	for i, s := range skills {
-		fmt.Fprintf(&buf, "| %d | `%s` | %s | %d | ~%d | ~%d | ~%d | ~%d | ~%d |\n",
-			i+1, s.name, s.category, s.bodyBytes, s.bodyTokens, s.descTokens, s.stackTokens, s.recipesTokens, s.otherTokens)
+		fmt.Fprintf(
+			&buf, "| %d | `%s` | %s | %d | ~%d | ~%d | ~%d | ~%d | ~%d |\n",
+			i+1, s.name, s.category, s.bodyBytes, s.bodyTokens, s.descTokens,
+			s.stackTokens, s.recipesTokens, s.otherTokens,
+		)
 	}
 
 	fmt.Fprintf(&buf, "\n**Totals:** %d body bytes · ~%d body tokens · ~%d desc tokens · ~%d side tokens\n\n",
@@ -610,7 +632,10 @@ func render(skills []skill, bundles []bundle) string {
 
 	buf.WriteString("## Skills to consider trimming\n\n")
 	if len(heavyBody) > 0 {
-		fmt.Fprintf(&buf, "Body > %d tokens — consider moving examples to `RECIPES.md` or topic files:\n\n", bodyThreshold)
+		fmt.Fprintf(
+			&buf, "Body > %d tokens — consider moving examples to `RECIPES.md` or topic files:\n\n",
+			bodyThreshold,
+		)
 		sort.Slice(heavyBody, func(i, j int) bool { return heavyBody[i].bodyTokens > heavyBody[j].bodyTokens })
 		for _, s := range heavyBody {
 			fmt.Fprintf(&buf, "- `%s` (~%d body tokens)\n", s.name, s.bodyTokens)
@@ -618,7 +643,11 @@ func render(skills []skill, bundles []bundle) string {
 		buf.WriteString("\n")
 	}
 	if len(byDesc) > 0 {
-		fmt.Fprintf(&buf, "Heaviest %d descriptions — each desc token is paid every turn for any session that installs the skill:\n\n", len(byDesc))
+		fmt.Fprintf(
+			&buf,
+			"Heaviest %d descriptions — each desc token is paid every turn for any session that installs the skill:\n\n",
+			len(byDesc),
+		)
 		for _, s := range byDesc {
 			fmt.Fprintf(&buf, "- `%s` (~%d desc tokens)\n", s.name, s.descTokens)
 		}
@@ -627,8 +656,13 @@ func render(skills []skill, bundles []bundle) string {
 
 	buf.WriteString("## Notes\n\n")
 	buf.WriteString("- **Body tokens** cost only when the skill is invoked in a session.\n")
-	buf.WriteString("- **Description tokens** cost every turn for any session that has the skill installed. The cost depends on which bundles are installed, not on the corpus total.\n")
-	buf.WriteString("- Side files (`STACK.md`, `RECIPES.md`, topic files) are never auto-loaded; they cost 0 per turn.\n")
+	buf.WriteString(
+		"- **Description tokens** cost every turn for any session that has the skill installed." +
+			" The cost depends on which bundles are installed, not on the corpus total.\n",
+	)
+	buf.WriteString(
+		"- Side files (`STACK.md`, `RECIPES.md`, topic files) are never auto-loaded; they cost 0 per turn.\n",
+	)
 	buf.WriteString(
 		"- For exact counts: run each file through" +
 			" [`tiktoken`](https://github.com/openai/tiktoken) with `cl100k_base`.\n",

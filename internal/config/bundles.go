@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-
+	"github.com/ralvarezdev/ralvaskills/internal/schema"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
 
@@ -29,7 +29,10 @@ type (
 
 	// catalogFile is the top-level shape of a catalog TOML file.
 	catalogFile struct {
-		Bundle []Bundle `toml:"bundle"`
+		// SchemaVersion identifies the file format version. Version 0 is
+		// accepted as legacy (pre-versioning) and treated as version 1.
+		SchemaVersion schema.Version `toml:"version,omitempty"`
+		Bundle        []Bundle       `toml:"bundle"`
 	}
 )
 
@@ -38,9 +41,9 @@ type (
 // Pass an empty string to use DefaultCatalogPath.
 //
 // When the user catalog exists but cannot be read or parsed, the embedded
-// defaults are returned together with a non-nil error describing the problem.
-// Callers should surface this error as a warning — rsk continues to work, but
-// the user's customisations are not applied.
+// defaults are returned together with a non-nil error. Callers should surface
+// this error as a warning — rsk continues to work, but user customisations are
+// not applied.
 func LoadCatalog(userCatalogPath string) ([]Bundle, error) {
 	defaults := mustParseEmbedded()
 
@@ -59,6 +62,9 @@ func LoadCatalog(userCatalogPath string) ([]Bundle, error) {
 	var user catalogFile
 	if _, err = toml.Decode(string(raw), &user); err != nil {
 		return defaults, fmt.Errorf("user catalog parse error (%s): %w", userCatalogPath, err)
+	}
+	if err = schema.Check(user.SchemaVersion, schema.Catalog); err != nil {
+		return defaults, fmt.Errorf("user catalog %s: %w", userCatalogPath, err)
 	}
 
 	return merge(defaults, user.Bundle), nil
@@ -80,7 +86,6 @@ func mustParseEmbedded() []Bundle {
 func merge(defaults, user []Bundle) []Bundle {
 	index := make(map[string]int, len(defaults))
 	result := make([]Bundle, len(defaults))
-
 	copy(result, defaults)
 	for i, b := range result {
 		index[b.Name] = i
@@ -95,8 +100,7 @@ func merge(defaults, user []Bundle) []Bundle {
 	return result
 }
 
-// FindBundle returns the bundle with the given name from bundles and whether it
-// was found.
+// FindBundle returns the bundle with the given name, and whether it was found.
 func FindBundle(bundles []Bundle, name string) (Bundle, bool) {
 	for _, b := range bundles {
 		if b.Name == name {

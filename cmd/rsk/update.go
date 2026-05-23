@@ -5,18 +5,18 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
+	rskgit "github.com/ralvarezdev/ralvaskills/internal/git"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 	"github.com/spf13/cobra"
 )
 
-const (
-	// officialSkillsURL is the GitHub URL for the anthropics/skills repo, which is used as a source for official skills in local-repo mode.
-	officialSkillsURL = "https://github.com/anthropics/skills"
-)
+// officialSkillsURL is the GitHub URL for the anthropics/skills repo used as a
+// source for official skills in local-repo mode.
+const officialSkillsURL = "https://github.com/anthropics/skills"
 
 type updateOpts struct {
 	global, dryRun, personal, official bool
@@ -40,12 +40,12 @@ Examples:
   rsk update --skill grpc-architect`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runUpdate(cmd, updateOpts{
-			global:   internal.FlagBool(cmd, internal.FlagGlobal),
-			dryRun:   internal.FlagBool(cmd, internal.FlagDryRun),
-			personal: internal.FlagBool(cmd, internal.FlagPersonal),
-			official: internal.FlagBool(cmd, internal.FlagOfficial),
-			forTool:  internal.FlagString(cmd, internal.FlagFor),
-			skill:    internal.FlagString(cmd, internal.FlagSkill),
+			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
+			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
+			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
+			official: cmdx.Bool(cmd, cmdx.FlagOfficial),
+			forTool:  cmdx.String(cmd, cmdx.FlagFor),
+			skill:    cmdx.String(cmd, cmdx.FlagSkill),
 		}, args)
 	},
 }
@@ -53,12 +53,12 @@ Examples:
 func init() {
 	rootCmd.AddCommand(updateCmd)
 	f := updateCmd.Flags()
-	f.Bool(internal.FlagGlobal, false, "Target global skills dir(s)")
-	f.String(internal.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
-	f.String(internal.FlagSkill, "", "Update a single skill by name")
-	f.Bool(internal.FlagOfficial, false, "Also re-fetch the anthropics/skills cache")
-	f.Bool(internal.FlagPersonal, false, "Include personal/ skills in update")
-	f.Bool(internal.FlagDryRun, false, "Show what would change without applying it")
+	f.Bool(cmdx.FlagGlobal, false, "Target global skills dir(s)")
+	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
+	f.String(cmdx.FlagSkill, "", "Update a single skill by name")
+	f.Bool(cmdx.FlagOfficial, false, "Also re-fetch the anthropics/skills cache")
+	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in update")
+	f.Bool(cmdx.FlagDryRun, false, "Show what would change without applying it")
 }
 
 func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {
@@ -80,6 +80,7 @@ func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {
 // runUpdateLocal handles update for local-repo mode: git pull + optional official cache refresh.
 func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts updateOpts) error {
 	out := cmd.OutOrStdout()
+	ctx := cmd.Context()
 
 	needsOfficial := opts.official
 	if !needsOfficial && (len(args) > 0 || opts.skill != "") {
@@ -126,27 +127,39 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 	fmt.Fprintln(out)
 
 	ui.Info(out, fmt.Sprintf("Pulling %s …", cfg.RepoPath))
-	if err := internal.GitPull(cfg.RepoPath, out); err != nil {
+	if err := rskgit.Pull(ctx, cfg.RepoPath, out); err != nil {
 		return fmt.Errorf("git pull (local repo): %w", err)
 	}
 
 	if needsOfficial {
-		if _, statErr := os.Stat(officialCacheDir); os.IsNotExist(statErr) {
-			ui.Info(out, fmt.Sprintf("Cloning %s → %s …", officialSkillsURL, officialCacheDir))
-			if err := internal.GitClone(officialSkillsURL, officialCacheDir, out); err != nil {
-				return fmt.Errorf("git clone (official cache): %w", err)
-			}
-		} else {
-			ui.Info(out, fmt.Sprintf("Pulling %s …", officialCacheDir))
-			if err := internal.GitPull(officialCacheDir, out); err != nil {
-				return fmt.Errorf("git pull (official cache): %w", err)
-			}
+		if err := refreshOfficialCache(cmd, officialCacheDir); err != nil {
+			return err
 		}
 	}
 
 	fmt.Fprintln(out)
 	ui.Success(out, "Update complete.")
 	ui.Info(out, "  Run 'rsk status' to see installed skill versions.")
+	return nil
+}
+
+// refreshOfficialCache clones or pulls the official anthropics/skills cache.
+func refreshOfficialCache(cmd *cobra.Command, dir string) error {
+	out := cmd.OutOrStdout()
+	ctx := cmd.Context()
+
+	if _, statErr := os.Stat(dir); os.IsNotExist(statErr) {
+		ui.Info(out, fmt.Sprintf("Cloning %s → %s …", officialSkillsURL, dir))
+		if err := rskgit.Clone(ctx, officialSkillsURL, dir, out); err != nil {
+			return fmt.Errorf("git clone (official cache): %w", err)
+		}
+		return nil
+	}
+
+	ui.Info(out, fmt.Sprintf("Pulling %s …", dir))
+	if err := rskgit.Pull(ctx, dir, out); err != nil {
+		return fmt.Errorf("git pull (official cache): %w", err)
+	}
 	return nil
 }
 
@@ -186,7 +199,10 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 		// Check all skills installed in any target dir.
 		seen := make(map[string]bool)
 		for _, target := range targets {
-			entries, _ := os.ReadDir(target)
+			entries, readErr := os.ReadDir(target)
+			if readErr != nil {
+				continue
+			}
 			for _, e := range entries {
 				if !seen[e.Name()] {
 					seen[e.Name()] = true

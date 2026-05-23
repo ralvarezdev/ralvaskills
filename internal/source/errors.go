@@ -1,8 +1,7 @@
+// Package source resolves skills from their respective origins.
 package source
 
 import "errors"
 
-var (
-	// ErrNotFound is returned when a skill cannot be located in a source.
-	ErrNotFound = errors.New("skill not found")
-)
+// ErrNotFound is returned when a skill cannot be located in a source.
+var ErrNotFound = errors.New("skill not found")

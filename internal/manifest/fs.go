@@ -9,68 +9,70 @@ import (
 )
 
 const (
-	// LocalConfigFolderName is the name of the folder in the local source where RSK configuration files are stored.
-	LocalConfigFolderName = ".rsk"
+	// ProjectFolderName is the name of the project-local rsk directory that
+	// marks a directory as an rsk project root.
+	ProjectFolderName = ".rsk"
 
-	// ClaudeFileName is the name of the file in .rsk that lists pinned skills to import.
+	// ClaudeFileName is the name of the generated file inside .rsk/ that lists
+	// pinned skills for Claude Code to import.
 	ClaudeFileName = "CLAUDE.md"
 
-	// OpenCodeConfigFileName is the name of the configuration file for OpenCode, which may be used to specify settings related to skill development and management.
-	OpenCodeConfigFileName = "opencode.json"
+	// OpenCodeFileName is the name of the OpenCode configuration file written
+	// inside the project root by rsk.
+	OpenCodeFileName = "opencode.json"
 
-	// ModManifestFile is the name of the manifest file that defines project-specific skills and their versions.
-	ModManifestFile = "rsk.mod"
+	// ModFileName is the filename of the project skill manifest.
+	ModFileName = "rsk.mod"
 
-	// LocalManifestFile is the name of the manifest file in the local source.
-	LockManifestFile = "rsk.lock"
+	// LockFileName is the filename of the resolved skill lockfile.
+	LockFileName = "rsk.lock"
 
-	// LocalTempFilePattern is the glob pattern for temporary files used during manifest operations, which should be ignored or cleaned up as needed.
-	LocalTempFilePattern = ".rsk-*.tmp"
-
-	// LocalDirPermission is the permission for the local .rsk directory, set to 0o755 to allow read/write/execute for the owner and read/execute for group and others.
-	LocalDirPermission = 0o750
-
-	// LocalFilePermission is the permission for files created in .rsk directories.
-	LocalFilePermission = 0o644
+	// TempFilePattern is the glob pattern for temporary files created during
+	// atomic write operations inside the .rsk directory.
+	TempFilePattern = ".rsk-*.tmp"
 )
 
 var (
-	// LocalSkillsPrefix is the forward-slash path prefix for .rsk/skills/ entries.
-	// Intentionally uses "/" not filepath.Separator: opencode.json stores Unix-style
-	// paths regardless of host OS, so this must remain slash-separated.
-	LocalSkillsPrefix = LocalConfigFolderName + "/" + skill.SkillsFolderName + "/"
+	// ProjectSkillsPrefix is the forward-slash path prefix for .rsk/skills/
+	// entries. Uses "/" rather than filepath.Separator because opencode.json
+	// stores Unix-style paths regardless of the host OS.
+	ProjectSkillsPrefix = ProjectFolderName + "/" + skill.SkillsFolderName + "/"
 
-	// RelativeClaudeFilePath is the relative file path of CLAUDE.md from the project root, used to determine where the pinned skills configuration file should be located within a project.
-	RelativeClaudeFilePath = filepath.Join(LocalConfigFolderName, ClaudeFileName)
+	// RelativeClaudeFilePath is the path of CLAUDE.md relative to the project
+	// root (.rsk/CLAUDE.md).
+	RelativeClaudeFilePath = filepath.Join(ProjectFolderName, ClaudeFileName)
 )
 
-// LocalConfigFolderPath returns the canonical local config folder path based on the current current working directory
-func LocalConfigFolderPath() (string, error) {
+// ProjectFolderPath returns the .rsk directory path for the current working
+// directory. Returns an error if rsk.mod is not found, indicating the directory
+// has not been initialized as an rsk project.
+func ProjectFolderPath() (string, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", fmt.Errorf("get working directory: %w", err)
 	}
 
-	rskDir := filepath.Join(cwd, LocalConfigFolderName)
-	if _, err := os.Stat(ModPath(rskDir)); os.IsNotExist(err) {
+	rskDir := filepath.Join(cwd, ProjectFolderName)
+	if _, statErr := os.Stat(ModPath(rskDir)); os.IsNotExist(statErr) {
 		return "", fmt.Errorf("no rsk.mod found — run 'rsk project init' first")
 	}
 	return rskDir, nil
 }
 
-// LocalConfigSkillsPath returns the canonical path of the local skills directory inside rskDir, where locally developed skills are stored.
-func LocalConfigSkillsPath(rskDir string) string {
+// ProjectSkillsPath returns the canonical path of the project-local skills
+// directory (.rsk/skills/).
+func ProjectSkillsPath(rskDir string) string {
 	return filepath.Join(rskDir, skill.SkillsFolderName)
 }
 
 // LockPath returns the canonical path of rsk.lock inside rskDir.
 func LockPath(rskDir string) string {
-	return filepath.Join(rskDir, LockManifestFile)
+	return filepath.Join(rskDir, LockFileName)
 }
 
 // ModPath returns the canonical path of rsk.mod inside rskDir.
 func ModPath(rskDir string) string {
-	return filepath.Join(rskDir, ModManifestFile)
+	return filepath.Join(rskDir, ModFileName)
 }
 
 // ClaudeConfigFilePath returns the canonical path of CLAUDE.md inside rskDir.
@@ -78,7 +80,8 @@ func ClaudeConfigFilePath(rskDir string) string {
 	return filepath.Join(rskDir, ClaudeFileName)
 }
 
-// OpenCodeConfigFilePath returns the canonical path of opencode.json inside rskDir.
+// OpenCodeConfigFilePath returns the canonical path of opencode.json inside
+// rskDir.
 func OpenCodeConfigFilePath(rskDir string) string {
-	return filepath.Join(rskDir, OpenCodeConfigFileName)
+	return filepath.Join(rskDir, OpenCodeFileName)
 }

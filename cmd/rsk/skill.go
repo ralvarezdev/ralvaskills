@@ -7,11 +7,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
+	"github.com/ralvarezdev/ralvaskills/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -72,19 +73,22 @@ func init() {
 	skillCmd.AddCommand(skillListCmd)
 	skillCmd.AddCommand(skillUpgradeCmd)
 
-	skillAddCmd.Flags().Bool(internal.FlagPin, false, fmt.Sprintf("Also pin the skill in %s", manifest.RelativeClaudeFilePath))
+	skillAddCmd.Flags().Bool(
+		cmdx.FlagPin, false,
+		fmt.Sprintf("Also pin the skill in %s", manifest.RelativeClaudeFilePath),
+	)
 }
 
 func runSkillAdd(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
 	ctx := cmd.Context()
 
-	name, version, err := parseNameVersion(args[0])
+	name, pinVersion, err := parseNameVersion(args[0])
 	if err != nil {
 		return err
 	}
 
-	rskDir, err := manifest.LocalConfigFolderPath()
+	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
 		return err
 	}
@@ -102,8 +106,8 @@ func runSkillAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
-	if err := skill.Link(s, skillsDir); err != nil {
+	skillsDir := manifest.ProjectSkillsPath(rskDir)
+	if err = skill.Link(s, skillsDir); err != nil {
 		return fmt.Errorf("link %s: %w", name, err)
 	}
 
@@ -112,17 +116,17 @@ func runSkillAdd(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	constraint := version
+	constraint := pinVersion
 	if constraint == "" {
 		constraint = "*"
 	}
 	m.Skills[name] = constraint
 
-	if internal.FlagBool(cmd, internal.FlagPin) && !slices.Contains(m.Pinned, name) {
+	if cmdx.Bool(cmd, cmdx.FlagPin) && !slices.Contains(m.Pinned, name) {
 		m.Pinned = append(m.Pinned, name)
 	}
 
-	if err := manifest.WriteMod(rskDir, m); err != nil {
+	if err = manifest.WriteMod(rskDir, m); err != nil {
 		return err
 	}
 
@@ -136,12 +140,12 @@ func runSkillAdd(cmd *cobra.Command, args []string) error {
 		Source:  s.Source,
 		Path:    s.Path,
 	})
-	if err := manifest.WriteLock(rskDir, lock); err != nil {
+	if err = manifest.WriteLock(rskDir, lock); err != nil {
 		return err
 	}
 
 	if slices.Contains(m.Pinned, name) {
-		if err := syncPinnedAllTools(rskDir, m); err != nil {
+		if err = syncPinnedAllTools(rskDir, m); err != nil {
 			return err
 		}
 	}
@@ -156,7 +160,7 @@ func runSkillPin(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
 	name := args[0]
 
-	rskDir, err := manifest.LocalConfigFolderPath()
+	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
 		return err
 	}
@@ -176,10 +180,10 @@ func runSkillPin(cmd *cobra.Command, args []string) error {
 	}
 
 	m.Pinned = append(m.Pinned, name)
-	if err := manifest.WriteMod(rskDir, m); err != nil {
+	if err = manifest.WriteMod(rskDir, m); err != nil {
 		return err
 	}
-	if err := syncPinnedAllTools(rskDir, m); err != nil {
+	if err = syncPinnedAllTools(rskDir, m); err != nil {
 		return err
 	}
 
@@ -193,7 +197,7 @@ func runSkillUnpin(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
 	name := args[0]
 
-	rskDir, err := manifest.LocalConfigFolderPath()
+	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
 		return err
 	}
@@ -209,10 +213,10 @@ func runSkillUnpin(cmd *cobra.Command, args []string) error {
 	}
 
 	m.Pinned = slices.DeleteFunc(m.Pinned, func(v string) bool { return v == name })
-	if err := manifest.WriteMod(rskDir, m); err != nil {
+	if err = manifest.WriteMod(rskDir, m); err != nil {
 		return err
 	}
-	if err := syncPinnedAllTools(rskDir, m); err != nil {
+	if err = syncPinnedAllTools(rskDir, m); err != nil {
 		return err
 	}
 
@@ -225,7 +229,7 @@ func runSkillUnpin(cmd *cobra.Command, args []string) error {
 func runSkillList(cmd *cobra.Command, _ []string) error {
 	out := cmd.OutOrStdout()
 
-	rskDir, err := manifest.LocalConfigFolderPath()
+	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
 		return err
 	}
@@ -245,7 +249,7 @@ func runSkillList(cmd *cobra.Command, _ []string) error {
 	fmt.Fprintln(out)
 	ui.Header(out, "Project skills:")
 
-	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
+	skillsDir := manifest.ProjectSkillsPath(rskDir)
 	pinnedSet := make(map[string]bool, len(m.Pinned))
 	for _, p := range m.Pinned {
 		pinnedSet[p] = true
@@ -288,7 +292,7 @@ func runSkillUpgrade(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 	name := args[0]
 
-	rskDir, err := manifest.LocalConfigFolderPath()
+	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
 		return err
 	}
@@ -315,8 +319,8 @@ func runSkillUpgrade(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	skillsDir := manifest.LocalConfigSkillsPath(rskDir)
-	if err := skill.Link(s, skillsDir); err != nil {
+	skillsDir := manifest.ProjectSkillsPath(rskDir)
+	if err = skill.Link(s, skillsDir); err != nil {
 		return fmt.Errorf("link %s: %w", name, err)
 	}
 
@@ -330,7 +334,7 @@ func runSkillUpgrade(cmd *cobra.Command, args []string) error {
 		Source:  s.Source,
 		Path:    s.Path,
 	})
-	if err := manifest.WriteLock(rskDir, lock); err != nil {
+	if err = manifest.WriteLock(rskDir, lock); err != nil {
 		return err
 	}
 
@@ -344,22 +348,17 @@ func runSkillUpgrade(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// syncPinnedAllTools writes pinned skill entries for every tool in m.Tools.
-// rskDir is .rsk/, projectDir is its parent.
+// syncPinnedAllTools writes pinned skill entries for every tool listed in
+// m.Tools. rskDir is the .rsk/ directory; the project root is its parent.
 func syncPinnedAllTools(rskDir string, m manifest.Mod) error {
 	projectDir := filepath.Dir(rskDir)
-	for _, tool := range m.Tools {
-		switch tool {
-		case internal.ToolClaudeCode:
-			if err := manifest.WritePinned(rskDir, m.Pinned); err != nil {
-				return fmt.Errorf("sync claude-code: %w", err)
-			}
-		case internal.ToolOpenCode:
-			if err := manifest.SyncOpenCodeInstructions(projectDir, m.Pinned); err != nil {
-				return fmt.Errorf("sync opencode: %w", err)
-			}
-		default:
-			return fmt.Errorf("unknown tool %q in rsk.mod", tool)
+	for _, id := range m.Tools {
+		t, ok := tool.Get(id)
+		if !ok {
+			return fmt.Errorf("unknown tool %q in rsk.mod", id)
+		}
+		if err := t.SyncPinned(projectDir, m.Pinned); err != nil {
+			return err
 		}
 	}
 	return nil

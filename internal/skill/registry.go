@@ -10,29 +10,35 @@ import (
 )
 
 const (
-	// VersionPrefix is the prefix in SKILL.md frontmatter for the version field.
+	// VersionPrefix is the YAML frontmatter key used to store a skill's version.
 	VersionPrefix = "version:"
 )
 
-// Walk discovers all skills under root by looking for SKILL.md files.
-// Any directory containing SKILL.md is a skill; recursion stops there.
+// Walk discovers all skills under root. A directory that contains SKILL.md is
+// a skill root; Walk does not descend into it further. The returned skills all
+// have Source set to source.
 func Walk(root string, source Source) ([]Skill, error) {
 	var skills []Skill
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || !d.IsDir() {
 			return err
 		}
-		if _, statErr := os.Stat(filepath.Join(path, SkillFileName)); statErr != nil {
-			return nil
+		if _, statErr := os.Stat(filepath.Join(path, SkillFileName)); statErr == nil {
+			s, parseErr := parseSkill(root, path, source)
+			if parseErr != nil {
+				return parseErr
+			}
+			skills = append(skills, s)
+			return fs.SkipDir
 		}
-		s, parseErr := parseSkill(root, path, source)
-		if parseErr != nil {
-			return parseErr
-		}
-		skills = append(skills, s)
-		return fs.SkipDir
+		return nil
 	})
 	return skills, err
+}
+
+// ReadVersion reads the version field from SKILL.md in dir.
+func ReadVersion(dir string) (string, error) {
+	return readVersionFromFrontmatter(filepath.Join(dir, SkillFileName))
 }
 
 func parseSkill(root, dir string, source Source) (Skill, error) {
@@ -40,12 +46,12 @@ func parseSkill(root, dir string, source Source) (Skill, error) {
 	if err != nil {
 		version = ""
 	}
-	
+
 	rel, err := filepath.Rel(root, dir)
 	if err != nil {
 		rel = dir
 	}
-	
+
 	return Skill{
 		Name:       filepath.Base(dir),
 		Version:    version,
@@ -55,12 +61,8 @@ func parseSkill(root, dir string, source Source) (Skill, error) {
 	}, nil
 }
 
-// ReadVersion reads the version field from SKILL.md in dir.
-func ReadVersion(dir string) (string, error) {
-	return readVersionFromFrontmatter(filepath.Join(dir, SkillFileName))
-}
-
-// readVersionFromFrontmatter reads the "version:" value from YAML frontmatter in path.
+// readVersionFromFrontmatter reads the "version:" value from YAML frontmatter
+// in path. Returns an error if the field is absent.
 func readVersionFromFrontmatter(path string) (string, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -72,7 +74,6 @@ func readVersionFromFrontmatter(path string) (string, error) {
 	inFrontmatter := false
 	for scanner.Scan() {
 		line := scanner.Text()
-		
 		if line == "---" {
 			if !inFrontmatter {
 				inFrontmatter = true
@@ -80,7 +81,6 @@ func readVersionFromFrontmatter(path string) (string, error) {
 			}
 			break
 		}
-		
 		if inFrontmatter && strings.HasPrefix(line, VersionPrefix) {
 			val := strings.TrimSpace(strings.TrimPrefix(line, VersionPrefix))
 			return strings.Trim(val, `"'`), nil

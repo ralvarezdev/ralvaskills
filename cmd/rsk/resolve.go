@@ -8,23 +8,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
 )
 
-// skillResolver is the common interface satisfied by source.Local, source.Registry,
-// and source.Official. Commands depend on this interface, not on concrete types.
-type skillResolver interface {
-	All(ctx context.Context) ([]skill.Skill, error)
-	Find(ctx context.Context, name string) (skill.Skill, error)
-}
-
-// newLocalSource returns the appropriate skillResolver for local skills based on
-// whether the config points to a local repo clone or the hosted registry.
-func newLocalSource(cfg config.Config) skillResolver {
+// newLocalSource returns the appropriate source.Resolver for local skills based
+// on whether the config points to a local repo clone or the hosted registry.
+func newLocalSource(cfg config.Config) source.Resolver {
 	if cfg.LocalMode() {
 		return source.NewLocal(cfg.RepoPath)
 	}
@@ -39,8 +32,8 @@ func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string
 		if err != nil {
 			return nil, fmt.Errorf("get working directory: %w", err)
 		}
-		rskDir := filepath.Join(cwd, manifest.LocalConfigFolderName)
-		return []string{manifest.LocalConfigSkillsPath(rskDir)}, nil
+		rskDir := filepath.Join(cwd, manifest.ProjectFolderName)
+		return []string{manifest.ProjectSkillsPath(rskDir)}, nil
 	}
 
 	if forTool != "" {
@@ -55,7 +48,7 @@ func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string
 	}
 
 	scope := cfg.DefaultTargetScope
-	if scope == internal.ForAll {
+	if scope == cmdx.ForAll {
 		dirs := make([]string, 0, len(cfg.GlobalTargets))
 		for _, dir := range cfg.GlobalTargets {
 			dirs = append(dirs, dir)
@@ -74,7 +67,7 @@ func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string
 }
 
 // findSkillByName looks up a skill by name, trying local first then official.
-func findSkillByName(ctx context.Context, name string, localSrc skillResolver, officialSrc skillResolver) (skill.Skill, error) {
+func findSkillByName(ctx context.Context, name string, localSrc, officialSrc source.Resolver) (skill.Skill, error) {
 	s, localErr := localSrc.Find(ctx, name)
 	if localErr == nil {
 		return s, nil
@@ -98,45 +91,39 @@ func findSkillByName(ctx context.Context, name string, localSrc skillResolver, o
 }
 
 // resolveBundleSkills resolves a bundle's skill refs into concrete Skill values.
-// Planned skills (not on disk) and missing official cache entries produce warnings
-// rather than errors — the operation continues for all available skills.
-func resolveBundleSkills(ctx context.Context, bundle config.Bundle, localSrc skillResolver, officialSrc skillResolver) ([]skill.Skill, []string, error) {
+// Planned skills (not on disk) and missing official cache entries produce
+// warnings rather than errors — the operation continues for available skills.
+func resolveBundleSkills(
+	ctx context.Context, bundle config.Bundle, localSrc, officialSrc source.Resolver,
+) ([]skill.Skill, []string, error) {
 	var skills []skill.Skill
 	var warnings []string
 
 	for _, ref := range bundle.Skills {
-		switch ref.Source {
-		case skill.SourceLocal:
-			s, err := localSrc.Find(ctx, ref.Name)
-			if err != nil {
-				if errors.Is(err, source.ErrNotFound) {
-					warnings = append(warnings, fmt.Sprintf(
-						"%s is not yet available (planned) — skipped",
-						ref.Name,
-					))
-					continue
-				}
-				return nil, nil, fmt.Errorf("resolve local skill %q: %w", ref.Name, err)
-			}
+		src, notFoundMsg := sourceForRef(ref.Source, localSrc, officialSrc)
+		s, err := src.Find(ctx, ref.Name)
+		if err == nil {
 			skills = append(skills, s)
-
-		case skill.SourceOfficial:
-			s, err := officialSrc.Find(ctx, ref.Name)
-			if err != nil {
-				if errors.Is(err, source.ErrNotFound) {
-					warnings = append(warnings, fmt.Sprintf(
-						"%s (official) not in cache — run 'rsk update --official' to fetch it",
-						ref.Name,
-					))
-					continue
-				}
-				return nil, nil, fmt.Errorf("resolve official skill %q: %w", ref.Name, err)
-			}
-			skills = append(skills, s)
+			continue
 		}
+		if !errors.Is(err, source.ErrNotFound) {
+			return nil, nil, fmt.Errorf("resolve %s skill %q: %w", ref.Source, ref.Name, err)
+		}
+		warnings = append(warnings, fmt.Sprintf(notFoundMsg, ref.Name))
 	}
 
 	return skills, warnings, nil
+}
+
+// sourceForRef returns the Resolver and a not-found warning format string for
+// the given source type. Format string receives the skill name as its argument.
+func sourceForRef(
+	src skill.Source, localSrc, officialSrc source.Resolver,
+) (resolver source.Resolver, notFoundMsg string) {
+	if src == skill.SourceOfficial {
+		return officialSrc, "%s (official) not in cache — run 'rsk update --official' to fetch it"
+	}
+	return localSrc, "%s is not yet available (planned) — skipped"
 }
 
 // filterSkills returns a new slice containing only the skills for which keep returns true.
@@ -212,8 +199,8 @@ func allTargetDirs(cfg config.Config) []string {
 		dirs = append(dirs, dir)
 	}
 	if cwd, err := os.Getwd(); err == nil {
-		rskDir := filepath.Join(cwd, manifest.LocalConfigFolderName)
-		dirs = append(dirs, manifest.LocalConfigSkillsPath(rskDir))
+		rskDir := filepath.Join(cwd, manifest.ProjectFolderName)
+		dirs = append(dirs, manifest.ProjectSkillsPath(rskDir))
 	}
 	return dirs
 }
