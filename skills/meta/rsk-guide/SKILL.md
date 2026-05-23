@@ -1,6 +1,6 @@
 ---
 name: rsk-guide
-version: 0.3.0
+version: 0.3.1
 description: Operator's guide for the rsk CLI — manage ralvaskills via the .rsk/ project manifest (rsk new, rsk install, rsk pin) or via bundle installs, plus global installs and the official Anthropic cache. Use when the user mentions rsk, asks how to install/pin/update skills, wants to add a skill to a project, or wants to set up ralvaskills on a new machine. Companion to cli-tool-architect (CLI design) and skill-builder (authoring new skills).
 ---
 
