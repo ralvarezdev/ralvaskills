@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.0.0
+version: 1.1.0
 description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -12,7 +12,7 @@ Targets **Go 1.26**. See [STACK.md](STACK.md) for pinned dependency versions.
 
 - **Enums:** Custom types with `iota` and an implemented `String()` method. Avoid bare primitives. Use `1 << iota` for bitmasks.
 - **Errors:** Export package-level sentinel errors (`var ErrNotFound = ...`) for `errors.Is()`. Use `errors.Join` to aggregate multiple errors.
-- **Grouping:** Group related constants in `const` blocks.
+- **Grouping:** When a file declares multiple `type`, `const`, or `var` at package level, consolidate each kind into a single parenthesized block (`type (...)`, `const (...)`, `var (...)`) rather than repeating the keyword. Keep unrelated groups separated by a blank line inside the block.
 
 ## 2. Structures & Memory
 
