@@ -79,33 +79,75 @@ func runNew(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("get working directory: %w", err)
 	}
 
-	if existing, existErr := manifest.ProjectFolderPath(); existErr == nil {
-		return fmt.Errorf("rsk project already exists at %s", existing)
-	}
+	existing, existErr := manifest.ProjectFolderPath()
 	rskDir := filepath.Join(cwd, internal.ProjectFolderName)
+	
+	var m manifest.Mod
+	var isNew bool
 
-	m := manifest.Mod{
-		Tools:  tools,
-		Skills: make(map[string]string),
-		Pinned: []string{},
+	if existErr == nil {
+		// Project exists, read it
+		m, err = manifest.ReadMod(existing)
+		if err != nil {
+			return err
+		}
+		
+		// Find missing tools
+		var added []tool.ID
+		for _, t := range tools {
+			found := false
+			for _, existingTool := range m.Tools {
+				if t == existingTool {
+					found = true
+					break
+				}
+			}
+			if !found {
+				added = append(added, t)
+				m.Tools = append(m.Tools, t)
+			}
+		}
+		
+		if len(added) == 0 {
+			ui.Info(out, fmt.Sprintf("rsk project already configured for %s", newProjectFor))
+			return nil
+		}
+		
+		ui.Info(out, fmt.Sprintf("Adding tools to existing project: %v", added))
+		rskDir = existing
+		
+	} else {
+		isNew = true
+		m = manifest.Mod{
+			Tools:  tools,
+			Skills: make(map[string]string),
+			Pinned: []string{},
+		}
 	}
+
 	if err = manifest.WriteMod(rskDir, m); err != nil {
 		return err
 	}
 
-	// Initialize per-tool project config. Empty pinned list on first init.
+	// Initialize per-tool project config.
 	for _, id := range tools {
 		t, ok := tool.Get(id)
 		if !ok {
 			continue
 		}
-		if err = t.SyncPinned(cwd, nil); err != nil {
+		// SyncPinned ensures the tool config (CLAUDE.md / opencode.json)
+		// receives the currently pinned skills.
+		if err = t.SyncPinned(cwd, m.Pinned); err != nil {
 			return err
 		}
 	}
 
 	fmt.Fprintln(out)
-	ui.Success(out, fmt.Sprintf("initialized .rsk/ for %s", newProjectFor))
+	if isNew {
+		ui.Success(out, fmt.Sprintf("initialized .rsk/ for %s", newProjectFor))
+	} else {
+		ui.Success(out, fmt.Sprintf("updated .rsk/ for %s", newProjectFor))
+	}
 	ui.Indent(out, "Run 'rsk install <name>' to add skills to this project.")
 	fmt.Fprintln(out)
 	return nil
