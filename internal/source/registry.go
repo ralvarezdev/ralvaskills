@@ -157,10 +157,20 @@ func (r *Registry) FindVersion(ctx context.Context, name, version string) (skill
 // ensureCached downloads and extracts the tarball for name@version if not
 // already present in cacheDir. Returns the path to the extracted skill
 // directory.
+//
+// A cache entry counts as present only if it contains SKILL.md. An empty or
+// partial directory — e.g. left behind by an interrupted earlier download — is
+// treated as a miss and re-fetched, so a stale dir can never permanently shadow
+// the real content. Extraction goes to a sibling temp dir that is atomically
+// renamed into place, so an interrupted run never leaves a partial cache entry.
 func (r *Registry) ensureCached(ctx context.Context, name, version, archiveURL string) (string, error) {
 	skillDir := filepath.Join(r.cacheDir, name, version)
-	if _, statErr := os.Stat(skillDir); statErr == nil {
+	if cacheComplete(skillDir) {
 		return skillDir, nil
+	}
+	// Clear any stale/partial entry before re-downloading.
+	if err := os.RemoveAll(skillDir); err != nil {
+		return "", fmt.Errorf("clear stale cache %s: %w", skillDir, err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, archiveURL, http.NoBody)
@@ -179,16 +189,35 @@ func (r *Registry) ensureCached(ctx context.Context, name, version, archiveURL s
 		return "", fmt.Errorf("download %s: HTTP %d", archiveURL, resp.StatusCode)
 	}
 
-	if err = os.MkdirAll(skillDir, fsperm.Dir); err != nil {
+	if err = os.MkdirAll(filepath.Dir(skillDir), fsperm.Dir); err != nil {
 		return "", fmt.Errorf("create cache dir: %w", err)
 	}
 
-	if err = extractTarball(resp.Body, skillDir, name); err != nil {
-		_ = os.RemoveAll(skillDir)
+	tmpDir, err := os.MkdirTemp(filepath.Dir(skillDir), "."+version+".tmp-")
+	if err != nil {
+		return "", fmt.Errorf("create temp cache dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	if err = extractTarball(resp.Body, tmpDir, name); err != nil {
 		return "", fmt.Errorf("extract tarball: %w", err)
+	}
+	if !cacheComplete(tmpDir) {
+		return "", fmt.Errorf("downloaded archive for %s@%s has no %s", name, version, skill.SkillFileName)
+	}
+
+	if err = os.Rename(tmpDir, skillDir); err != nil {
+		return "", fmt.Errorf("finalize cache %s: %w", skillDir, err)
 	}
 
 	return skillDir, nil
+}
+
+// cacheComplete reports whether dir holds a fully extracted skill, identified
+// by the presence of its SKILL.md manifest.
+func cacheComplete(dir string) bool {
+	_, err := os.Stat(filepath.Join(dir, skill.SkillFileName))
+	return err == nil
 }
 
 // extractTarball extracts a .tar.gz stream into destDir. Archive entries

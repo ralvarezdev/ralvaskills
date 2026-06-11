@@ -4,6 +4,9 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -60,6 +63,55 @@ func TestExtractTarball_normal(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dest, "prompt.md")); err != nil {
 		t.Errorf("prompt.md not extracted: %v", err)
+	}
+}
+
+// TestEnsureCached_staleEmptyDir guards the install bug where an interrupted
+// earlier download left an empty version dir that permanently shadowed the real
+// archive: every later run saw the dir exist and skipped the download, so the
+// installed junction pointed at empty content.
+func TestEnsureCached_staleEmptyDir(t *testing.T) {
+	const name, version = "cli-tool-architect", "1.0.0"
+	tarball := buildTarball(t, []struct{ name, content string }{
+		{name + "/SKILL.md", "version: 1.0.0\n"},
+	})
+
+	var hits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits++
+		w.Write(tarball)
+	}))
+	defer srv.Close()
+
+	cache := t.TempDir()
+	r := NewRegistry("", cache)
+
+	// Simulate the interrupted run: an empty version dir with no SKILL.md.
+	skillDir := filepath.Join(cache, name, version)
+	if err := os.MkdirAll(skillDir, fsperm.Dir); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := r.ensureCached(context.Background(), name, version, srv.URL)
+	if err != nil {
+		t.Fatalf("ensureCached: %v", err)
+	}
+	if got != skillDir {
+		t.Errorf("path = %q, want %q", got, skillDir)
+	}
+	if hits != 1 {
+		t.Errorf("expected 1 download for stale empty cache, got %d", hits)
+	}
+	if !cacheComplete(skillDir) {
+		t.Error("SKILL.md missing after re-fetch of stale cache")
+	}
+
+	// A second call now sees a complete cache and must not re-download.
+	if _, err = r.ensureCached(context.Background(), name, version, srv.URL); err != nil {
+		t.Fatalf("ensureCached (cached): %v", err)
+	}
+	if hits != 1 {
+		t.Errorf("expected no re-download for complete cache, got %d hits", hits)
 	}
 }
 
