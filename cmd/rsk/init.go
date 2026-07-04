@@ -109,13 +109,13 @@ func runInit(cmd *cobra.Command, force bool) error {
 	globalTargets := make(map[string]string, len(selectedIndices))
 	for _, idx := range selectedIndices {
 		t := tools[idx]
-		dir, err := ui.Ask(out, fmt.Sprintf("Global skills dir for %s", t.ID()), t.SkillsDir())
-		if err != nil {
-			return err
+		dir, askErr := ui.Ask(out, fmt.Sprintf("Global skills dir for %s", t.ID()), t.SkillsDir())
+		if askErr != nil {
+			return askErr
 		}
-		expanded, err := expandPath(dir)
-		if err != nil {
-			return fmt.Errorf("invalid path for %s: %w", t.ID(), err)
+		expanded, expandErr := expandPath(dir)
+		if expandErr != nil {
+			return fmt.Errorf("invalid path for %s: %w", t.ID(), expandErr)
 		}
 		globalTargets[string(t.ID())] = expanded
 	}

@@ -330,7 +330,7 @@ func roundDiv(n, d int64) int64 {
 func estimateTokens(content []byte) int64 {
 	var proseBytes, codeBytes int64
 	inCode := false
-	for _, line := range strings.Split(string(content), "\n") {
+	for line := range strings.SplitSeq(string(content), "\n") {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "```") {
 			inCode = !inCode

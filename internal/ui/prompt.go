@@ -140,11 +140,11 @@ func selectPlain(w io.Writer, label string, choices []string, defaultIdx int) (i
 	if err != nil {
 		return 0, err
 	}
-	picked, parseErr := strconv.Atoi(selection)
-	if parseErr != nil || picked < 1 || picked > len(choices) {
-		return defaultIdx, nil
+	picked, err := strconv.Atoi(selection)
+	if err == nil && picked >= 1 && picked <= len(choices) {
+		return picked - 1, nil
 	}
-	return picked - 1, nil
+	return defaultIdx, nil
 }
 
 func multiSelectPlain(w io.Writer, label string, choices []string, defaultIndices []int) ([]int, error) {

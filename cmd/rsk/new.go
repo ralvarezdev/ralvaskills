@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/ralvarezdev/ralvaskills/internal"
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
@@ -81,7 +82,7 @@ func runNew(cmd *cobra.Command, _ []string) error {
 
 	existing, existErr := manifest.ProjectFolderPath()
 	rskDir := filepath.Join(cwd, internal.ProjectFolderName)
-	
+
 	var m manifest.Mod
 	var isNew bool
 
@@ -91,31 +92,25 @@ func runNew(cmd *cobra.Command, _ []string) error {
 		if err != nil {
 			return err
 		}
-		
+
 		// Find missing tools
 		var added []tool.ID
 		for _, t := range tools {
-			found := false
-			for _, existingTool := range m.Tools {
-				if t == existingTool {
-					found = true
-					break
-				}
-			}
+			found := slices.Contains(m.Tools, t)
 			if !found {
 				added = append(added, t)
 				m.Tools = append(m.Tools, t)
 			}
 		}
-		
+
 		if len(added) == 0 {
 			ui.Info(out, fmt.Sprintf("rsk project already configured for %s", newProjectFor))
 			return nil
 		}
-		
+
 		ui.Info(out, fmt.Sprintf("Adding tools to existing project: %v", added))
 		rskDir = existing
-		
+
 	} else {
 		isNew = true
 		m = manifest.Mod{
