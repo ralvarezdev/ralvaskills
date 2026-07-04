@@ -232,14 +232,14 @@ func runInstallProject(
 		return err
 	}
 
-	// Per-argument pin set: parse the version constraint from each arg and
-	// remember which top-level names should be pinned when --pin is on.
-	pinNames, argConstraints, err := constraintsFromArgs(args)
+	// Per-argument version constraints, parsed from any "name@version" arg.
+	argConstraints, err := constraintsFromArgs(args)
 	if err != nil {
 		return err
 	}
 
 	var failed int
+	var installedNames []string
 	for _, s := range skills {
 		linkFailed := false
 		for _, target := range targets {
@@ -257,6 +257,7 @@ func runInstallProject(
 			constraint = "*"
 		}
 		m.Skills[s.Name] = constraint
+		installedNames = append(installedNames, s.Name)
 		lock = manifest.UpsertLockEntry(lock, manifest.LockEntry{
 			Name:    s.Name,
 			Version: s.Version,
@@ -274,11 +275,10 @@ func runInstallProject(
 		return fmt.Errorf("%d skill(s) failed to install", failed)
 	}
 
+	// --pin pins every skill resolved from args (bundles expand to all their
+	// skills), not just names that happen to match a top-level arg.
 	if opts.pin {
-		for _, name := range pinNames {
-			if _, inMod := m.Skills[name]; !inMod {
-				continue
-			}
+		for _, name := range installedNames {
 			if !slices.Contains(m.Pinned, name) {
 				m.Pinned = append(m.Pinned, name)
 			}
@@ -300,27 +300,20 @@ func runInstallProject(
 	return nil
 }
 
-// constraintsFromArgs returns the de-duplicated list of top-level names in
-// args (for --pin) and a map of name → version constraint pulled from any
-// "name@version" arg. Bundle names are passed through unchanged; callers that
-// only care about skill names should still consult the resolved skill list.
-func constraintsFromArgs(args []string) (names []string, constraints map[string]string, err error) {
+// constraintsFromArgs returns a map of name → version constraint pulled from
+// any "name@version" arg. Bundle names are passed through unchanged.
+func constraintsFromArgs(args []string) (constraints map[string]string, err error) {
 	constraints = make(map[string]string, len(args))
-	seen := make(map[string]bool, len(args))
 	for _, raw := range args {
 		name, version, parseErr := parseNameVersion(raw)
 		if parseErr != nil {
-			return nil, nil, parseErr
+			return nil, parseErr
 		}
 		if version != "" {
 			constraints[name] = version
 		}
-		if !seen[name] {
-			seen[name] = true
-			names = append(names, name)
-		}
 	}
-	return names, constraints, nil
+	return constraints, nil
 }
 
 // printInstallPreview renders the skill × target preview block shared by the

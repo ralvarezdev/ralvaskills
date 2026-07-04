@@ -24,6 +24,10 @@ Run once per machine. Prompts for:
   - Global skills directory for each tool
   - Default install scope for --global
 
+Set $RSK_CONFIG_HOME to sandbox the entire rsk config dir (config.json,
+catalog.toml, caches) elsewhere — useful for testing without touching your
+real machine config.
+
 Examples:
   rsk init
   rsk init --force`,

@@ -2,6 +2,7 @@
 package config
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/adrg/xdg"
@@ -9,6 +10,12 @@ import (
 )
 
 const (
+	// EnvConfigHome, when set, overrides the entire rsk config directory
+	// (normally ~/.config/rsk) — config.json, catalog.toml, and all caches
+	// live under it instead. Intended for sandboxing rsk during manual or
+	// automated testing without touching the real machine config.
+	EnvConfigHome = "RSK_CONFIG_HOME"
+
 	// ConfigFolderName is the name of the folder under ~/.config/ where rsk
 	// stores its configuration.
 	ConfigFolderName = "rsk"
@@ -29,21 +36,24 @@ const (
 )
 
 // DefaultConfigFolderPath returns the canonical path of the rsk config folder
-// (~/.config/rsk).
+// (~/.config/rsk), or $RSK_CONFIG_HOME if set.
 func DefaultConfigFolderPath() string {
+	if dir := os.Getenv(EnvConfigHome); dir != "" {
+		return dir
+	}
 	return filepath.Join(internal.ConfigHome(), ConfigFolderName)
 }
 
 // DefaultConfigFilePath returns the canonical path of the rsk config file
 // (~/.config/rsk/config.json).
 func DefaultConfigFilePath() string {
-	return filepath.Join(internal.ConfigHome(), ConfigFolderName, ConfigFileName)
+	return filepath.Join(DefaultConfigFolderPath(), ConfigFileName)
 }
 
 // DefaultCatalogPath returns the canonical path of the user skill catalog
 // (~/.config/rsk/catalog.toml).
 func DefaultCatalogPath() string {
-	return filepath.Join(internal.ConfigHome(), ConfigFolderName, CatalogFileName)
+	return filepath.Join(DefaultConfigFolderPath(), CatalogFileName)
 }
 
 // DefaultRegistryCachePath returns the directory used to cache skill downloads
