@@ -86,7 +86,9 @@ func runDestroy(cmd *cobra.Command, _ []string) error {
 		if !seenDirs[dir] {
 			seenDirs[dir] = true
 			for _, name := range installedNames {
-				_ = skill.Unlink(name, dir)
+				if unlinkErr := skill.Unlink(name, dir); unlinkErr != nil {
+					ui.Warn(out, fmt.Sprintf("unlink %s: %v", name, unlinkErr))
+				}
 			}
 		}
 		if err = t.RemovePinned(cwd); err != nil {

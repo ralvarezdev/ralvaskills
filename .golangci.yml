@@ -83,6 +83,7 @@ linters:
 
     # Modernization (Go 1.22+ idioms)
     - modernize
+    - intrange # Explicit — for i:=0; i<n; i++ → range n
 
     # Context & Concurrency
     - contextcheck
@@ -213,8 +214,6 @@ linters:
         - diagnostic
         - style
         - performance
-      enabled-checks:
-        - rangeOverInt # Explicit — catches for i:=0; i<n; i++ → range n
       disabled-checks:
         - commentFormatting
         - whyNoLint

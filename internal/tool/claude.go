@@ -29,10 +29,10 @@ const (
 	ClaudeFileName = "CLAUDE.md"
 
 	// Settings.json configuration keys
-	claudeSettingsFileName   = "settings.json"
-	claudeSettingsPermKey    = "permissions"
-	claudeSettingsAllowKey   = "allow"
-	claudeSettingsDenyKey    = "deny"
+	claudeSettingsFileName = "settings.json"
+	claudeSettingsPermKey  = "permissions"
+	claudeSettingsAllowKey = "allow"
+	claudeSettingsDenyKey  = "deny"
 
 	claudeImportLine    = "@" + internal.ProjectFolderName + "/" + ClaudeFileName
 	claudeFileOpenFlags = os.O_APPEND | os.O_CREATE | os.O_WRONLY
@@ -234,7 +234,7 @@ func toStringSlice(v any) []string {
 	}
 	result := make([]string, 0, len(arr))
 	for _, item := range arr {
-		if s, ok := item.(string); ok {
+		if s, stringOK := item.(string); stringOK {
 			result = append(result, s)
 		}
 	}

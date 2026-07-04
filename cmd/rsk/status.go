@@ -180,7 +180,12 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	return nil
 }
 
-func buildStatusSections(cfg config.Config, globalOnly, projectOnly bool, forTool, rskDir string, projectDirs []string) []statusSection {
+func buildStatusSections(
+	cfg config.Config,
+	globalOnly, projectOnly bool,
+	forTool, rskDir string,
+	projectDirs []string,
+) []statusSection {
 	var sections []statusSection
 
 	if !projectOnly {

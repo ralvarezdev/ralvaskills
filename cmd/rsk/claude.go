@@ -10,6 +10,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func claudeToolGet() (*tool.ClaudeTool, error) {
+	t, ok := tool.Get(tool.ClaudeID)
+	if !ok {
+		return nil, fmt.Errorf("tool %s not registered", tool.ClaudeID)
+	}
+	ct, ok := t.(*tool.ClaudeTool)
+	if !ok {
+		return nil, fmt.Errorf("tool %s has unexpected type %T", tool.ClaudeID, t)
+	}
+	return ct, nil
+}
+
 // availableClaudeTools lists all Claude Code tools that can be managed.
 var availableClaudeTools = []string{
 	"Agent",
@@ -130,8 +142,10 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 	}
 	projectDir := cwd[:len(cwd)-len("/.rsk")]
 
-	ct, _ := tool.Get(tool.ClaudeID)
-	claudeTool := ct.(*tool.ClaudeTool)
+	claudeTool, err := claudeToolGet()
+	if err != nil {
+		return err
+	}
 	allow, deny, err := claudeTool.ReadPermissions(projectDir)
 	if err != nil {
 		return err
@@ -147,11 +161,12 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 	unconfiguredTools := make([]string, 0)
 
 	for _, tool := range availableClaudeTools {
-		if slices.Contains(allow, tool) {
+		switch {
+		case slices.Contains(allow, tool):
 			allowedTools = append(allowedTools, tool)
-		} else if slices.Contains(deny, tool) {
+		case slices.Contains(deny, tool):
 			deniedTools = append(deniedTools, tool)
-		} else {
+		default:
 			unconfiguredTools = append(unconfiguredTools, tool)
 		}
 	}
@@ -197,8 +212,10 @@ func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {
 	}
 	projectDir := cwd[:len(cwd)-len("/.rsk")]
 
-	ct, _ := tool.Get(tool.ClaudeID)
-	claudeTool := ct.(*tool.ClaudeTool)
+	claudeTool, err := claudeToolGet()
+	if err != nil {
+		return err
+	}
 	allow, deny, err := claudeTool.ReadPermissions(projectDir)
 	if err != nil {
 		return err
@@ -237,8 +254,10 @@ func runClaudeToolsDeny(cmd *cobra.Command, args []string) error {
 	}
 	projectDir := cwd[:len(cwd)-len("/.rsk")]
 
-	ct, _ := tool.Get(tool.ClaudeID)
-	claudeTool := ct.(*tool.ClaudeTool)
+	claudeTool, err := claudeToolGet()
+	if err != nil {
+		return err
+	}
 	allow, deny, err := claudeTool.ReadPermissions(projectDir)
 	if err != nil {
 		return err
@@ -277,8 +296,10 @@ func runClaudeToolsRemove(cmd *cobra.Command, args []string) error {
 	}
 	projectDir := cwd[:len(cwd)-len("/.rsk")]
 
-	ct, _ := tool.Get(tool.ClaudeID)
-	claudeTool := ct.(*tool.ClaudeTool)
+	claudeTool, err := claudeToolGet()
+	if err != nil {
+		return err
+	}
 	allow, deny, err := claudeTool.ReadPermissions(projectDir)
 	if err != nil {
 		return err

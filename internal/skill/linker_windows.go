@@ -3,6 +3,7 @@
 package skill
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -17,7 +18,8 @@ func createLink(target, link string) error {
 	if err != nil {
 		return fmt.Errorf("resolve target %s: %w", target, err)
 	}
-	out, err := exec.Command("cmd", "/c", "mklink", "/J", link, absTarget).CombinedOutput()
+	ctx := context.Background()
+	out, err := exec.CommandContext(ctx, "cmd", "/c", "mklink", "/J", link, absTarget).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("mklink /J: %w: %s", err, out)
 	}

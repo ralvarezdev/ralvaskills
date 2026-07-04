@@ -121,7 +121,7 @@ internal/userrepo/
 - **Lint:** `golangci-lint` **v2** — a single binary that aggregates `staticcheck`, `govet`, `gofmt`, `goimports`, `revive`, and dozens more. Pin via `.golangci.yml` (v2 config schema). Run on every commit and in CI. Treat warnings as errors. Drop-in template: [`assets/golangci.yml`](assets/golangci.yml) — copy to your project root as `.golangci.yml` and set `goimports.local-prefixes` to your module path.
   - **Essential linters:** `govet`, `staticcheck`, `unused`, `gocritic`, `revive`, `errorlint`, `gosec`, `misspell`, `sloglint`.
   - **modernize** (standalone linter, golangci-lint v1.57+): all checks on by default — catches `range n` (Go 1.22+), `slices.Sort`, `slices.Contains`, `maps.Keys`, `maps.Values`, etc. If too noisy, constrain via `modernize.settings` (e.g., `forRangeInts: true` only).
-  - **gocritic.rangeOverInt:** enable explicitly via `enabled-checks` — flags `for i := 0; i < n; i++` where `range n` is cleaner.
+  - **intrange** (standalone linter): explicitly enabled — flags `for i := 0; i < n; i++` where `range n` is cleaner. Lightweight alternative to the `modernize` coverage.
 - **Modernization:** Run `go fix` periodically (revamped in Go 1.26 as push-button modernizers). It rewrites legacy patterns toward current stdlib APIs and respects `//go:fix inline` directives for local refactors. Ongoing hygiene, not a one-off.
 - **Format:** `gofmt` (built-in) plus `goimports` (via `golangci-lint`) — no other formatter, no debate.
 - **Build/run:** `go build`, `go test`, `go vet`, `go work` for multi-module repos. Stdlib only — avoid Make/Task wrappers unless multi-language CI demands it.

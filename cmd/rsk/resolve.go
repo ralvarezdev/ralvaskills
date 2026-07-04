@@ -304,9 +304,9 @@ func joinKeys(m map[string]string) string {
 // parseNameVersion splits a "name" or "name@version" argument. Returns an
 // error if the name half is empty.
 func parseNameVersion(arg string) (name, version string, err error) {
-	if idx := strings.Index(arg, "@"); idx >= 0 {
-		name = arg[:idx]
-		version = arg[idx+1:]
+	if before, after, ok := strings.Cut(arg, "@"); ok {
+		name = before
+		version = after
 	} else {
 		name = arg
 	}
