@@ -141,10 +141,10 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 		}
 	}
 
-	// If we're in a project and arg-targeted, also bump rsk.lock entries.
-	if !opts.global && len(args) > 0 {
-		if err := bumpLockEntries(cmd, args, cfg); err != nil {
-			ui.Warn(out, fmt.Sprintf("update rsk.lock: %v", err))
+	// If we're in a project, bump rsk.lock entries for any changed skills.
+	if !opts.global {
+		if lockErr := bumpLockForProject(cmd, args, cfg); lockErr != nil {
+			ui.Warn(out, fmt.Sprintf("update rsk.lock: %v", lockErr))
 		}
 	}
 
@@ -154,22 +154,50 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 	return nil
 }
 
-// bumpLockEntries re-resolves each named skill (expanding bundle args) and
-// updates the project's rsk.lock entries. Used after a local-repo pull.
-func bumpLockEntries(cmd *cobra.Command, args []string, cfg config.Config) error {
+// tryRskDir returns the project .rsk directory. Second return is false when
+// the caller is not inside a project — no error, just nothing to do.
+func tryRskDir() (string, bool) {
+	d, err := manifest.ProjectFolderPath()
+	return d, err == nil
+}
+
+// tryReadMod reads rsk.mod from rskDir. Second return is false on any read
+// error (no mod means nothing to bump).
+func tryReadMod(rskDir string) (manifest.Mod, bool) {
+	m, err := manifest.ReadMod(rskDir)
+	return m, err == nil
+}
+
+// bumpLockForProject re-resolves skills and updates the project's rsk.lock.
+// When args is empty, all skills in rsk.mod are refreshed. No-op if no project.
+func bumpLockForProject(cmd *cobra.Command, args []string, cfg config.Config) error {
 	ctx := cmd.Context()
 
-	rskDir, err := manifest.ProjectFolderPath()
-	if err != nil {
-		return err
+	rskDir, ok := tryRskDir()
+	if !ok {
+		return nil
 	}
-	catalog, catalogWarn := config.LoadCatalog("")
-	if catalogWarn != nil {
-		ui.Warn(cmd.OutOrStdout(), fmt.Sprintf("user catalog: %v", catalogWarn))
+
+	catalog, warn := config.LoadCatalog("")
+	if warn != nil {
+		ui.Warn(cmd.OutOrStdout(), fmt.Sprintf("user catalog: %v", warn))
 	}
+
 	names, err := skillNamesFromArgs(args, catalog)
 	if err != nil {
 		return err
+	}
+	if len(names) == 0 {
+		m, modOK := tryReadMod(rskDir)
+		if !modOK {
+			return nil
+		}
+		for name := range m.Skills {
+			names = append(names, name)
+		}
+		if len(names) == 0 {
+			return nil
+		}
 	}
 
 	localSrc := newLocalSource(cfg)
@@ -231,6 +259,10 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
 	ctx := cmd.Context()
+
+	if opts.official {
+		ui.Warn(out, "--official is only supported in local-clone mode; ignored")
+	}
 
 	targets, err := resolveTargetDirs(cfg, opts.global, opts.forTool)
 	if err != nil {
@@ -364,6 +396,13 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 
 	if failed > 0 {
 		return fmt.Errorf("%d skill(s) failed to update", failed)
+	}
+
+	// Bump project lock for updated skills (no-op if not in a project).
+	if !opts.global {
+		if lockErr := bumpLockForProject(cmd, args, cfg); lockErr != nil {
+			ui.Warn(out, fmt.Sprintf("update rsk.lock: %v", lockErr))
+		}
 	}
 
 	fmt.Fprintln(out)
