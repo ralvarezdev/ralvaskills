@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.1.0
+version: 1.2.0
 description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -13,14 +13,17 @@ Targets **Go 1.26**. See [STACK.md](STACK.md) for pinned dependency versions.
 - **Enums:** Custom types with `iota` and an implemented `String()` method. Avoid bare primitives. Use `1 << iota` for bitmasks.
 - **Errors:** Export package-level sentinel errors (`var ErrNotFound = ...`) for `errors.Is()`. Use `errors.Join` to aggregate multiple errors.
 - **Grouping:** When a file declares multiple `type`, `const`, or `var` at package level, consolidate each kind into a single parenthesized block (`type (...)`, `const (...)`, `var (...)`) rather than repeating the keyword. Keep unrelated groups separated by a blank line inside the block.
+- **File-level ordering:** const → var → type → func. Enforced by the `decorder` linter (see §14) — no hand-maintained script needed.
+- **Magic values:** a bare numeric or string literal used more than once becomes a named constant. Enforced by `mnd` (numbers) and `goconst` (strings) (see §14).
 
 ## 2. Structures & Memory
 
-- **Design:** Explicit struct tags, standard audit fields, composition via embedding.
+- **Design:** Explicit struct tags, standard audit fields, composition via embedding. Keep tag casing (`json`, `yaml`) consistent across the codebase — `tagliatelle` catches drift, opt-in and scoped since legacy tags often can't be renamed without a breaking change (see §14).
 - **Optimization:** Order fields largest → smallest to minimize padding.
 - **Semantics:** Pointers for mutation or mutex-protected state; values for small, immutable payloads.
 - **Validation:** `Validate() error` for structs taking external input; tag-based validation via `go-playground/validator`.
 - **Ordering:** Use `cmp` (`cmp.Compare[T]`, `cmp.Or`, `cmp.Less`) as the default ordering toolkit.
+- **Typed models over maps:** Prefer a defined struct to `map[string]any`/`map[string]interface{}` for shaped data — the compiler catches typos and missing fields a map silently swallows. `forbidigo` flags the anti-pattern (see §14); `exhaustruct` (opt-in, scoped to specific structs) catches incomplete struct literals once you've made the switch.
 
 ## 3. Instantiation
 
@@ -29,8 +32,8 @@ Targets **Go 1.26**. See [STACK.md](STACK.md) for pinned dependency versions.
 
 ## 4. Interfaces
 
-- **Design:** Define interfaces where they're *used*, not where implemented. Keep them small (1–3 methods).
-- **Signatures:** Accept interfaces (for easy mocking); return concrete structs.
+- **Design:** Define interfaces where they're *used*, not where implemented. Keep them small (1–3 methods) — enforced by `interfacebloat` (see §14).
+- **Signatures:** Accept interfaces (for easy mocking); return concrete structs — enforced by `ireturn` (see §14).
 
 ## 5. Stdlib defaults
 
@@ -120,8 +123,15 @@ internal/userrepo/
 
 - **Lint:** `golangci-lint` **v2** — a single binary that aggregates `staticcheck`, `govet`, `gofmt`, `goimports`, `revive`, and dozens more. Pin via `.golangci.yml` (v2 config schema). Run on every commit and in CI. Treat warnings as errors. Drop-in template: [`assets/golangci.yml`](assets/golangci.yml) — copy to your project root as `.golangci.yml` and set `goimports.local-prefixes` to your module path.
   - **Essential linters:** `govet`, `staticcheck`, `unused`, `gocritic`, `revive`, `errorlint`, `gosec`, `misspell`, `sloglint`.
+  - **Duplication & magic values:** `dupl` (structural clones), `goconst` (repeated string literals), `mnd` (magic numbers) — all push toward named constants/enums (see §1).
+  - **Complexity & size:** `nestif`, `gocognit` (cognitive complexity), `maintidx` (maintainability index), plus revive's `file-length-limit` and `argument-limit` rules — catch functions/files that should be split before they rot.
+  - **Declaration structure:** `decorder` enforces file-level `const → var → type → func` ordering — note `disable-dec-order-check` defaults to `true` (order checking *off*); the template sets it `false` to actually enforce (see §1). `gochecknoinits` flags `init()` outright (see §11).
+  - **Interfaces & enums:** `interfacebloat` caps interface method count, `ireturn` enforces concrete returns (see §4); `exhaustive` forces enum-typed `switch` statements to cover every value; `forbidigo` bans `map[string]interface{}`/`map[string]any` in favor of typed structs (see §2). `exhaustruct` (commented out in the template) is worth enabling scoped to config/DTO structs once you've made that switch — repo-wide it's noisy. `tagliatelle` (also commented out) enforces struct-tag casing consistency (`json`/`yaml`) — scope it too, since legacy tags often can't be renamed without a breaking API/schema change (see §2).
   - **modernize** (standalone linter, golangci-lint v1.57+): all checks on by default — catches `range n` (Go 1.22+), `slices.Sort`, `slices.Contains`, `maps.Keys`, `maps.Values`, etc. If too noisy, constrain via `modernize.settings` (e.g., `forRangeInts: true` only).
   - **intrange** (standalone linter): explicitly enabled — flags `for i := 0; i < n; i++` where `range n` is cleaner. Lightweight alternative to the `modernize` coverage.
+  - **copyloopvar** / **perfsprint**: modernization nudges — `copyloopvar` flags now-redundant `x := x` loop-variable copies (Go 1.22+ semantics), `perfsprint` suggests faster alternatives to `fmt.Sprintf`/`fmt.Errorf` (e.g. `strconv`, `err.Error()`). Both low-noise, safe to enable by default.
+- **Doc-comment coverage (opt-in):** the main config disables revive's `exported`/`package-comments` rules — doc coverage isn't part of the standard gate (see §15). Run it on demand with the secondary config [`assets/golangci.doccheck.yml`](assets/golangci.doccheck.yml): `golangci-lint run -c golangci.doccheck.yml ./...`.
+- **Repo-level style guards (opt-in, not golangci-lint):** two conventions golangci-lint has no linter for — no one-line function bodies, no decorative separator comments (`// ──`, `# ═══`). Ship as shell scripts, not lint rules, since existing codebases likely have violations needing a separate cleanup pass first: [`assets/check-no-oneline-functions.sh`](assets/check-no-oneline-functions.sh), [`assets/check-no-separator-comments.sh`](assets/check-no-separator-comments.sh). Wire each into its own task-runner target (see `repo-tooling-architect` §4 for Task/just setup) rather than the main lint gate, so a legacy-codebase failure doesn't block unrelated CI.
 - **Modernization:** Run `go fix` periodically (revamped in Go 1.26 as push-button modernizers). It rewrites legacy patterns toward current stdlib APIs and respects `//go:fix inline` directives for local refactors. Ongoing hygiene, not a one-off.
 - **Format:** `gofmt` (built-in) plus `goimports` (via `golangci-lint`) — no other formatter, no debate.
 - **Build/run:** `go build`, `go test`, `go vet`, `go work` for multi-module repos. Stdlib only — avoid Make/Task wrappers unless multi-language CI demands it.

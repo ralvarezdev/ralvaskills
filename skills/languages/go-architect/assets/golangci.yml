@@ -54,7 +54,6 @@ linters:
     - govet
     - staticcheck
     - unused
-    - goconst
     - godoclint
     - sloglint
     - misspell
@@ -74,15 +73,36 @@ linters:
     - nilerr
     - nilnil
 
-    # Code quality
+    # Duplication & magic values — extract to named constants/enums (see go-architect §1)
     - dupl
+    - goconst
+    - mnd
+
+    # Complexity & size — split instead of suppress (see go-architect §14)
     - nestif
+    - gocognit
+    - maintidx
+
+    # Declaration structure
+    - decorder
+    - gochecknoinits
     - ineffassign
     - revive
     - gocritic
     - unconvert
     - wastedassign
     - usestdlibvars
+
+    # Interfaces & enums — small interfaces, concrete returns, exhaustive
+    # switches, typed models over map[string]any (see go-architect §2 and §4)
+    - ireturn
+    - interfacebloat
+    - exhaustive
+    - forbidigo
+
+    # Modernization nudges — in the spirit of §14's "run go fix" note
+    - copyloopvar
+    - perfsprint
 
     # Context & concurrency
     - contextcheck
@@ -91,6 +111,15 @@ linters:
     # Enable when using testify (see go-architect §9):
     # - testifylint
     # - thelper
+
+    # Enable selectively via settings.exhaustruct.include — noisy repo-wide,
+    # scope to specific config/DTO structs instead (see go-architect §2):
+    # - exhaustruct
+
+    # Enable if struct tags mix JSON/YAML casing conventions inconsistently —
+    # skip if the repo has legacy tags that can't be renamed without a breaking
+    # API/schema change (see go-architect §2):
+    # - tagliatelle
 
   settings:
     govet:
@@ -124,6 +153,64 @@ linters:
         - "http.*"
         - "^test.*"
         - '.*\.proto$'
+
+    mnd:
+      ignored-numbers:
+        - "0"
+        - "1"
+        - "2"
+      ignored-functions:
+        - "^strconv\\."
+        - "^time\\."
+
+    gocognit:
+      min-complexity: 20
+
+    maintidx:
+      under: 20
+
+    decorder:
+      # Default order is type→const→var→func; go-architect uses const→var→type→func (see §1).
+      # disable-dec-order-check defaults to true (order checking OFF) — must be set false to enforce.
+      dec-order:
+        - const
+        - var
+        - type
+        - func
+      disable-dec-order-check: false
+      disable-init-func-first-check: false
+
+    interfacebloat:
+      max: 3
+
+    ireturn:
+      allow:
+        - error
+        - empty
+        - anon
+        - stdlib
+        - context.Context
+
+    exhaustive:
+      default-signifies-exhaustive: true
+
+    forbidigo:
+      forbid:
+        - pattern: 'map\[string\]interface\{\}'
+          msg: "define a typed struct instead of map[string]interface{} (see go-architect §2)"
+        - pattern: 'map\[string\]any'
+          msg: "define a typed struct instead of map[string]any (see go-architect §2)"
+
+    # exhaustruct:
+    #   include:
+    #     - '.*\.Config$'
+    #     - '.*Options$'
+
+    # tagliatelle:
+    #   case:
+    #     rules:
+    #       json: snake
+    #       yaml: snake
 
     godoclint:
       default: basic
@@ -191,6 +278,16 @@ linters:
         - name: superfluous-else
         - name: unreachable-code
 
+        # Size — split instead of suppress (see go-architect §14)
+        - name: file-length-limit
+          arguments:
+            - max: 500
+              skipComments: true
+              skipBlankLines: true
+        - name: argument-limit
+          arguments:
+            - 8
+
         # Style
         - name: var-naming
         - name: range
@@ -237,6 +334,8 @@ linters:
           - gosec
           - funlen
           - gocyclo
+          - mnd
+          - gocognit
 
       # Generated protobuf
       - path: '\.pb\.go$'
@@ -276,6 +375,7 @@ severity:
     - linters:
         - dupl
         - goconst
+        - mnd
       severity: info
 
     # Defer to gosec's own severity mapping

@@ -24,5 +24,5 @@
 - **No ORM.** Database access goes through `sqlx` with raw SQL in `.sql` files embedded via `//go:embed`. This is an architectural opinion enforced by `go-architect`.
 - **Dependency injection:** `uber-go/fx` is the default for larger graphs. `google/wire` is acceptable when compile-time-only wiring is preferred.
 
-_Last reviewed: 2026-05-20_
-_Skill version at last review: 1.0.0_
+_Last reviewed: 2026-07-05_
+_Skill version at last review: 1.2.0_
