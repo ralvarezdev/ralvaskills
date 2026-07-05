@@ -118,7 +118,7 @@ func readFrontmatter(path string) (version, description string, err error) {
 	if err != nil {
 		return "", "", err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	scanner := bufio.NewScanner(f)
 	inFrontmatter := false
@@ -156,9 +156,9 @@ func createTarball(skillPath, skillName, dest string) (retErr error) {
 		return err
 	}
 	defer func() {
-		f.Close()
+		_ = f.Close()
 		if retErr != nil {
-			os.Remove(dest)
+			_ = os.Remove(dest)
 		}
 	}()
 
@@ -194,7 +194,7 @@ func createTarball(skillPath, skillName, dest string) (retErr error) {
 		if openErr != nil {
 			return openErr
 		}
-		defer src.Close()
+		defer func() { _ = src.Close() }()
 		_, copyErr := io.Copy(tw, src)
 		return copyErr
 	})

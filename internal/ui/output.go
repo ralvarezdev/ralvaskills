@@ -10,7 +10,7 @@ import (
 
 // Brand prints the rsk name and version header.
 func Brand(w io.Writer, version string) {
-	fmt.Fprintf(w, "\n"+Padding+"%s"+Padding+"%s\n\n",
+	_, _ = fmt.Fprintf(w, "\n"+Padding+"%s"+Padding+"%s\n\n",
 		BrandStyle.Render("rsk"),
 		VersionStyle.Render("v"+version),
 	)
@@ -18,8 +18,8 @@ func Brand(w io.Writer, version string) {
 
 // Header prints a bold section title followed by a divider line.
 func Header(w io.Writer, msg string) {
-	fmt.Fprintln(w, TitleStyle.Render(msg))
-	fmt.Fprintln(w, divider())
+	_, _ = fmt.Fprintln(w, TitleStyle.Render(msg))
+	_, _ = fmt.Fprintln(w, divider())
 }
 
 // SectionHeader prints a bold title, an optional muted subtitle, and a divider.

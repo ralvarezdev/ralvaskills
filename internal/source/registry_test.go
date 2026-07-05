@@ -25,7 +25,7 @@ func buildTarball(t *testing.T, entries []struct{ name, content string }) []byte
 
 	for _, e := range entries {
 		if e.name != "" && e.name[len(e.name)-1] == '/' {
-			tw.WriteHeader(&tar.Header{
+			_ = tw.WriteHeader(&tar.Header{
 				Typeflag: tar.TypeDir,
 				Name:     e.name,
 				Mode:     fsperm.Dir,
@@ -33,16 +33,16 @@ func buildTarball(t *testing.T, entries []struct{ name, content string }) []byte
 			continue
 		}
 		body := []byte(e.content)
-		tw.WriteHeader(&tar.Header{
+		_ = tw.WriteHeader(&tar.Header{
 			Typeflag: tar.TypeReg,
 			Name:     e.name,
 			Size:     int64(len(body)),
 			Mode:     fsperm.File,
 		})
-		tw.Write(body)
+		_, _ = tw.Write(body)
 	}
-	tw.Close()
-	gw.Close()
+	_ = tw.Close()
+	_ = gw.Close()
 	return buf.Bytes()
 }
 
@@ -79,7 +79,7 @@ func TestEnsureCached_staleEmptyDir(t *testing.T) {
 	var hits int
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		hits++
-		w.Write(tarball)
+		_, _ = w.Write(tarball)
 	}))
 	defer srv.Close()
 
@@ -122,15 +122,15 @@ func TestExtractTarball_zipSlip(t *testing.T) {
 	gw := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gw)
 	body := []byte("evil")
-	tw.WriteHeader(&tar.Header{
+	_ = tw.WriteHeader(&tar.Header{
 		Typeflag: tar.TypeReg,
 		Name:     "skill/../../evil.txt",
 		Size:     int64(len(body)),
 		Mode:     fsperm.File,
 	})
-	tw.Write(body)
-	tw.Close()
-	gw.Close()
+	_, _ = tw.Write(body)
+	_ = tw.Close()
+	_ = gw.Close()
 
 	err := extractTarball(bytes.NewReader(buf.Bytes()), dest, skill.SkillsFolderName)
 	if err == nil {
@@ -149,13 +149,13 @@ func TestExtractTarball_rejectsSymlink(t *testing.T) {
 	var buf bytes.Buffer
 	gw := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gw)
-	tw.WriteHeader(&tar.Header{
+	_ = tw.WriteHeader(&tar.Header{
 		Typeflag: tar.TypeSymlink,
 		Name:     "skill/link",
 		Linkname: "/etc/passwd",
 	})
-	tw.Close()
-	gw.Close()
+	_ = tw.Close()
+	_ = gw.Close()
 
 	if err := extractTarball(bytes.NewReader(buf.Bytes()), dest, skill.SkillsFolderName); err == nil {
 		t.Fatal("expected error for symlink entry, got nil")

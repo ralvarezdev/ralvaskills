@@ -31,13 +31,13 @@ func confirmHuh(prompt string) bool {
 }
 
 func confirmPlain(w io.Writer, prompt string) bool {
-	fmt.Fprintf(w, "\n"+Padding+"%s %s ", PromptStyle.Render(prompt), MutedStyle.Render("[y/N]"))
+	_, _ = fmt.Fprintf(w, "\n"+Padding+"%s %s ", PromptStyle.Render(prompt), MutedStyle.Render("[y/N]"))
 
 	raw, err := stdinReader.ReadString('\n')
 	if err != nil {
 		return false
 	}
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 
 	line := strings.ToLower(strings.TrimSpace(raw))
 	return line == "y" || line == "yes"

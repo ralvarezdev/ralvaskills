@@ -23,16 +23,16 @@ func WriteAtomic(path, tempPattern string, write func(io.Writer) error) error {
 	tmpPath := tmp.Name()
 
 	if err = write(tmp); err != nil {
-		tmp.Close()
-		os.Remove(tmpPath)
+		_ = tmp.Close()
+		_ = os.Remove(tmpPath)
 		return err
 	}
 	if err = tmp.Close(); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return fmt.Errorf("close temp file: %w", err)
 	}
 	if err = os.Rename(tmpPath, path); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return fmt.Errorf("rename %s → %s: %w", tmpPath, path, err)
 	}
 	return nil

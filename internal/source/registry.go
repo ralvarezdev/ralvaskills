@@ -81,7 +81,7 @@ func (r *Registry) Index(ctx context.Context) (map[string]*indexSkillEntry, erro
 	if err != nil {
 		return nil, fmt.Errorf("fetch index: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetch index: HTTP %d from %s", resp.StatusCode, url)
@@ -183,7 +183,7 @@ func (r *Registry) ensureCached(ctx context.Context, name, version, archiveURL s
 	if err != nil {
 		return "", fmt.Errorf("download %s: %w", archiveURL, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("download %s: HTTP %d", archiveURL, resp.StatusCode)
@@ -197,7 +197,7 @@ func (r *Registry) ensureCached(ctx context.Context, name, version, archiveURL s
 	if err != nil {
 		return "", fmt.Errorf("create temp cache dir: %w", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	if err = extractTarball(resp.Body, tmpDir, name); err != nil {
 		return "", fmt.Errorf("extract tarball: %w", err)
@@ -232,7 +232,7 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 	if err != nil {
 		return err
 	}
-	defer gr.Close()
+	defer func() { _ = gr.Close() }()
 
 	destDir = filepath.Clean(destDir)
 	safeRoot := destDir + string(filepath.Separator)

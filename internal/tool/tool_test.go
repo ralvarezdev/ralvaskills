@@ -88,7 +88,9 @@ func TestAppendClaudeImport_idempotent(t *testing.T) {
 
 func TestRemoveClaudeImport(t *testing.T) {
 	path := filepath.Join(t.TempDir(), ClaudeFileName)
-	os.WriteFile(path, []byte("# header\n"+claudeImportLine+"\n# footer\n"), fsperm.File)
+	if err := os.WriteFile(path, []byte("# header\n"+claudeImportLine+"\n# footer\n"), fsperm.File); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
 
 	if err := removeClaudeImport(path); err != nil {
 		t.Fatalf("removeClaudeImport: %v", err)

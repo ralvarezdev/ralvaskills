@@ -112,9 +112,9 @@ func huhErr(err error) error {
 
 func askPlain(w io.Writer, label, defaultVal string) (string, error) {
 	if defaultVal != "" {
-		fmt.Fprintf(w, "\n"+Padding+"%s %s: ", PromptStyle.Render(label), MutedStyle.Render("["+defaultVal+"]"))
+		_, _ = fmt.Fprintf(w, "\n"+Padding+"%s %s: ", PromptStyle.Render(label), MutedStyle.Render("["+defaultVal+"]"))
 	} else {
-		fmt.Fprintf(w, "\n"+Padding+"%s: ", PromptStyle.Render(label))
+		_, _ = fmt.Fprintf(w, "\n"+Padding+"%s: ", PromptStyle.Render(label))
 	}
 	raw, err := stdinReader.ReadString('\n')
 	if err != nil && !errors.Is(err, io.EOF) {
