@@ -26,6 +26,7 @@ done < <(grep -rnE "$PATTERN" . \
   --exclude-dir="vendor" \
   --exclude-dir="third_party" \
   --exclude-dir=".git" \
+  --exclude-dir=".claude" \
   2>/dev/null || true)
 
 if [[ $EXIT_CODE -eq 0 ]]; then

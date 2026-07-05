@@ -21,7 +21,9 @@ const (
 	outputJSON outputFormat = "json"
 )
 
-func (o outputFormat) valid() bool { return o == outputText || o == outputJSON }
+func (o outputFormat) valid() bool {
+	return o == outputText || o == outputJSON
+}
 
 type (
 	catalogOpts struct {

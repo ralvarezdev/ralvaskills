@@ -133,6 +133,16 @@ tasks:
     cmds:
       - golangci-lint run --config .golangci.doccheck.yml ./cmd/rsk/... ./internal/... ./cmd/count-tokens/... ./cmd/generate-registry/...
 
+  lint:oneliners:
+    desc: Check for one-line function bodies (not part of the standard gate — opt-in)
+    cmds:
+      - bash skills/languages/go-architect/assets/check-no-oneline-functions.sh
+
+  lint:separators:
+    desc: Check for decorative comment separators (// ──, # ──, etc. — opt-in)
+    cmds:
+      - bash skills/languages/go-architect/assets/check-no-separator-comments.sh
+
   fmt:
     desc: Format everything
     cmds:

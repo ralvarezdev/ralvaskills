@@ -47,6 +47,7 @@ formatters:
     paths:
       - "vendor/"
       - "third_party/"
+      - ".claude/"
 
 linters:
   enable:

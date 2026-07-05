@@ -25,6 +25,7 @@ for ext in go py sh js ts tsx jsx; do
     --exclude-dir="third_party" \
     --exclude-dir="node_modules" \
     --exclude-dir=".git" \
+    --exclude-dir=".claude" \
     2>/dev/null || true)
 done
 
