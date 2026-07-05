@@ -37,8 +37,6 @@ const (
 	OpenCodeSkillsPrefix = ClaudeFolderName + "/" + skill.SkillsFolderName + "/"
 )
 
-func init() { Register(&openCodeTool{}) }
-
 // openCodeTool implements Tool for OpenCode.
 type openCodeTool struct{}
 

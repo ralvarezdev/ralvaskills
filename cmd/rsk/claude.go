@@ -11,18 +11,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 )
 
-func claudeToolGet() (*tool.ClaudeTool, error) {
-	t, ok := tool.Get(tool.ClaudeID)
-	if !ok {
-		return nil, fmt.Errorf("tool %s not registered", tool.ClaudeID)
-	}
-	ct, ok := t.(*tool.ClaudeTool)
-	if !ok {
-		return nil, fmt.Errorf("tool %s has unexpected type %T", tool.ClaudeID, t)
-	}
-	return ct, nil
-}
-
 // availableClaudeTools lists all Claude Code tools that can be managed.
 var availableClaudeTools = []string{
 	"Agent",
@@ -132,6 +120,18 @@ func init() {
 	claudeToolsCmd.AddCommand(claudeToolsAllowCmd)
 	claudeToolsCmd.AddCommand(claudeToolsDenyCmd)
 	claudeToolsCmd.AddCommand(claudeToolsRemoveCmd)
+}
+
+func claudeToolGet() (*tool.ClaudeTool, error) {
+	t, ok := tool.Get(tool.ClaudeID)
+	if !ok {
+		return nil, fmt.Errorf("tool %s not registered", tool.ClaudeID)
+	}
+	ct, ok := t.(*tool.ClaudeTool)
+	if !ok {
+		return nil, fmt.Errorf("tool %s has unexpected type %T", tool.ClaudeID, t)
+	}
+	return ct, nil
 }
 
 func runClaudeToolsList(cmd *cobra.Command, args []string) error {

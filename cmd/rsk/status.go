@@ -16,29 +16,7 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 )
 
-type (
-	// statusOpts holds the options for the status command.
-	statusOpts struct {
-		global, project, stack, refresh, personal bool
-		forTool                                   string
-	}
-
-	// statusSection groups linked skills under a single target directory.
-	statusSection struct {
-		title    string
-		subtitle string
-		dir      string
-		skills   []linkedEntry
-	}
-
-	// linkedEntry describes one symlink found in a target directory.
-	linkedEntry struct {
-		name    string
-		version string
-		source  skill.Source
-		bundles []string
-	}
-)
+const versionColumnWidth = 7
 
 var statusCmd = &cobra.Command{
 	Use:   "status [flags]",
@@ -67,16 +45,29 @@ Examples:
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(statusCmd)
-	f := statusCmd.Flags()
-	f.Bool(cmdx.FlagGlobal, false, "Show global skills only")
-	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
-	f.Bool("project", false, "Show project skills only")
-	f.Bool(cmdx.FlagStack, false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
-	f.Bool(cmdx.FlagRefresh, false, "With --stack: bypass the 24h cache and force a re-fetch")
-	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in output")
-}
+type (
+	// statusOpts holds the options for the status command.
+	statusOpts struct {
+		global, project, stack, refresh, personal bool
+		forTool                                   string
+	}
+
+	// statusSection groups linked skills under a single target directory.
+	statusSection struct {
+		title    string
+		subtitle string
+		dir      string
+		skills   []linkedEntry
+	}
+
+	// linkedEntry describes one symlink found in a target directory.
+	linkedEntry struct {
+		name    string
+		version string
+		source  skill.Source
+		bundles []string
+	}
+)
 
 func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	out := cmd.OutOrStdout()
@@ -165,7 +156,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 			fmt.Fprintf(out, "  %s  %s  %s  %s%s\n",
 				ui.SourceLabel(e.source),
 				ui.PadRight(ui.SkillName(e.name), nameWidth),
-				ui.PadRight(ui.SkillVersion(e.version), 7),
+				ui.PadRight(ui.SkillVersion(e.version), versionColumnWidth),
 				ui.SuccessMark,
 				tags,
 			)

@@ -36,14 +36,6 @@ Examples:
 	RunE: runNew,
 }
 
-func init() {
-	rootCmd.AddCommand(newCmd)
-	newCmd.Flags().StringVar(
-		&newProjectFor, cmdx.FlagFor, string(tool.ClaudeID),
-		"Tools to configure: claude-code | opencode | all",
-	)
-}
-
 func toolsFromFlag(flag string) ([]tool.ID, error) {
 	switch flag {
 	case string(tool.ClaudeID):

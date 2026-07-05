@@ -32,11 +32,6 @@ project config.`,
 	}
 )
 
-func init() {
-	rootCmd.AddCommand(pinCmd)
-	rootCmd.AddCommand(unpinCmd)
-}
-
 func runPin(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
 	name, err := nameFromArgsOrPrompt(cmd, args, "Skill to pin")

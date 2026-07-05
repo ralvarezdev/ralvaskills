@@ -20,11 +20,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 )
 
-type installOpts struct {
-	global, dryRun, personal, pin bool
-	forTool, version              string
-}
-
 var installCmd = &cobra.Command{
 	Use:   "install [name...] [flags]",
 	Short: "Install bundles or skills.",
@@ -59,15 +54,9 @@ Examples:
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(installCmd)
-	f := installCmd.Flags()
-	f.Bool(cmdx.FlagGlobal, false, "Install to the configured global skills dir(s)")
-	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
-	f.Bool(cmdx.FlagPersonal, false, "Allow installing personal/ skills")
-	f.Bool(cmdx.FlagPin, false, "Also pin installed skills in the project (project scope only)")
-	f.String(cmdx.FlagVersion, "", "Pin to a specific repo tag (local skills only)")
-	f.Bool(cmdx.FlagDryRun, false, "Show what would be installed without doing it")
+type installOpts struct {
+	global, dryRun, personal, pin bool
+	forTool, version              string
 }
 
 func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
@@ -343,7 +332,7 @@ func printInstallPreview(out io.Writer, skills []skill.Skill, targets, warnings 
 			fmt.Fprintf(out, "  %s  %s  %s  %s  %s%s\n",
 				ui.SourceLabel(s.Source),
 				ui.PadRight(ui.SkillName(s.Name), nameWidth),
-				ui.PadRight(ui.SkillVersion(s.Version), 7),
+				ui.PadRight(ui.SkillVersion(s.Version), versionColumnWidth),
 				ui.Arrow,
 				ui.MutedPath(filepath.Join(target, s.Name)),
 				suffix,

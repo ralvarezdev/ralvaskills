@@ -52,8 +52,6 @@ var (
 	ProjectClaudeFilePath = filepath.Join(internal.ProjectFolderName, ClaudeFileName)
 )
 
-func init() { Register(&ClaudeTool{}) }
-
 // ClaudeTool implements Tool for Claude Code.
 type ClaudeTool struct{}
 

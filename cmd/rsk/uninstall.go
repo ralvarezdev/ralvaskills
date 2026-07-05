@@ -16,18 +16,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 )
 
-type (
-	removeEntry struct {
-		name   string
-		target string
-	}
-
-	uninstallOpts struct {
-		global, dryRun, personal bool
-		forTool                  string
-	}
-)
-
 var uninstallCmd = &cobra.Command{
 	Use:   "uninstall <name...> [flags]",
 	Short: "Remove installed bundles or skills.",
@@ -55,14 +43,17 @@ Examples:
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(uninstallCmd)
-	f := uninstallCmd.Flags()
-	f.Bool(cmdx.FlagGlobal, false, "Target the configured global skills dir(s)")
-	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
-	f.Bool(cmdx.FlagPersonal, false, "Allow removing personal/ skills")
-	f.Bool(cmdx.FlagDryRun, false, "Show what would be removed without doing it")
-}
+type (
+	removeEntry struct {
+		name   string
+		target string
+	}
+
+	uninstallOpts struct {
+		global, dryRun, personal bool
+		forTool                  string
+	}
+)
 
 func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	out := cmd.OutOrStdout()

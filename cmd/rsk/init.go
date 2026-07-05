@@ -38,11 +38,6 @@ Examples:
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(initCmd)
-	initCmd.Flags().Bool(cmdx.FlagForce, false, "Overwrite existing config without prompting")
-}
-
 func runInit(cmd *cobra.Command, force bool) error {
 	cfgPath := config.DefaultConfigFilePath()
 	out := cmd.OutOrStdout()

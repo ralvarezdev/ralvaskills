@@ -21,11 +21,6 @@ import (
 // source for official skills in local-repo mode.
 const officialSkillsURL = "https://github.com/anthropics/skills"
 
-type updateOpts struct {
-	global, dryRun, personal, official bool
-	forTool                            string
-}
-
 var updateCmd = &cobra.Command{
 	Use:   "update [name...] [flags]",
 	Short: "Pull the latest skills and re-link.",
@@ -57,14 +52,9 @@ Examples:
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(updateCmd)
-	f := updateCmd.Flags()
-	f.Bool(cmdx.FlagGlobal, false, "Target the configured global skills dir(s)")
-	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
-	f.Bool(cmdx.FlagOfficial, false, "Also re-fetch the anthropics/skills cache")
-	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in update")
-	f.Bool(cmdx.FlagDryRun, false, "Show what would change without applying it")
+type updateOpts struct {
+	global, dryRun, personal, official bool
+	forTool                            string
 }
 
 func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {

@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+const semverParts = 3
+
 // Version is a parsed semver triplet.
 type Version struct {
 	Major int
@@ -17,8 +19,8 @@ type Version struct {
 // ParseVersion parses a semver string of the form "MAJOR.MINOR.PATCH" or "vMAJOR.MINOR.PATCH".
 func ParseVersion(s string) (Version, error) {
 	s = strings.TrimPrefix(s, "v")
-	parts := strings.SplitN(s, ".", 3)
-	if len(parts) != 3 {
+	parts := strings.SplitN(s, ".", semverParts)
+	if len(parts) != semverParts {
 		return Version{}, fmt.Errorf("invalid version %q: want MAJOR.MINOR.PATCH", s)
 	}
 

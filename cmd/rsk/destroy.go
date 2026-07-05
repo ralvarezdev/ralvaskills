@@ -24,10 +24,6 @@ This does not touch globally installed skills or the user-level config.`,
 	RunE: runDestroy,
 }
 
-func init() {
-	rootCmd.AddCommand(destroyCmd)
-}
-
 func runDestroy(cmd *cobra.Command, _ []string) error {
 	out := cmd.OutOrStdout()
 

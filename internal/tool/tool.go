@@ -12,34 +12,6 @@ import (
 // ID identifies a supported AI tool by its string name in rsk.mod.
 type ID string
 
-// ParseID converts s to an ID. Returns an error if s is not a registered tool.
-func ParseID(s string) (ID, error) {
-	if _, ok := registry[ID(s)]; ok {
-		return ID(s), nil
-	}
-	return "", fmt.Errorf("unknown tool %q: must be one of %s", s, strings.Join(Names(), ", "))
-}
-
-// String returns the string representation of the tool identifier.
-func (id ID) String() string {
-	return string(id)
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (id ID) MarshalText() ([]byte, error) {
-	return []byte(id), nil
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler, rejecting unknown tool IDs.
-func (id *ID) UnmarshalText(b []byte) error {
-	parsed, err := ParseID(string(b))
-	if err != nil {
-		return err
-	}
-	*id = parsed
-	return nil
-}
-
 // Tool describes an AI tool that rsk can manage skills for.
 type Tool interface {
 	// ToolID returns the unique identifier for this tool.
@@ -65,6 +37,39 @@ type Tool interface {
 
 // registry is the global map of registered tools, keyed by ID.
 var registry = make(map[ID]Tool)
+
+func init() {
+	Register(&ClaudeTool{})
+	Register(&openCodeTool{})
+}
+
+// String returns the string representation of the tool identifier.
+func (id ID) String() string {
+	return string(id)
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (id ID) MarshalText() ([]byte, error) {
+	return []byte(id), nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler, rejecting unknown tool IDs.
+func (id *ID) UnmarshalText(b []byte) error {
+	parsed, err := ParseID(string(b))
+	if err != nil {
+		return err
+	}
+	*id = parsed
+	return nil
+}
+
+// ParseID converts s to an ID. Returns an error if s is not a registered tool.
+func ParseID(s string) (ID, error) {
+	if _, ok := registry[ID(s)]; ok {
+		return ID(s), nil
+	}
+	return "", fmt.Errorf("unknown tool %q: must be one of %s", s, strings.Join(Names(), ", "))
+}
 
 // Register adds t to the global tool registry. It is called from each tool's
 // init() function and panics if the same ID is registered twice.

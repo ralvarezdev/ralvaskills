@@ -12,6 +12,8 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 )
 
+const exitAborted = 130 // SIGINT + 128 per POSIX convention
+
 // Build metadata — injected via -ldflags at release time.
 var (
 	version   = "dev"
@@ -54,22 +56,23 @@ Use 'rsk <command> --help' for command-specific help.`,
 	SilenceErrors: true,
 }
 
-// Execute runs the root command and exits on error.
-// A user cancellation (Ctrl+C during a prompt) exits 130 silently per SIGINT convention.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		if errors.Is(err, ui.ErrAborted) {
-			os.Exit(130)
-		}
-		fmt.Fprintln(os.Stderr, "rsk: "+err.Error())
-		os.Exit(1)
-	}
-}
-
 func init() {
 	rootCmd.Version = fmt.Sprintf(
 		"%s (rev %s, built %s, %s)",
 		version, commit, buildDate, runtime.Version(),
 	)
 	rootCmd.SetVersionTemplate("rsk {{.Version}}\n")
+	setupCommands()
+}
+
+// Execute runs the root command and exits on error.
+// A user cancellation (Ctrl+C during a prompt) exits 130 silently per SIGINT convention.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		if errors.Is(err, ui.ErrAborted) {
+			os.Exit(exitAborted)
+		}
+		fmt.Fprintln(os.Stderr, "rsk: "+err.Error())
+		os.Exit(1)
+	}
 }

@@ -17,25 +17,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 )
 
-type (
-	listOpts struct {
-		global  bool
-		forTool string
-		output  outputFormat
-	}
-
-	// listedSkill is one row in the list output — used for both project-manifest
-	// and global views and serialized as JSON when -o json is set.
-	listedSkill struct {
-		Name      string `json:"name"`
-		Version   string `json:"version,omitempty"`
-		Source    string `json:"source,omitempty"`
-		Installed bool   `json:"installed"`
-		Pinned    bool   `json:"pinned,omitempty"`
-		Path      string `json:"path,omitempty"`
-	}
-)
-
 var listCmd = &cobra.Command{
 	Use:   "list [flags]",
 	Short: "Show installed skills.",
@@ -59,13 +40,24 @@ Examples:
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(listCmd)
-	f := listCmd.Flags()
-	f.Bool(cmdx.FlagGlobal, false, "List globally installed skills instead of the project manifest")
-	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text | json")
-}
+type (
+	listOpts struct {
+		global  bool
+		forTool string
+		output  outputFormat
+	}
+
+	// listedSkill is one row in the list output — used for both project-manifest
+	// and global views and serialized as JSON when -o json is set.
+	listedSkill struct {
+		Name      string `json:"name"`
+		Version   string `json:"version,omitempty"`
+		Source    string `json:"source,omitempty"`
+		Installed bool   `json:"installed"`
+		Pinned    bool   `json:"pinned,omitempty"`
+		Path      string `json:"path,omitempty"`
+	}
+)
 
 func runList(cmd *cobra.Command, opts listOpts) error {
 	if !opts.output.valid() {

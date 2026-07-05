@@ -24,8 +24,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
 
-var semverRe = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
-
 const (
 	descriptionField    = "description:"
 	frontmatterDelim    = "---"
@@ -36,6 +34,8 @@ const (
 	newVersionsFileName = "new-versions.json"
 	gitHubRepoDefault   = "ralvarezdev/ralvaskills"
 )
+
+var semverRe = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
 
 type (
 	// Index is the top-level shape of the published index.json.

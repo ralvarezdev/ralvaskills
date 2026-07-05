@@ -16,18 +16,39 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 )
 
-type outputFormat string
-
 const (
 	outputText outputFormat = "text"
 	outputJSON outputFormat = "json"
 )
 
-func (o outputFormat) valid() bool {
-	return o == outputText || o == outputJSON
+var catalogCmd = &cobra.Command{
+	Use:   "catalog [flags]",
+	Short: "Browse the catalog of available skills and bundles.",
+	Long: `Browse what rsk knows about. By default lists every skill. Use --bundles to
+list bundles instead, or --bundle <name> to list the skills inside a single
+bundle.
+
+Examples:
+  rsk catalog                       # all skills
+  rsk catalog --bundles             # all bundles
+  rsk catalog --bundle go-grpc      # skills inside the go-grpc bundle
+  rsk catalog --source local        # filter by source
+  rsk catalog --personal            # include personal/ skills
+  rsk catalog -o json`,
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		return runCatalog(cmd, catalogOpts{
+			bundles:  cmdx.Bool(cmd, cmdx.FlagBundles),
+			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
+			bundle:   cmdx.String(cmd, cmdx.FlagBundle),
+			source:   cmdx.String(cmd, cmdx.FlagSource),
+			output:   outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
+		})
+	},
 }
 
 type (
+	outputFormat string
+
 	catalogOpts struct {
 		bundles, personal bool
 		bundle, source    string
@@ -56,39 +77,8 @@ type (
 	}
 )
 
-var catalogCmd = &cobra.Command{
-	Use:   "catalog [flags]",
-	Short: "Browse the catalog of available skills and bundles.",
-	Long: `Browse what rsk knows about. By default lists every skill. Use --bundles to
-list bundles instead, or --bundle <name> to list the skills inside a single
-bundle.
-
-Examples:
-  rsk catalog                       # all skills
-  rsk catalog --bundles             # all bundles
-  rsk catalog --bundle go-grpc      # skills inside the go-grpc bundle
-  rsk catalog --source local        # filter by source
-  rsk catalog --personal            # include personal/ skills
-  rsk catalog -o json`,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		return runCatalog(cmd, catalogOpts{
-			bundles:  cmdx.Bool(cmd, cmdx.FlagBundles),
-			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
-			bundle:   cmdx.String(cmd, cmdx.FlagBundle),
-			source:   cmdx.String(cmd, cmdx.FlagSource),
-			output:   outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
-		})
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(catalogCmd)
-	f := catalogCmd.Flags()
-	f.Bool(cmdx.FlagBundles, false, "List bundles instead of skills")
-	f.String(cmdx.FlagBundle, "", "Show only skills that belong to this bundle")
-	f.String(cmdx.FlagSource, "", "Filter by source: local | official")
-	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in the listing")
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text | json")
+func (o outputFormat) valid() bool {
+	return o == outputText || o == outputJSON
 }
 
 func runCatalog(cmd *cobra.Command, opts catalogOpts) error {
