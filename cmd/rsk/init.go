@@ -1,16 +1,18 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	"github.com/ralvarezdev/ralvaskills/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 var initCmd = &cobra.Command{
@@ -48,11 +50,11 @@ func runInit(cmd *cobra.Command, force bool) error {
 
 	if config.Exists() {
 		if !force {
-			ui.Fail(errOut, fmt.Sprintf("config already exists at %s", cfgPath))
+			ui.Fail(errOut, "config already exists at "+cfgPath)
 			ui.Fail(errOut, "  Use --force to overwrite.")
 			return fmt.Errorf("config already exists: %s", cfgPath)
 		}
-		ui.Warn(out, fmt.Sprintf("overwriting existing config at %s", cfgPath))
+		ui.Warn(out, "overwriting existing config at "+cfgPath)
 	}
 
 	ui.Header(out, "rsk init")
@@ -106,7 +108,7 @@ func runInit(cmd *cobra.Command, force bool) error {
 		return err
 	}
 	if len(selectedIndices) == 0 {
-		return fmt.Errorf("select at least one AI tool")
+		return errors.New("select at least one AI tool")
 	}
 
 	// 3. Global skills directories.
@@ -151,7 +153,7 @@ func runInit(cmd *cobra.Command, force bool) error {
 	}
 
 	fmt.Fprintln(out)
-	ui.Success(out, fmt.Sprintf("Config written to %s", cfgPath))
+	ui.Success(out, "Config written to "+cfgPath)
 	fmt.Fprintln(out)
 	ui.Info(out, "Next steps:")
 	ui.Indent(out, "rsk install global --global   # install universal skills machine-wide")

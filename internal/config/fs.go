@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/adrg/xdg"
+
 	"github.com/ralvarezdev/ralvaskills/internal"
 )
 

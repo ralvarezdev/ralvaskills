@@ -2,12 +2,14 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/go-playground/validator/v10"
+
 	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/fsx"
 	"github.com/ralvarezdev/ralvaskills/internal/schema"
@@ -44,7 +46,9 @@ type Config struct {
 
 // LocalMode reports whether the config points to a local repo clone rather than
 // the hosted registry.
-func (c Config) LocalMode() bool { return c.RepoPath != "" }
+func (c Config) LocalMode() bool {
+	return c.RepoPath != ""
+}
 
 // RegistryCache returns the directory used to cache skill downloads from the
 // hosted registry. It is derived from OfficialCache so both caches share the
@@ -82,7 +86,7 @@ func LoadFrom(path string) (Config, error) {
 		return Config{}, fmt.Errorf("invalid config: %w", err)
 	}
 	if cfg.RepoPath == "" && cfg.RegistryURL == "" {
-		return Config{}, fmt.Errorf("invalid config: one of repo_path or registry_url is required")
+		return Config{}, errors.New("invalid config: one of repo_path or registry_url is required")
 	}
 	return cfg, nil
 }

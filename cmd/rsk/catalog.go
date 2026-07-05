@@ -2,16 +2,18 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
+
+	"github.com/spf13/cobra"
 
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 type outputFormat string
@@ -94,7 +96,7 @@ func runCatalog(cmd *cobra.Command, opts catalogOpts) error {
 		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
 	}
 	if opts.bundles && (opts.bundle != "" || opts.personal || opts.source != "") {
-		return fmt.Errorf("--bundle, --personal, and --source apply when listing skills, not --bundles")
+		return errors.New("--bundle, --personal, and --source apply when listing skills, not --bundles")
 	}
 	if opts.bundles {
 		return runCatalogBundles(cmd, opts)

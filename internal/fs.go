@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	"github.com/adrg/xdg"
+
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
 

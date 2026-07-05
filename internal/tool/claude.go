@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+
 	"github.com/ralvarezdev/ralvaskills/internal"
 	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/internal/fsx"
@@ -57,7 +58,9 @@ func init() { Register(&ClaudeTool{}) }
 type ClaudeTool struct{}
 
 // ID returns ClaudeID.
-func (*ClaudeTool) ID() ID { return ClaudeID }
+func (*ClaudeTool) ID() ID {
+	return ClaudeID
+}
 
 // SkillsDir returns the canonical path to the Claude Code global skills
 // directory (~/.claude/skills).

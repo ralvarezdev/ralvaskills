@@ -9,6 +9,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -209,7 +210,7 @@ func findRoot() (string, error) {
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return "", fmt.Errorf("no .git directory found — run this from inside the repo")
+			return "", errors.New("no .git directory found — run this from inside the repo")
 		}
 		dir = parent
 	}

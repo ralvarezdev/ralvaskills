@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -58,7 +59,7 @@ func runPin(cmd *cobra.Command, args []string) error {
 	}
 
 	if slices.Contains(m.Pinned, name) {
-		ui.Info(out, fmt.Sprintf("%s is already pinned", name))
+		ui.Info(out, name+" is already pinned")
 		return nil
 	}
 
@@ -71,7 +72,7 @@ func runPin(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintln(out)
-	ui.Success(out, fmt.Sprintf("pinned %s", ui.SkillName(name)))
+	ui.Success(out, "pinned "+ui.SkillName(name))
 	fmt.Fprintln(out)
 	return nil
 }
@@ -94,7 +95,7 @@ func runUnpin(cmd *cobra.Command, args []string) error {
 	}
 
 	if !slices.Contains(m.Pinned, name) {
-		ui.Info(out, fmt.Sprintf("%s is not pinned", name))
+		ui.Info(out, name+" is not pinned")
 		return nil
 	}
 
@@ -107,7 +108,7 @@ func runUnpin(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintln(out)
-	ui.Success(out, fmt.Sprintf("unpinned %s", ui.SkillName(name)))
+	ui.Success(out, "unpinned "+ui.SkillName(name))
 	fmt.Fprintln(out)
 	return nil
 }

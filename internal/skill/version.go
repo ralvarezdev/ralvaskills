@@ -55,7 +55,11 @@ func (v Version) Compare(other Version) int {
 }
 
 // Before reports whether v is strictly older than other.
-func (v Version) Before(other Version) bool { return v.Compare(other) < 0 }
+func (v Version) Before(other Version) bool {
+	return v.Compare(other) < 0
+}
 
 // After reports whether v is strictly newer than other.
-func (v Version) After(other Version) bool { return v.Compare(other) > 0 }
+func (v Version) After(other Version) bool {
+	return v.Compare(other) > 0
+}

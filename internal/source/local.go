@@ -30,7 +30,9 @@ func NewLocal(repoPath string) *Local {
 }
 
 // SkillsRoot returns the absolute path to the skills/ directory.
-func (l *Local) SkillsRoot() string { return l.fs.root }
+func (l *Local) SkillsRoot() string {
+	return l.fs.root
+}
 
 // All walks the local skills directory and returns every discovered skill.
 func (l *Local) All(ctx context.Context) ([]skill.Skill, error) {

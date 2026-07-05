@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 func claudeToolGet() (*tool.ClaudeTool, error) {
@@ -222,7 +223,7 @@ func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {
 	}
 
 	if slices.Contains(allow, rule) {
-		ui.Info(out, fmt.Sprintf("%s is already allowed", rule))
+		ui.Info(out, rule+" is already allowed")
 		return nil
 	}
 
@@ -236,7 +237,7 @@ func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintln(out)
-	ui.Success(out, fmt.Sprintf("allowed %s", rule))
+	ui.Success(out, "allowed "+rule)
 	fmt.Fprintln(out)
 	return nil
 }
@@ -264,7 +265,7 @@ func runClaudeToolsDeny(cmd *cobra.Command, args []string) error {
 	}
 
 	if slices.Contains(deny, rule) {
-		ui.Info(out, fmt.Sprintf("%s is already denied", rule))
+		ui.Info(out, rule+" is already denied")
 		return nil
 	}
 
@@ -278,7 +279,7 @@ func runClaudeToolsDeny(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintln(out)
-	ui.Success(out, fmt.Sprintf("denied %s", rule))
+	ui.Success(out, "denied "+rule)
 	fmt.Fprintln(out)
 	return nil
 }
@@ -311,7 +312,7 @@ func runClaudeToolsRemove(cmd *cobra.Command, args []string) error {
 	deny = slices.DeleteFunc(deny, func(v string) bool { return v == rule })
 
 	if len(allow) == initialAllow && len(deny) == initialDeny {
-		ui.Info(out, fmt.Sprintf("%s not found in permissions", rule))
+		ui.Info(out, rule+" not found in permissions")
 		return nil
 	}
 
@@ -320,7 +321,7 @@ func runClaudeToolsRemove(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Fprintln(out)
-	ui.Success(out, fmt.Sprintf("removed %s", rule))
+	ui.Success(out, "removed "+rule)
 	fmt.Fprintln(out)
 	return nil
 }

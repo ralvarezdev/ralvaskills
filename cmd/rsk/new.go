@@ -6,12 +6,13 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ralvarezdev/ralvaskills/internal"
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 var newProjectFor string
@@ -104,7 +105,7 @@ func runNew(cmd *cobra.Command, _ []string) error {
 		}
 
 		if len(added) == 0 {
-			ui.Info(out, fmt.Sprintf("rsk project already configured for %s", newProjectFor))
+			ui.Info(out, "rsk project already configured for "+newProjectFor)
 			return nil
 		}
 
@@ -139,9 +140,9 @@ func runNew(cmd *cobra.Command, _ []string) error {
 
 	fmt.Fprintln(out)
 	if isNew {
-		ui.Success(out, fmt.Sprintf("initialized .rsk/ for %s", newProjectFor))
+		ui.Success(out, "initialized .rsk/ for "+newProjectFor)
 	} else {
-		ui.Success(out, fmt.Sprintf("updated .rsk/ for %s", newProjectFor))
+		ui.Success(out, "updated .rsk/ for "+newProjectFor)
 	}
 	ui.Indent(out, "Run 'rsk install <name>' to add skills to this project.")
 	fmt.Fprintln(out)

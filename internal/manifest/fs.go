@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,7 +32,7 @@ func ProjectFolderPath() (string, error) {
 
 	rskDir := filepath.Join(cwd, internal.ProjectFolderName)
 	if _, statErr := os.Stat(ModPath(rskDir)); os.IsNotExist(statErr) {
-		return "", fmt.Errorf("no rsk.mod found — run 'rsk new' first")
+		return "", errors.New("no rsk.mod found — run 'rsk new' first")
 	}
 	return rskDir, nil
 }

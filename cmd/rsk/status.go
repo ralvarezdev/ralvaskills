@@ -1,17 +1,19 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/cobra"
 
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 type (
@@ -80,16 +82,16 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	out := cmd.OutOrStdout()
 
 	if opts.stack {
-		return fmt.Errorf("--stack is not yet implemented")
+		return errors.New("--stack is not yet implemented")
 	}
 	if !opts.stack && opts.refresh {
-		return fmt.Errorf("--refresh requires --stack")
+		return errors.New("--refresh requires --stack")
 	}
 	if opts.global && opts.project {
-		return fmt.Errorf("--global and --project are mutually exclusive")
+		return errors.New("--global and --project are mutually exclusive")
 	}
 	if !opts.global && opts.forTool != "" {
-		return fmt.Errorf("--for requires --global")
+		return errors.New("--for requires --global")
 	}
 
 	cfg, err := config.Load()

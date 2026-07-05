@@ -1,12 +1,15 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"slices"
 	"sort"
+
+	"github.com/spf13/cobra"
 
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
@@ -15,7 +18,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 type installOpts struct {
@@ -74,13 +76,13 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 	ctx := cmd.Context()
 
 	if !opts.global && opts.forTool != "" {
-		return fmt.Errorf("--for requires --global")
+		return errors.New("--for requires --global")
 	}
 	if opts.global && opts.pin {
-		return fmt.Errorf("--pin only applies to project installs (drop --global or --pin)")
+		return errors.New("--pin only applies to project installs (drop --global or --pin)")
 	}
 	if opts.version != "" {
-		return fmt.Errorf("--version is not yet supported; skills are symlinked from the local repo HEAD")
+		return errors.New("--version is not yet supported; skills are symlinked from the local repo HEAD")
 	}
 
 	// Project-bundle install with no args: read rsk.mod and install everything.
@@ -94,7 +96,7 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 			return err
 		}
 		if name == "" {
-			return fmt.Errorf("specify at least one bundle or skill name")
+			return errors.New("specify at least one bundle or skill name")
 		}
 		args = []string{name}
 	}

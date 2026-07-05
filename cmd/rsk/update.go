@@ -1,9 +1,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/cobra"
 
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
@@ -12,7 +15,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 // officialSkillsURL is the GitHub URL for the anthropics/skills repo used as a
@@ -67,7 +69,7 @@ func init() {
 
 func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {
 	if !opts.global && opts.forTool != "" {
-		return fmt.Errorf("--for requires --global")
+		return errors.New("--for requires --global")
 	}
 
 	cfg, err := config.Load()

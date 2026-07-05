@@ -29,7 +29,9 @@ func ParseSource(s string) (Source, error) {
 
 // String returns the string representation of the source, identical to its
 // wire encoding.
-func (s Source) String() string { return string(s) }
+func (s Source) String() string {
+	return string(s)
+}
 
 // Label returns the short display label used in table output.
 func (s Source) Label() string {
@@ -47,7 +49,9 @@ func (s Source) Label() string {
 
 // MarshalText implements encoding.TextMarshaler so Source encodes as its
 // string value in TOML, JSON, and other text-based formats.
-func (s Source) MarshalText() ([]byte, error) { return []byte(s), nil }
+func (s Source) MarshalText() ([]byte, error) {
+	return []byte(s), nil
+}
 
 // UnmarshalText implements encoding.TextUnmarshaler so Source decodes from
 // its string value in TOML, JSON, and other text-based formats.

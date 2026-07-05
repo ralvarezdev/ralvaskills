@@ -7,8 +7,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/ralvarezdev/ralvaskills/internal/ui"
 	"github.com/spf13/cobra"
+
+	"github.com/ralvarezdev/ralvaskills/internal/ui"
 )
 
 // Build metadata — injected via -ldflags at release time.

@@ -43,7 +43,9 @@ func init() { Register(&openCodeTool{}) }
 type openCodeTool struct{}
 
 // ID returns OpenCodeID.
-func (*openCodeTool) ID() ID { return OpenCodeID }
+func (*openCodeTool) ID() ID {
+	return OpenCodeID
+}
 
 // SkillsDir returns the canonical path to the OpenCode global skills directory
 // (~/.config/opencode/skills).

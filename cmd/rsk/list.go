@@ -8,12 +8,13 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/spf13/cobra"
+
 	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/config"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	"github.com/spf13/cobra"
 )
 
 type (
@@ -71,7 +72,7 @@ func runList(cmd *cobra.Command, opts listOpts) error {
 		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
 	}
 	if !opts.global && opts.forTool != "" {
-		return fmt.Errorf("--for requires --global")
+		return errors.New("--for requires --global")
 	}
 	if opts.global {
 		return runListGlobal(cmd, opts)

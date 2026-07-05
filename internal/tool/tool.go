@@ -21,10 +21,14 @@ func ParseID(s string) (ID, error) {
 }
 
 // String returns the string representation of the tool identifier.
-func (id ID) String() string { return string(id) }
+func (id ID) String() string {
+	return string(id)
+}
 
 // MarshalText implements encoding.TextMarshaler.
-func (id ID) MarshalText() ([]byte, error) { return []byte(id), nil }
+func (id ID) MarshalText() ([]byte, error) {
+	return []byte(id), nil
+}
 
 // UnmarshalText implements encoding.TextUnmarshaler, rejecting unknown tool IDs.
 func (id *ID) UnmarshalText(b []byte) error {
