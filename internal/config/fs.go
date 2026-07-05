@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	// EnvConfigHome, when set, overrides the entire rsk config directory
+	// EnvConfigHome overrides the entire rsk config directory
 	// (normally ~/.config/rsk) — config.json, catalog.toml, and all caches
 	// live under it instead. Intended for sandboxing rsk during manual or
 	// automated testing without touching the real machine config.

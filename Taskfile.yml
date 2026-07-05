@@ -128,6 +128,11 @@ tasks:
     cmds:
       - golangci-lint run --config .golangci.yml ./...
 
+  lint:doccheck:
+    desc: "Check exported doc-comment coverage (revive exported & package-comments rules)"
+    cmds:
+      - golangci-lint run --config .golangci.doccheck.yml ./cmd/rsk/... ./internal/... ./cmd/count-tokens/... ./cmd/generate-registry/...
+
   fmt:
     desc: Format everything
     cmds:

@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
+# Secondary golangci-lint config for measuring exported doc-comment coverage.
+#
+# The main .golangci.yml deliberately disables revive's `exported` and
+# `package-comments` rules (doc-comment coverage isn't part of the standard
+# quality gate), so this file exists to run that check on demand without
+# touching the shared config every other module's clean state depends on.
+#
+# Usage: golangci-lint run -c .golangci.doccheck.yml ./...   (run per-module,
+# same as the main config — there is no root go.mod in this go.work workspace)
+
+version: "2"
+
+run:
+  timeout: 5m
+  concurrency: 0
+  tests: true
+  modules-download-mode: readonly
+  go: "1.26.2"
+  relative-path-mode: gomod
+
+linters:
+  disable-all: true
+  enable:
+    - revive
+  disable:
+    - errcheck
+
+  settings:
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 50
+  uniq-by-line: true

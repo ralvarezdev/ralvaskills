@@ -1,3 +1,4 @@
+// Package internal provides internal utilities for the rsk CLI.
 package internal
 
 import (
