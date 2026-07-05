@@ -12,11 +12,11 @@ func TestDefaultConfigFolderPathEnvOverride(t *testing.T) {
 	if got := DefaultConfigFolderPath(); got != want {
 		t.Errorf("DefaultConfigFolderPath() = %q, want %q", got, want)
 	}
-	if got, want := DefaultConfigFilePath(), filepath.Join(want, ConfigFileName); got != want {
-		t.Errorf("DefaultConfigFilePath() = %q, want %q", got, want)
+	if got, want2 := DefaultConfigFilePath(), filepath.Join(want, ConfigFileName); got != want2 {
+		t.Errorf("DefaultConfigFilePath() = %q, want %q", got, want2)
 	}
-	if got, want := DefaultCatalogPath(), filepath.Join(want, CatalogFileName); got != want {
-		t.Errorf("DefaultCatalogPath() = %q, want %q", got, want)
+	if got, want2 := DefaultCatalogPath(), filepath.Join(want, CatalogFileName); got != want2 {
+		t.Errorf("DefaultCatalogPath() = %q, want %q", got, want2)
 	}
 }
 
