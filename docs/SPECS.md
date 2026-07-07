@@ -184,7 +184,8 @@ ralvaskills/                          # current state — (📋) marks planned a
 │
 │   └── personal/                     # 📋 new category — personal skills, never auto-bundled
 │       ├── demo-script-architect/    # ✅ exists (moved from workflows/)
-│       └── demo-presentation-architect/  # ✅ exists (v1.1.0 — slide-deck spec authoring; content distribution + within-slide organization + layout catalog in LAYOUTS.md)
+│       ├── demo-presentation-architect/  # ✅ exists (v1.1.0 — slide-deck spec authoring; content distribution + within-slide organization + layout catalog in LAYOUTS.md)
+│       └── pi-iteration-workflow/    # ✅ exists (v1.0.0 — Windows-to-Pi SSH deploy loop for the voldemorbot robot codebase; pixi/ROS2 rebuild triggers, screen for flaky WiFi, PowerShell SSH quoting, Pi Zero sudo caching; no STACK.md)
 │
 ├── .github/
 │   └── workflows/
@@ -1003,6 +1004,7 @@ Currently located in `skills/personal/`. Any skill whose path contains a `person
 |---|---|
 | `demo-script-architect` | Presenter-centric demo scripts with narrative flow and progressive capability reveals |
 | `demo-presentation-architect` | Slide-deck specifications (`.md` only) with per-slide layouts and exact text; never generates HTML/PDF/PPTX |
+| `pi-iteration-workflow` | Windows-to-Pi SSH edit-test loop for the voldemorbot robot codebase — host access, pixi/ROS2 deploy triggers, flaky-connection handling |
 
 ---
 
@@ -1212,6 +1214,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 |---|---|---|
 | `demo-script-architect` | ✅ | Personal use only — not bundled, requires `--personal` flag |
 | `demo-presentation-architect` | ✅ | v1.1.0 — slide-deck spec authoring (`.md` output only). Interview-first (language → main info). Cross-slide content distribution (slide budget, fixed slots, 5 narrative arcs, splitting + repetition discipline) and within-slide organization (takeaway-led titles, ordering by layout family, body word budgets). 14-layout catalog in `LAYOUTS.md` with primitive blocks, decision flow, and deck-wide design conventions; reference HTML exemplar in the skill folder. Personal use only — not bundled, requires `--personal` flag |
+| `pi-iteration-workflow` | ✅ | v1.0.0 — Windows-to-Pi SSH edit-test loop for the `voldemorbot` robot codebase. Host access table (prefer `rpi-5-direct` over WiFi/tunnel aliases), pixi/ROS2 rebuild triggers, `screen` for flaky-WiFi survival, PowerShell SSH quoting pitfall, Pi Zero sudo credential caching. Companion to `ros2-architect` for workspace conventions. Personal use only — not bundled, requires `--personal` flag; exempt from `STACK.md` (operational, not library-version-sensitive) |
 
 ---
 
