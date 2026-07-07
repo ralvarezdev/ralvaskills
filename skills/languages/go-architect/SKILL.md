@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.3.1
+version: 1.4.0
 description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -44,6 +44,7 @@ Prefer stdlib over hand-rolled or third-party when stdlib now covers it.
 - `iter` — `iter.Seq[T]`, `iter.Seq2[K,V]` for sequence-shaped returns (see §6).
 - `log/slog` — structured logging; **default for new code**. Reach for `zap`/`zerolog` only when slog's allocator perf is provably insufficient.
 - `errors` — `errors.Is`, `errors.As`, `errors.Join`.
+- `net.JoinHostPort` / `net.SplitHostPort` — idiomatic host:port assembly (enforced by `nosprintfhostport` linter). Never `fmt.Sprintf("%s:%d", host, port)`.
 
 ## 6. Iterators (Go 1.23+)
 
@@ -55,23 +56,26 @@ Prefer stdlib over hand-rolled or third-party when stdlib now covers it.
 ## 7. Concurrency
 
 - **State:** Embed `sync.RWMutex` directly above the fields it protects. `sync/atomic` for simple counters.
+- **Context fields:** Never embed `context.Context` in structs (`containedctx` linter enforces this). Pass it as a parameter; contexts are designed as function arguments, not persistent state.
+- **Duration:** Use `time.Duration` primitives; never multiply durations (`durationcheck` catches `time.Second * 60` — use `time.Minute` instead).
+- **Context nesting:** Avoid nested contexts in loops or closures (`fatcontext` catches this anti-pattern).
 - **WaitGroup:** Use `sync.WaitGroup.Go(fn)` (Go 1.25+) — replaces `Add(1) / go func() { defer Done(); ... }()` boilerplate.
 - **Context:** Pass `context.Context` as the first parameter for any blocking or I/O. Use `signal.NotifyContext` for shutdown; the cancellation cause now records which signal fired (Go 1.26).
 - **Containers:** `GOMAXPROCS` respects cgroup CPU limits since Go 1.25 — don't hardcode in containerized deploys.
 
 ## 8. Errors & Panics
 
-- **Checking:** `errors.As` for custom types; `errors.Is` for sentinels.
+- **Checking:** `errors.As` for custom types; `errors.Is` for sentinels. Never force type assertions on error results — use `ok` check or `errors.As` (`forcetypeassert` enforces this).
 - **Aggregation:** `errors.Join(errs...)` when collecting multiple errors (validation, parallel fan-out).
-- **Wrapping:** `fmt.Errorf("op: %w", err)` to add context while preserving the chain.
+- **Wrapping:** `fmt.Errorf("op: %w", err)` to add context while preserving the chain. When wrapping external package errors, use `wrapcheck` to verify proper context addition (prevents "swallowing" errors).
 - **Panics:** Restrict to initialization (`MustCompile` style). Never as control flow.
 
 ## 9. Testing
 
-- **Patterns:** Table-driven tests and black-box testing (`package mypkg_test`).
-- **Helpers:** `t.Helper()` as the first line in any custom assertion.
+- **Patterns:** Table-driven tests and black-box testing (`package mypkg_test`). Parallelize tests with `t.Parallel()` — checked and enforced by `paralleltest` and `tparallel` linters. Avoid deprecated testing APIs (`ioutil.TempDir` → `t.TempDir()`); `usetesting` enforces modern stdlib testing functions.
+- **Helpers:** `t.Helper()` as the first line in any custom assertion — enforced by `thelper`.
 - **Concurrent code:** Use `testing/synctest` (GA in Go 1.25) — virtualizes time, waits for goroutines to quiesce, makes async tests deterministic.
-- **Library:** `stretchr/testify` for assertions/mocks/suites when stdlib alone is awkward.
+- **Library:** `stretchr/testify` for assertions/mocks/suites when stdlib alone is awkward. Use `testifylint` to catch incorrect assertion patterns (`assert` vs `require`).
 
 ## 10. Packages
 
@@ -122,8 +126,9 @@ internal/userrepo/
 ## 14. Tooling
 
 - **Lint:** `golangci-lint` **v2** — a single binary that aggregates `staticcheck`, `govet`, `gofmt`, `goimports`, `revive`, and dozens more. Pin via `.golangci.yml` (v2 config schema). Run on every commit and in CI. Treat warnings as errors. Drop-in template: [`assets/golangci.yml`](assets/golangci.yml) — copy to your project root as `.golangci.yml` and set `goimports.local-prefixes` to your module path.
-  - **Essential linters:** `govet`, `staticcheck`, `unused`, `gocritic`, `revive`, `errorlint`, `gosec`, `misspell`, `sloglint`.
-  - **Code quality:** `nolintlint` validates that `//nolint` directives are specific and actually suppress something — enforces intentional, clean ignores. `varnamelen` enforces minimum variable name length (catches `x`, `i` outside loops; configure `max-distance: 5, min-name-length: 1`). `errname` ensures error types follow convention (`ErrFoo`, `FooError`) — complements §1's sentinel error pattern.
+  - **Essential linters:** `govet`, `staticcheck`, `unused`, `gocritic`, `revive`, `errorlint`, `gosec`, `misspell`, `sloglint`, `godoclint`.
+  - **Code quality:** `nolintlint` validates that `//nolint` directives are specific and actually suppress something — enforces intentional, clean ignores. `varnamelen` enforces minimum variable name length (catches `x`, `i` outside loops; configure `max-distance: 5, min-name-length: 1`). `errname` ensures error types follow convention (`ErrFoo`, `FooError`) — complements §1's sentinel error pattern. `stylecheck` enforces naming conventions across the codebase (e.g., exported/unexported consistency).
+  - **Idiomatic patterns:** `prealloc` detects slices that could pre-allocate capacity — idiomatic Go performance practice. `reassign` flags package variable reassignment in favor of const/new-var idiom. `makezero` catches unintended zero-length slice declarations. `predeclared` prevents shadowing Go builtins. `looppointer` detects address-of-loop-variable bugs (memory safety). `recvcheck` ensures method receiver types are consistent within an interface. `dogsled` flags excessive blank identifiers (e.g., `_, _, _, v := ...` suggests destructuring instead). `mirror` catches bytes/strings type mismatches (e.g., comparing `[]byte` to `string` idiomatically). `exptostd` replaces `golang.org/x/exp` packages with stdlib equivalents — use stdlib for idiomatic Go. `modernize` suggests modern Go simplifications (range-over-int, slices API, etc.).
   - **Duplication & magic values:** `dupl` (structural clones), `goconst` (repeated string literals), `mnd` (magic numbers) — all push toward named constants/enums (see §1).
   - **Complexity & size:** `nestif`, `gocognit` (cognitive complexity), `maintidx` (maintainability index), plus revive's `file-length-limit` and `argument-limit` rules — catch functions/files that should be split before they rot.
   - **Declaration structure:** `decorder` enforces file-level `type → const → var → func` ordering (decorder's default). Set `disable-dec-order-check: false` in your `.golangci.yml` to enable (see §1). `gochecknoinits` flags `init()` outright (see §11).
@@ -136,8 +141,22 @@ internal/userrepo/
     - `tagliatelle`: Enforces struct-tag casing consistency (`json`/`yaml` naming). Scope to new code since legacy tags often can't be renamed without breaking changes; useful when refactoring APIs (see §2).
     - `depguard`: Controls allowed imports (e.g., no test frameworks in prod code). Requires careful allowlist configuration per project structure — enable after establishing import boundaries.
   - **Testing linters:**
-    - `testifylint`: Best practices for testify assertions — flags incorrect `assert` vs `require` usage and other testify pitfalls. Enable if your project uses `stretchr/testify` (see §9).
+    - `paralleltest`: Detects tests missing `t.Parallel()` — encourages test suite parallelization for faster feedback.
+    - `tparallel`: Catches inappropriate `t.Parallel()` usage in subtests, preventing race conditions and serialization bugs.
     - `thelper`: Ensures test helper functions call `t.Helper()` — prevents test output pollution and clarifies stack traces.
+    - `testifylint`: Best practices for testify assertions — flags incorrect `assert` vs `require` usage and other testify pitfalls (see §9).
+    - `usetesting`: Replaces deprecated testing helpers (e.g., `ioutil.TempDir` → `t.TempDir()`) with modern stdlib equivalents.
+  - **Correctness & safety patterns:**
+    - `containedctx`: Detects `context.Context` embedded in structs — pass as parameter instead (see §7).
+    - `durationcheck`: Prevents duration multiplication bugs (e.g., `time.Second * 60` vs `time.Minute`).
+    - `forcetypeassert`: Flags forced type assertions without `ok` check — use `errors.As` or check the boolean (see §8).
+    - `fatcontext`: Detects nested contexts in loops/closures — anti-pattern that escapes context cancellation.
+    - `mirror`: Catches bytes/strings type mismatches; encourages idiomatic type usage.
+    - `exptostd`: Flags `golang.org/x/exp` packages — use stdlib equivalents instead (core idiom).
+    - `wrapcheck`: Ensures external package errors are wrapped with context; prevents "swallowing" errors (see §8).
+    - `unparam`: Reports unused function parameters — aids cleanup (can be noisy during refactoring).
+    - `funcorder`: Enforces consistent function/method/constructor ordering within types.
+    - `modernize`: Suggests modern Go simplifications (range-over-int, slices API, maps functions, etc.) — complement to `copyloopvar` + `perfsprint`.
   - **Template:** The [`assets/golangci.yml`](assets/golangci.yml) template includes sane defaults for all recommended linters with tested configuration values for `linters.settings`. Copy it to `.golangci.yml` and customize thresholds (e.g., `gocognit.max` for cognitive complexity) to match your project's complexity profile.
 - **Doc-comment coverage (opt-in):** the main config disables revive's `exported`/`package-comments` rules — doc coverage isn't part of the standard gate (see §15). Run it on demand with the secondary config [`assets/golangci.doccheck.yml`](assets/golangci.doccheck.yml): `golangci-lint run -c golangci.doccheck.yml ./...`.
 - **Repo-level style guards (opt-in, not golangci-lint):** two conventions golangci-lint has no linter for — no one-line function bodies, no decorative separator comments (`// ──`, `# ═══`). Ship as shell scripts, not lint rules, since existing codebases likely have violations needing a separate cleanup pass first: [`assets/check-no-oneline-functions.sh`](assets/check-no-oneline-functions.sh), [`assets/check-no-separator-comments.sh`](assets/check-no-separator-comments.sh). Wire each into its own task-runner target (see `repo-tooling-architect` §4 for Task/just setup) rather than the main lint gate, so a legacy-codebase failure doesn't block unrelated CI.

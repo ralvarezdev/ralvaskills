@@ -114,18 +114,42 @@ linters:
     - contextcheck
     - noctx
 
-    # Enable when using testify (see go-architect §9):
-    # - testifylint
-    # - thelper
+    # Idiomatic patterns
+    - prealloc
+    - reassign
+    - makezero
+    - predeclared
+    - looppointer
+
+    # Test best practices
+    - paralleltest
+    - tparallel
+    - thelper
+    - testifylint
+
+    # Style & conventions
+    - stylecheck
+    - recvcheck
+    - nosprintfhostport
+    - tagliatelle
+
+    # Correctness & safety patterns
+    - containedctx
+    - durationcheck
+    - forcetypeassert
+    - dogsled
+    - exptostd
+    - fatcontext
+    - mirror
+    - unparam
+    - usetesting
+    - funcorder
+    - modernize
+    - wrapcheck
 
     # Enable selectively via settings.exhaustruct.include — noisy repo-wide,
     # scope to specific config/DTO structs instead (see go-architect §2):
     # - exhaustruct
-
-    # Enable if struct tags mix JSON/YAML casing conventions inconsistently —
-    # skip if the repo has legacy tags that can't be renamed without a breaking
-    # API/schema change (see go-architect §2):
-    # - tagliatelle
 
   settings:
     govet:
@@ -202,16 +226,33 @@ linters:
         - pattern: 'map\[string\]any'
           msg: "define a typed struct instead of map[string]any (see go-architect §2)"
 
-    # exhaustruct:
-    #   include:
-    #     - '.*\.Config$'
-    #     - '.*Options$'
+    exhaustruct:
+      include:
+        - '.*\.Config$'
+        - '.*Options$'
 
-    # tagliatelle:
-    #   case:
-    #     rules:
-    #       json: snake
-    #       yaml: snake
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+          yaml: snake
+
+    prealloc:
+      range-allocs: true
+      for-loops: false
+
+    reassign:
+      patterns:
+        - ".*"
+
+    dogsled:
+      max-blank-identifiers: 2
+
+    unparam:
+      check-exported: false
+
+    modernize:
+      exclude-unsafe: false
 
     godoclint:
       default: basic
