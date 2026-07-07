@@ -6,4 +6,5 @@ pinned = []
   cli-tool-architect = "*"
   go-architect = "*"
   logic-cleaner = "*"
+  repo-tooling-architect = "*"
   skill-builder = "*"
