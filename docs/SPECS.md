@@ -146,7 +146,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   └── event-driven-architect/   # ✅ exists (v1.0.0 — Protobuf schemas, outbox mandatory, broker-agnostic; NATS/Kafka/RabbitMQ)
 │   ├── tooling/
 │   │   ├── cli-tool-architect/       # ✅ exists (v1.0.0 — Go cobra+pflag+viper, Python typer; TOML/XDG config, --output, exit codes, NO_COLOR)
-│   │   └── repo-tooling-architect/   # ✅ exists (v1.0.0 — .editorconfig/.gitignore, mise|proto, Task|just, pre-commit, Renovate)
+│   │   └── repo-tooling-architect/   # ✅ exists (v1.1.0 — .editorconfig/.gitignore, mise|proto, Task|just (module:verb naming), pre-commit, Renovate)
 │   ├── design/
 │   │   ├── ddd-architect/            # ✅ exists (v1.0.0 — strategic-first DDD, bounded contexts, aggregates; event sourcing OOS)
 │   │   └── hexagonal-arch/           # ✅ exists (v1.0.0 — ports & adapters; dependency direction inward; no folder rule)
@@ -155,7 +155,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── agent-architect/          # 📋 planned
 │   │   └── ml-pipeline-architect/    # 📋 planned
 │   ├── infra/
-│   │   ├── docker-architect/         # ✅ exists (v1.0.0 — Docker 29, Compose v2, distroless/slim defaults, multi-arch, Trivy)
+│   │   ├── docker-architect/         # ✅ exists (v1.2.0 — Docker 29, Compose v2, distroless/slim defaults, multi-arch, Trivy, new-project CHECKLIST.md)
 │   │   ├── ci-cd-architect/          # ✅ exists (v1.0.0 — principles-first CI/CD; GitHub Actions recipes; suggestion-mode framing; pairs with docker-architect)
 │   │   ├── grafana-architect/        # ✅ exists (v1.0.0 — dashboards-as-code via Grizzly, unified alerting, per-service folders)
 │   │   └── observability-architect/  # ✅ exists (v1.0.0 — Prometheus metrics + OTel logs/traces, RED+USE, head sampling at 10%)
@@ -1144,7 +1144,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | Skill | Status | Notes |
 |---|---|---|
 | `cli-tool-architect` | ✅ | v1.0.0 — cross-language CLI conventions. Root + subcommands, **flag > env > config > default** precedence, TOML config in XDG location, stdout/stderr separation, `--output text\|json\|yaml` mandatory, standard exit codes, `NO_COLOR` respect, shell completions, multi-arch distribution. Recipes for Go (cobra+pflag+viper) and Python (typer+rich) |
-| `repo-tooling-architect` | ✅ | v1.0.0 — cross-language repo productivity layer. `.editorconfig` + `.gitignore` always; `mise` (default) / `proto` (alternative) for tool version pinning; `Task` (default) / `just` (alternative) for task running + dotenv; minimal pre-commit hooks; Renovate for dependency updates; explicit "when to skip" guidance |
+| `repo-tooling-architect` | ✅ | v1.1.0 — cross-language repo productivity layer. `.editorconfig` + `.gitignore` always; `mise` (default) / `proto` (alternative) for tool version pinning; `Task` (default) / `just` (alternative) for task running + dotenv, `module:verb` task naming with `includes:` namespacing for larger modules; minimal pre-commit hooks; Renovate for dependency updates; explicit "when to skip" guidance |
 
 #### Design
 | Skill | Status | Notes |
@@ -1162,7 +1162,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 #### Infra
 | Skill | Status | Notes |
 |---|---|---|
-| `docker-architect` | ✅ | v1.0.0 — Docker 29, Compose v2 (`docker compose` + `docker-compose.yaml`), per-language base defaults (distroless Go, debian-slim Python/Node), BuildKit cache+secret mounts, multi-arch (amd64+arm64), Trivy scanning, language-specific recipes |
+| `docker-architect` | ✅ | v1.2.0 — Docker 29, Compose v2 (`docker compose` + `docker-compose.yaml`), per-language base defaults (distroless Go, debian-slim Python/Node), BuildKit cache+secret mounts, multi-arch (amd64+arm64), Trivy scanning, language-specific recipes, new-project `CHECKLIST.md` (restart policy, resource limits, healthchecks, security, registry setup) |
 | `ci-cd-architect` | ✅ | v1.0.0 — principles-first CI/CD (suggestion-mode, trade-offs over mandates). Pipeline taxonomy (CI/release/deploy/scheduled), trigger + concurrency design, supply-chain hygiene (SHA-pinned actions + Renovate, minimal `permissions:`), OIDC over long-lived secrets, language caching, matrix discipline, test gates on branch-protection, build/push delegates to `docker-architect`, release-please for Conventional Commits → tags, deployment strategies + environment approval. GitHub Actions recipes in `RECIPES.md`; lean `STACK.md` tracks action versions for `rsk status --stack` |
 | `observability-architect` | ✅ | v1.0.0 — application-side signal production. Prometheus for metrics (naming convention, cardinality cap), OTLP for logs+traces, `log/slog` (Go) + `structlog` (Python), trace_id correlation across all three pillars, head sampling at 10% + 100% on errors, PII/secret redaction at SDK, RED + USE golden signals, SLOs per critical user journey |
 | `grafana-architect` | ✅ | v1.0.0 — dashboard + alert consumption layer. Dashboards-as-code via Grizzly (`grr`), one-folder-per-service ownership, one-question-per-panel design, unified alerting with multi-window/multi-burn-rate SLOs, mandatory `runbook_url` annotations, drift detection on UI edits. Pairs with `observability-architect` |

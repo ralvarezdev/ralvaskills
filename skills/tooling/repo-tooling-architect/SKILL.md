@@ -1,6 +1,6 @@
 ---
 name: repo-tooling-architect
-version: 1.0.0
+version: 1.1.0
 description: Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), minimal pre-commit, env vars via dotenv + external secret manager, Renovate. Use when scaffolding or auditing a repo's tooling layer.
 ---
 
@@ -105,7 +105,7 @@ tasks:
     cmds:
       - task --list
 
-  proto:
+  proto:generate:
     desc: Regenerate Go code from .proto files
     sources:
       - 'proto/**/*.proto'
@@ -114,19 +114,56 @@ tasks:
     cmds:
       - buf generate
 
-  test:
+  test:unit:
+    desc: Run unit tests
+    cmds:
+      - go test ./...
+
+  test:race:
     desc: Run all tests with race detector
     cmds:
       - go test -race ./...
 
-  up:
+  docker:up:
     desc: Start dev stack (DB + app)
     cmds:
       - docker compose up -d
+
+  docker:down:
+    desc: Stop dev stack
+    cmds:
+      - docker compose down
 ```
 
 - **Why Task as default:** built-in `sources:` / `generates:` for incremental builds, `--watch` mode, first-class Windows support (ships its own POSIX-sh interpreter), built-in `dotenv:` loading.
 - **Discoverability:** `task --list` shows every task with its `desc`.
+
+**Naming: `module:verb`.** Name tasks after the thing they act on, then the action — `proto:generate`, `test:unit`, `test:race`, `docker:up`, `docker:down` — not the reverse (`generate-proto`, `run-tests`). `task --list` groups alphabetically, so this puts every task for a module next to its siblings and reads as a discoverable namespace even without splitting files. Reserve unprefixed names (`default`, `build`, `lint`) for repo-wide entry points that don't belong to a single module.
+
+For a large enough module to warrant its own file, promote the prefix to a real namespace with `includes:` — Task auto-prefixes every task in the included file, so `docker:up` becomes `task docker:up` whether it's a flat key or defined in `Taskfile.docker.yml`:
+
+```yaml
+# Taskfile.yml
+includes:
+  docker: ./Taskfile.docker.yml
+  proto: ./Taskfile.proto.yml
+```
+
+```yaml
+# Taskfile.docker.yml
+version: '3'
+tasks:
+  up:
+    desc: Start dev stack (DB + app)
+    cmds:
+      - docker compose up -d
+  down:
+    desc: Stop dev stack
+    cmds:
+      - docker compose down
+```
+
+Stay flat until a module earns its own file (5+ tasks, or config distinct enough to warrant separation) — splitting a two-task module into its own `Taskfile.*.yml` is ceremony the flat `module:verb` key already avoids.
 
 ### Alternative: just with `justfile`
 

@@ -1,6 +1,6 @@
 ---
 name: docker-architect
-version: 1.1.0
+version: 1.2.0
 description: Docker standards — multi-stage builds, per-language base defaults (distroless Go, slim Python/Node), BuildKit cache mounts, non-root, multi-arch amd64+arm64, digest-pinned bases, Trivy scanning, Compose v2. Use when writing or reviewing Dockerfiles or Compose files.
 ---
 
