@@ -20,5 +20,5 @@
 - **Trivy is the default scanner** — fail builds on `HIGH,CRITICAL` severities by default.
 - **`HEALTHCHECK` on every service** — Compose `depends_on` conditions rely on them.
 
-_Last reviewed: 2026-05-20_
-_Skill version at last review: 1.0.0_
+_Last reviewed: 2026-07-07_
+_Skill version at last review: 1.1.0_
