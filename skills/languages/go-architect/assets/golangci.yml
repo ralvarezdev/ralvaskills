@@ -58,6 +58,7 @@ linters:
     - godoclint
     - sloglint
     - misspell
+    - nolintlint
 
     # Security
     - gosec
@@ -71,6 +72,7 @@ linters:
     # Error handling
     - errorlint
     - errcheck
+    - errname
     - nilerr
     - nilnil
 
@@ -78,6 +80,9 @@ linters:
     - dupl
     - goconst
     - mnd
+
+    # Code quality
+    - varnamelen
 
     # Complexity & size — split instead of suppress (see go-architect §14)
     - nestif
@@ -236,6 +241,15 @@ linters:
         - kubernetes
         - grpc
         - protobuf
+
+    nolintlint:
+      allow-leading-space: false
+      require-explanation: true
+      require-specific: true
+
+    varnamelen:
+      max-distance: 5
+      min-name-length: 1
 
     dupl:
       threshold: 250
