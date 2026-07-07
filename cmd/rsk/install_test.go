@@ -3,6 +3,7 @@ package main
 import "testing"
 
 func TestConstraintsFromArgs(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		args []string
@@ -27,6 +28,7 @@ func TestConstraintsFromArgs(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := constraintsFromArgs(tc.args)
 			if err != nil {
 				t.Fatalf("constraintsFromArgs(%v): unexpected error: %v", tc.args, err)

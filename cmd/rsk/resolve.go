@@ -17,6 +17,8 @@ import (
 
 // newLocalSource returns the appropriate source.Resolver for local skills based
 // on whether the config points to a local repo clone or the hosted registry.
+//
+//nolint:ireturn // returns interface for dependency injection
 func newLocalSource(cfg config.Config) source.Resolver {
 	if cfg.LocalMode() {
 		return source.NewLocal(cfg.RepoPath)
@@ -177,6 +179,8 @@ func resolveBundleSkills(
 
 // sourceForRef returns the Resolver and a not-found warning format string for
 // the given source type. Format string receives the skill name as its argument.
+//
+//nolint:ireturn // returns interface for dependency injection
 func sourceForRef(
 	src skill.Source, localSrc, officialSrc source.Resolver,
 ) (resolver source.Resolver, notFoundMsg string) {

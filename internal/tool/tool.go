@@ -10,9 +10,13 @@ import (
 )
 
 // ID identifies a supported AI tool by its string name in rsk.mod.
+//
+//nolint:recvcheck // mixed receivers are idiomatic for encoding.TextMarshaler/Unmarshaler
 type ID string
 
 // Tool describes an AI tool that rsk can manage skills for.
+//
+//nolint:interfacebloat // intentionally larger for API convenience
 type Tool interface {
 	// ToolID returns the unique identifier for this tool.
 	ID() ID
@@ -38,6 +42,7 @@ type Tool interface {
 // registry is the global map of registered tools, keyed by ID.
 var registry = make(map[ID]Tool)
 
+//nolint:gochecknoinits // init() used for tool registration
 func init() {
 	Register(&ClaudeTool{})
 	Register(&openCodeTool{})
@@ -81,6 +86,8 @@ func Register(t Tool) {
 }
 
 // Get returns the Tool with the given ID and whether it was found.
+//
+//nolint:ireturn // returns interface for registry pattern
 func Get(id ID) (Tool, bool) {
 	t, ok := registry[id]
 	return t, ok

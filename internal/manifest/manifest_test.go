@@ -9,6 +9,7 @@ import (
 )
 
 func TestWriteReadMod_roundtrip(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 
 	m := Mod{
@@ -39,6 +40,7 @@ func TestWriteReadMod_roundtrip(t *testing.T) {
 }
 
 func TestWriteMod_overwrite(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 
 	m1 := Mod{Skills: map[string]string{"a": "*"}}
@@ -64,6 +66,7 @@ func TestWriteMod_overwrite(t *testing.T) {
 }
 
 func TestReadMod_missingFile(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	_, err := ReadMod(dir)
 	if err == nil {
@@ -72,6 +75,7 @@ func TestReadMod_missingFile(t *testing.T) {
 }
 
 func TestWriteReadLock_roundtrip(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 
 	l := Lock{Skills: []LockEntry{
@@ -101,6 +105,7 @@ func TestWriteReadLock_roundtrip(t *testing.T) {
 }
 
 func TestReadLock_missingFileReturnsEmpty(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	got, err := ReadLock(dir)
 	if err != nil {
@@ -112,6 +117,7 @@ func TestReadLock_missingFileReturnsEmpty(t *testing.T) {
 }
 
 func TestUpsertRemoveLockEntry(t *testing.T) {
+	t.Parallel()
 	l := Lock{}
 	l = UpsertLockEntry(l, LockEntry{Name: "a", Version: "1.0.0"})
 	l = UpsertLockEntry(l, LockEntry{Name: "b", Version: "2.0.0"})

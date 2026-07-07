@@ -5,6 +5,7 @@ import (
 )
 
 func TestRoundDiv(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		n, d, want int64
 	}{
@@ -28,6 +29,7 @@ func TestRoundDiv(t *testing.T) {
 }
 
 func TestStripFrontmatter(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		input string
@@ -68,6 +70,7 @@ func TestStripFrontmatter(t *testing.T) {
 }
 
 func TestExtractDescription(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name  string
 		input string
@@ -123,6 +126,7 @@ func TestExtractDescription(t *testing.T) {
 }
 
 func TestEstimateTokens(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name    string
 		content string

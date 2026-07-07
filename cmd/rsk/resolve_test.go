@@ -8,6 +8,7 @@ import (
 )
 
 func TestDedupSkills(t *testing.T) {
+	t.Parallel()
 	input := []skill.Skill{
 		{Name: "a"},
 		{Name: "b"},
@@ -29,6 +30,7 @@ func TestDedupSkills(t *testing.T) {
 }
 
 func TestDetectSkillSource(t *testing.T) {
+	t.Parallel()
 	repo := filepath.FromSlash("/home/user/ralvaskills")
 	official := filepath.FromSlash("/home/user/.config/rsk/cache/anthropic")
 	registry := filepath.FromSlash("/home/user/.config/rsk/cache/registry")
@@ -62,6 +64,7 @@ func TestDetectSkillSource(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			got := detectSkillSource(tc.skillPath, repo, official, registry)
 			if got != tc.want {
 				t.Errorf("detectSkillSource(%q) = %v, want %v", tc.skillPath, got, tc.want)
@@ -71,6 +74,7 @@ func TestDetectSkillSource(t *testing.T) {
 }
 
 func TestJoinKeys(t *testing.T) {
+	t.Parallel()
 	// joinKeys returns a comma-separated string of map keys.
 	// Order is non-deterministic so we test with a single-key map.
 	m := map[string]string{"claude-code": "/path"}
@@ -81,6 +85,7 @@ func TestJoinKeys(t *testing.T) {
 }
 
 func TestParseNameVersion(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input       string
 		wantName    string
@@ -95,6 +100,7 @@ func TestParseNameVersion(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
+			t.Parallel()
 			name, pinVersion, err := parseNameVersion(tc.input)
 			if tc.wantErr {
 				if err == nil {

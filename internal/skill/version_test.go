@@ -3,6 +3,7 @@ package skill
 import "testing"
 
 func TestParseVersion(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		input   string
 		want    Version
@@ -19,6 +20,7 @@ func TestParseVersion(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.input, func(t *testing.T) {
+			t.Parallel()
 			got, err := ParseVersion(tc.input)
 			if tc.wantErr {
 				if err == nil {
@@ -37,6 +39,7 @@ func TestParseVersion(t *testing.T) {
 }
 
 func TestVersion_String(t *testing.T) {
+	t.Parallel()
 	v := Version{1, 2, 3}
 	if got := v.String(); got != "1.2.3" {
 		t.Errorf("String() = %q, want %q", got, "1.2.3")
@@ -44,6 +47,7 @@ func TestVersion_String(t *testing.T) {
 }
 
 func TestVersion_Compare(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		a, b Version
 		want int
@@ -64,6 +68,7 @@ func TestVersion_Compare(t *testing.T) {
 }
 
 func TestVersion_BeforeAfter(t *testing.T) {
+	t.Parallel()
 	older := Version{1, 0, 0}
 	newer := Version{2, 0, 0}
 

@@ -10,6 +10,7 @@ import (
 )
 
 func TestClaudeID_registered(t *testing.T) {
+	t.Parallel()
 	_, ok := Get(ClaudeID)
 	if !ok {
 		t.Errorf("ClaudeID %q not registered", ClaudeID)
@@ -17,6 +18,7 @@ func TestClaudeID_registered(t *testing.T) {
 }
 
 func TestOpenCodeID_registered(t *testing.T) {
+	t.Parallel()
 	_, ok := Get(OpenCodeID)
 	if !ok {
 		t.Errorf("OpenCodeID %q not registered", OpenCodeID)
@@ -24,6 +26,7 @@ func TestOpenCodeID_registered(t *testing.T) {
 }
 
 func TestAll_order(t *testing.T) {
+	t.Parallel()
 	tools := All()
 	if len(tools) < 2 {
 		t.Fatalf("expected at least 2 tools, got %d", len(tools))
@@ -36,6 +39,7 @@ func TestAll_order(t *testing.T) {
 }
 
 func TestWritePinnedClaude_roundtrip(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 
 	if err := writePinnedClaude(dir, []string{"go-architect", "tdd"}); err != nil {
@@ -54,6 +58,7 @@ func TestWritePinnedClaude_roundtrip(t *testing.T) {
 }
 
 func TestWritePinnedClaude_empty(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	if err := writePinnedClaude(dir, nil); err != nil {
 		t.Fatalf("writePinnedClaude empty: %v", err)
@@ -68,6 +73,7 @@ func TestWritePinnedClaude_empty(t *testing.T) {
 }
 
 func TestAppendClaudeImport_idempotent(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), ClaudeFileName)
 
 	if err := appendClaudeImport(path); err != nil {
@@ -87,6 +93,7 @@ func TestAppendClaudeImport_idempotent(t *testing.T) {
 }
 
 func TestRemoveClaudeImport(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), ClaudeFileName)
 	if err := os.WriteFile(path, []byte("# header\n"+claudeImportLine+"\n# footer\n"), fsperm.File); err != nil {
 		t.Fatalf("WriteFile: %v", err)
@@ -109,6 +116,7 @@ func TestRemoveClaudeImport(t *testing.T) {
 }
 
 func TestRemoveClaudeImport_missingFile(t *testing.T) {
+	t.Parallel()
 	err := removeClaudeImport(filepath.Join(t.TempDir(), "nonexistent.md"))
 	if err != nil {
 		t.Errorf("expected nil for missing file, got %v", err)

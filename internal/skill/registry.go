@@ -24,10 +24,7 @@ func Walk(root string, source Source) ([]Skill, error) {
 			return err
 		}
 		if _, statErr := os.Stat(filepath.Join(path, SkillFileName)); statErr == nil {
-			s, parseErr := parseSkill(root, path, source)
-			if parseErr != nil {
-				return parseErr
-			}
+			s := parseSkill(root, path, source)
 			skills = append(skills, s)
 			return fs.SkipDir
 		}
@@ -41,7 +38,7 @@ func ReadVersion(dir string) (string, error) {
 	return readVersionFromFrontmatter(filepath.Join(dir, SkillFileName))
 }
 
-func parseSkill(root, dir string, source Source) (Skill, error) {
+func parseSkill(root, dir string, source Source) Skill {
 	version, err := readVersionFromFrontmatter(filepath.Join(dir, SkillFileName))
 	if err != nil {
 		version = ""
@@ -58,7 +55,7 @@ func parseSkill(root, dir string, source Source) (Skill, error) {
 		Path:       dir,
 		Source:     source,
 		IsPersonal: IsPersonalPath(rel),
-	}, nil
+	}
 }
 
 // readVersionFromFrontmatter reads the "version:" value from YAML frontmatter

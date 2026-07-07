@@ -87,7 +87,7 @@ linters:
     - maintidx
 
     # Declaration structure
-    - decorder
+    # - decorder  # disabled — enforced via code review, linter disabled to avoid friction with tooling defaults
     - gochecknoinits
     - ineffassign
     - revive
@@ -113,15 +113,57 @@ linters:
     - contextcheck
     - noctx
 
-    # Enable when using testify:
-    # - testifylint
-    # - thelper
+    # Idiomatic patterns
+    - prealloc
+    - reassign
+    - makezero
+    - predeclared
+
+    # Test best practices
+    - paralleltest
+    - tparallel
+    - thelper
+    - testifylint
+
+    # Style & conventions
+    - recvcheck
+    - nosprintfhostport
+
+    # Correctness & safety patterns
+    - containedctx
+    - durationcheck
+    - forcetypeassert
+    - dogsled
+    - exptostd
+    - fatcontext
+    - mirror
+    - unparam
+    - usetesting
+    - funcorder
+    # - wrapcheck  # too noisy with stdlib; revisit after refactoring error handling
 
     # Enable selectively via settings — noisy repo-wide:
     # - exhaustruct
     # - tagliatelle
 
   settings:
+    prealloc:
+      range-allocs: true
+      for-loops: false
+
+    reassign:
+      patterns:
+        - ".*"
+
+    dogsled:
+      max-blank-identifiers: 2
+
+    unparam:
+      check-exported: false
+
+    modernize:
+      exclude-unsafe: false
+
     govet:
       enable:
         - shadow
@@ -171,9 +213,9 @@ linters:
 
     decorder:
       dec-order:
+        - type
         - const
         - var
-        - type
         - func
       disable-dec-order-check: false
       disable-init-func-first-check: false

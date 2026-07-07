@@ -56,6 +56,7 @@ Use 'rsk <command> --help' for command-specific help.`,
 	SilenceErrors: true,
 }
 
+//nolint:gochecknoinits // init() used for root command setup
 func init() {
 	rootCmd.Version = fmt.Sprintf(
 		"%s (rev %s, built %s, %s)",

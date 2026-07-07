@@ -8,9 +8,9 @@ version = 1
 
 [[skills]]
   name = "go-architect"
-  version = "1.0.0"
+  version = "1.4.0"
   source = "registry"
-  path = "C:\\Users\\ralva\\.config\\rsk\\cache\\registry\\go-architect\\1.0.0"
+  path = "C:\\Users\\ralva\\.config\\rsk\\cache\\registry\\go-architect\\1.4.0"
 
 [[skills]]
   name = "cli-tool-architect"

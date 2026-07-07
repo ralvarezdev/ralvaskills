@@ -47,6 +47,7 @@ func buildTarball(t *testing.T, entries []struct{ name, content string }) []byte
 }
 
 func TestExtractTarball_normal(t *testing.T) {
+	t.Parallel()
 	dest := t.TempDir()
 	data := buildTarball(t, []struct{ name, content string }{
 		{"go-architect/", ""},
@@ -71,6 +72,7 @@ func TestExtractTarball_normal(t *testing.T) {
 // archive: every later run saw the dir exist and skipped the download, so the
 // installed junction pointed at empty content.
 func TestEnsureCached_staleEmptyDir(t *testing.T) {
+	t.Parallel()
 	const name, version = "cli-tool-architect", "1.0.0"
 	tarball := buildTarball(t, []struct{ name, content string }{
 		{name + "/SKILL.md", "version: 1.0.0\n"},
@@ -116,6 +118,7 @@ func TestEnsureCached_staleEmptyDir(t *testing.T) {
 }
 
 func TestExtractTarball_zipSlip(t *testing.T) {
+	t.Parallel()
 	dest := t.TempDir()
 
 	var buf bytes.Buffer
@@ -144,6 +147,7 @@ func TestExtractTarball_zipSlip(t *testing.T) {
 }
 
 func TestExtractTarball_rejectsSymlink(t *testing.T) {
+	t.Parallel()
 	dest := t.TempDir()
 
 	var buf bytes.Buffer
@@ -163,6 +167,7 @@ func TestExtractTarball_rejectsSymlink(t *testing.T) {
 }
 
 func TestExtractTarball_stripPrefix(t *testing.T) {
+	t.Parallel()
 	dest := t.TempDir()
 	data := buildTarball(t, []struct{ name, content string }{
 		{"myskill/SKILL.md", "version: 2.0.0\n"},

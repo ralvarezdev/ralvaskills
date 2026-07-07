@@ -105,7 +105,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
 		projectDirs = projectSkillsDirs(filepath.Dir(rskDir), m)
 	}
-	sections := buildStatusSections(cfg, opts.global, opts.project, opts.forTool, rskDir, projectDirs)
+	sections := buildStatusSections(cfg, opts.global, opts.project, opts.forTool, projectDirs)
 
 	pinnedSet := make(map[string]bool)
 	if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
@@ -176,7 +176,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 func buildStatusSections(
 	cfg config.Config,
 	globalOnly, projectOnly bool,
-	forTool, rskDir string,
+	forTool string,
 	projectDirs []string,
 ) []statusSection {
 	var sections []statusSection

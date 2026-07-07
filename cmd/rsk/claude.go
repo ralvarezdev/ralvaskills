@@ -113,6 +113,7 @@ The rule format is Tool(specifier), for example:
 	}
 )
 
+//nolint:gochecknoinits // init() used for command registration
 func init() {
 	rootCmd.AddCommand(claudeCmd)
 	claudeCmd.AddCommand(claudeToolsCmd)

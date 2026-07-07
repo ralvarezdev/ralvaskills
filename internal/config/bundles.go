@@ -86,8 +86,8 @@ func mustParseEmbedded() []Bundle {
 // are appended in the order they appear in the user catalog.
 func merge(defaults, user []Bundle) []Bundle {
 	index := make(map[string]int, len(defaults))
-	result := make([]Bundle, len(defaults))
-	copy(result, defaults)
+	result := make([]Bundle, 0, len(defaults)+len(user))
+	result = append(result, defaults...)
 	for i, b := range result {
 		index[b.Name] = i
 	}
