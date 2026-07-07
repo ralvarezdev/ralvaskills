@@ -176,13 +176,8 @@ linters:
       under: 20
 
     decorder:
-      # Default order is type→const→var→func; go-architect uses const→var→type→func (see §1).
-      # disable-dec-order-check defaults to true (order checking OFF) — must be set false to enforce.
-      dec-order:
-        - const
-        - var
-        - type
-        - func
+      # go-architect recommends type→const→var→func (decorder's default order).
+      # disable-dec-order-check: false enforces this ordering via the linter.
       disable-dec-order-check: false
       disable-init-func-first-check: false
 

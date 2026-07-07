@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.3.0
+version: 1.3.1
 description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -13,7 +13,7 @@ Targets **Go 1.26**. See [STACK.md](STACK.md) for pinned dependency versions.
 - **Enums:** Custom types with `iota` and an implemented `String()` method. Avoid bare primitives. Use `1 << iota` for bitmasks.
 - **Errors:** Export package-level sentinel errors (`var ErrNotFound = ...`) for `errors.Is()`. Use `errors.Join` to aggregate multiple errors.
 - **Grouping:** When a file declares multiple `type`, `const`, or `var` at package level, consolidate each kind into a single parenthesized block (`type (...)`, `const (...)`, `var (...)`) rather than repeating the keyword. Keep unrelated groups separated by a blank line inside the block.
-- **File-level ordering:** const → var → type → func. Enforced by the `decorder` linter (see §14) — no hand-maintained script needed.
+- **File-level ordering:** type → const → var → func (decorder's default order). Enforced via code review; linter checking disabled to avoid friction with tooling defaults.
 - **Magic values:** a bare numeric or string literal used more than once becomes a named constant. Enforced by `mnd` (numbers) and `goconst` (strings) (see §14).
 
 ## 2. Structures & Memory
@@ -126,7 +126,7 @@ internal/userrepo/
   - **Code quality:** `nolintlint` validates that `//nolint` directives are specific and actually suppress something — enforces intentional, clean ignores. `varnamelen` enforces minimum variable name length (catches `x`, `i` outside loops; configure `max-distance: 5, min-name-length: 1`). `errname` ensures error types follow convention (`ErrFoo`, `FooError`) — complements §1's sentinel error pattern.
   - **Duplication & magic values:** `dupl` (structural clones), `goconst` (repeated string literals), `mnd` (magic numbers) — all push toward named constants/enums (see §1).
   - **Complexity & size:** `nestif`, `gocognit` (cognitive complexity), `maintidx` (maintainability index), plus revive's `file-length-limit` and `argument-limit` rules — catch functions/files that should be split before they rot.
-  - **Declaration structure:** `decorder` enforces file-level `const → var → type → func` ordering — note `disable-dec-order-check` defaults to `true` (order checking *off*); the template sets it `false` to actually enforce (see §1). `gochecknoinits` flags `init()` outright (see §11).
+  - **Declaration structure:** `decorder` enforces file-level `type → const → var → func` ordering (decorder's default). Set `disable-dec-order-check: false` in your `.golangci.yml` to enable (see §1). `gochecknoinits` flags `init()` outright (see §11).
   - **Interfaces & enums:** `interfacebloat` caps interface method count, `ireturn` enforces concrete returns (see §4); `exhaustive` forces enum-typed `switch` statements to cover every value; `forbidigo` bans `map[string]interface{}`/`map[string]any` in favor of typed structs (see §2) — requires careful regex tuning for your codebase (consider enforcing struct typing via code review if regex patterns get unwieldy; template includes reference patterns in `assets/forbidigo-patterns.yml`).
   - **modernize** (standalone linter, golangci-lint v1.57+): all checks on by default — catches `range n` (Go 1.22+), `slices.Sort`, `slices.Contains`, `maps.Keys`, `maps.Values`, etc. If too noisy, constrain via `modernize.settings` (e.g., `forRangeInts: true` only).
   - **intrange** (standalone linter): explicitly enabled — flags `for i := 0; i < n; i++` where `range n` is cleaner. Lightweight alternative to the `modernize` coverage.
