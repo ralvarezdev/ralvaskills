@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-07T14:26:38Z",
+  "generated_at": "2026-07-07T19:53:15Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -367,6 +367,19 @@
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/performance-reviewer@v1.0.0/performance-reviewer-v1.0.0.tar.gz"
+        }
+      }
+    },
+    "pi-iteration-workflow": {
+      "name": "pi-iteration-workflow",
+      "description": "Edit-test workflow for the voldemorbot robot codebase — Windows-to-Pi SSH deploy loop, pixi/ROS2 rebuild triggers, flaky-WiFi survival via screen, PowerShell SSH quoting pitfalls, sudo caching on the Pi Zero. Use when pushing platform/robot changes to hardware, restarting the robot service, or a Pi SSH session misbehaves.",
+      "personal": true,
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-07-07T19:53:15Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/pi-iteration-workflow@v1.0.0/pi-iteration-workflow-v1.0.0.tar.gz"
         }
       }
     },
