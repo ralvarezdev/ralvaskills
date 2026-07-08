@@ -24,5 +24,5 @@
 - **Free-threaded builds (PEP 703).** Design hot paths to avoid shared mutable state regardless of GIL presence — code should run correctly on both standard and free-threaded interpreters.
 - **No task queue pinned.** Neither `arq` nor `celery` is canonical right now — add when a real use case appears.
 
-_Last reviewed: 2026-05-20_
-_Skill version at last review: 1.0.0_
+_Last reviewed: 2026-07-08_
+_Skill version at last review: 1.3.0_
