@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-08T15:23:39Z",
+  "generated_at": "2026-07-08T23:50:23Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -196,8 +196,8 @@
     },
     "go-architect": {
       "name": "go-architect",
-      "description": "Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern. Use when writing, reviewing, or scaffolding Go code.",
-      "latest": "1.4.0",
+      "description": "Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.",
+      "latest": "1.5.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -223,6 +223,11 @@
           "version": "1.4.0",
           "published_at": "2026-07-07T01:49:23Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.4.0/go-architect-v1.4.0.tar.gz"
+        },
+        "1.5.0": {
+          "version": "1.5.0",
+          "published_at": "2026-07-08T23:50:23Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.5.0/go-architect-v1.5.0.tar.gz"
         }
       }
     },
@@ -265,12 +270,17 @@
     "hexagonal-arch": {
       "name": "hexagonal-arch",
       "description": "Hexagonal architecture (ports \u0026 adapters) — dependencies point inward; domain declares ports, adapters implement them; domain never imports framework/DB/HTTP. Dependency graph is prescribed, folder layout is not. Use when designing service structure, placing interfaces, or evaluating seam cleanliness.",
-      "latest": "1.0.0",
+      "latest": "1.1.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/hexagonal-arch@v1.0.0/hexagonal-arch-v1.0.0.tar.gz"
+        },
+        "1.1.0": {
+          "version": "1.1.0",
+          "published_at": "2026-07-08T23:50:23Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/hexagonal-arch@v1.1.0/hexagonal-arch-v1.1.0.tar.gz"
         }
       }
     },
