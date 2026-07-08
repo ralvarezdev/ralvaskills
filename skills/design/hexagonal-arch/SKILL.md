@@ -1,6 +1,6 @@
 ---
 name: hexagonal-arch
-version: 1.0.0
+version: 1.1.0
 description: Hexagonal architecture (ports & adapters) — dependencies point inward; domain declares ports, adapters implement them; domain never imports framework/DB/HTTP. Dependency graph is prescribed, folder layout is not. Use when designing service structure, placing interfaces, or evaluating seam cleanliness.
 ---
 
@@ -76,6 +76,7 @@ This is where hexagonal pays back. The cost (defining ports, separating layers) 
 - **Single-adapter ports.** A port introduced "for future flexibility" with one implementation and no second adapter justified. Per [improve-codebase-architecture's DEEPENING.md](../../refactoring/improve-codebase-architecture/DEEPENING.md): *one adapter = hypothetical seam; two adapters = real seam*. If you only ever need one, the port is indirection without payoff. Inline it.
 - **Reaching into infrastructure from the domain.** `User.save()` calling the DB. Fix: `User` is the data + behavior; `UserRepo.save(user)` does the persistence. The aggregate doesn't know how it gets persisted.
 - **Treating "hexagonal" as a folder convention.** Renaming packages `domain/`, `application/`, `infrastructure/`, `interfaces/` doesn't make a codebase hexagonal. The dependency direction does. A flat folder structure can be hexagonal if the imports flow correctly; a deeply layered structure can be a mess if they don't.
+- **Naming an adapter directory "ports."** A port is always an interface; an adapter is always a concrete implementation. If you split adapters into their own directories, name them after direction (`primary`/`secondary`, or `driving`/`driven`) — never reuse "ports" for an adapter folder just because that's where the outside world plugs in. An explicit primary port, when one is warranted (see §7 — usually only once a second caller needs to swap it), belongs with the layer that offers it (the application service), not with the adapter that calls into it.
 
 ## 7. When NOT to use it
 

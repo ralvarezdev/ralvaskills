@@ -1,7 +1,7 @@
 ---
 name: go-architect
-version: 1.4.0
-description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern. Use when writing, reviewing, or scaffolding Go code.
+version: 1.5.0
+description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
 # Go Architecture & Domain Modeling
@@ -81,6 +81,7 @@ Prefer stdlib over hand-rolled or third-party when stdlib now covers it.
 
 - **Naming:** Short, lowercase, single-word. Never `util`, `common`, `helpers`.
 - **Layout:** Organize by domain/feature, not by technical layer.
+- **Domain modeling & interface placement:** See [hexagonal-arch](../../design/hexagonal-arch/SKILL.md) for ports/adapters and [ddd-architect](../../design/ddd-architect/SKILL.md) for aggregates/bounded contexts. For `go.work` multi-module layout, see §16.
 
 ## 11. Dependencies & Logging
 
@@ -169,6 +170,18 @@ internal/userrepo/
 - **Format:** Exported names get full-sentence comments starting with the identifier name. Include a package-level comment.
 - **Style:** Weave parameter and return names into prose (no `@param`). Document specific error conditions.
 - **Focus:** Explain *why* (business rules, edge cases) — code already shows *what*.
+
+## 16. Multi-module workspaces (`go.work`)
+
+For repos where `go.work` ties together independently-versioned modules — one per bounded context, plus shared libraries — rather than a single `go.mod`.
+
+- **Module boundary is the real privacy/reuse unit.** Once something is its own module (own `go.mod`), nesting it under a directory named `internal/` adds nothing — Go's `internal/` import restriction is a single-module-tree mechanism and does nothing extra for something already module-isolated. Treat the directory name as organizational labeling, not enforcement. If a service module needs a genuine internal-only boundary, nest a further `internal/` inside that module (`internal/order/internal/wire/`).
+- **`pkg/*`** — each subdirectory its own module, for code genuinely shared by 2+ service modules (validation, observability, an RFC 7807 problem-detail mapper). Don't default to creating `pkg/`; per [hexagonal-arch §7](../../design/hexagonal-arch/SKILL.md#7-when-not-to-use-it), a shared seam is only real once two consumers need it.
+- **Root-level `domain`** — only for value objects/types genuinely shared *across* bounded contexts (e.g. a `Money` type used by both Order and Payment). Most contexts should keep their domain private inside their own service module. A shared root `domain` module is a deliberate Shared Kernel (see [ddd-architect's context-mapping table](../../design/ddd-architect/PATTERNS.md#1-context-mapping-patterns)), not a default.
+- **`internal/<service>`** — one bounded context = one module. Internally structured per [hexagonal-arch](../../design/hexagonal-arch/SKILL.md): `domain/`, `app/`, `adapters/{primary,secondary}` — or flatter, since hexagonal-arch mandates the dependency direction, not the folder split. "Service" here means the deployable module itself, not [ddd-architect's Domain/Application Service patterns](../../design/ddd-architect/SKILL.md#7-domain-vs-application-services) — a single `internal/<service>` module typically contains several Application Services inside its `app/` layer (e.g. `PlaceOrderService`).
+- **`cmd/<service>` vs `app/<service>`** — keep distinct rather than merging composition into `cmd`. `cmd/<service>/main.go` stays minimal: parse flags/env, wire `signal.NotifyContext`, call into `app`, handle the exit code. `app/<service>` is the actual composition root — DI graph, adapter wiring, server lifecycle — so it's exercisable independently of process-level concerns.
+- **Cross-context calls never reach into another context's `domain/` or `adapters/`.** They go through that context's public API (HTTP/gRPC, since each service is a separate deployable in a multi-module workspace). The calling context defines its *own* ports shaped for what it needs (`OrderCreator`, not `order.Repository`) — the same "define interfaces where used" rule from §4, applied across a context boundary. This is the Go-flavored version of [ddd-architect's Customer/Supplier or Open Host Service patterns](../../design/ddd-architect/PATTERNS.md#1-context-mapping-patterns).
+- **Full worked example** — an order-owning service plus a checkout orchestrator service, with code — lives in [RECIPES.md](RECIPES.md).
 
 ## Canonical libraries
 
