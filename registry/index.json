@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-08T23:50:23Z",
+  "generated_at": "2026-07-10T19:55:38Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -197,7 +197,7 @@
     "go-architect": {
       "name": "go-architect",
       "description": "Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.",
-      "latest": "1.5.0",
+      "latest": "1.6.2",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -228,6 +228,11 @@
           "version": "1.5.0",
           "published_at": "2026-07-08T23:50:23Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.5.0/go-architect-v1.5.0.tar.gz"
+        },
+        "1.6.2": {
+          "version": "1.6.2",
+          "published_at": "2026-07-10T19:55:38Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.6.2/go-architect-v1.6.2.tar.gz"
         }
       }
     },
@@ -408,7 +413,7 @@
     "python-architect": {
       "name": "python-architect",
       "description": "Python 3.14 enterprise standards — modern typing (PEP 649), immutable dataclasses, Protocol-based DI, asyncio discipline, pytest 9, psycopg + .sql files via importlib.resources. Use when writing, reviewing, or scaffolding Python code.",
-      "latest": "1.3.0",
+      "latest": "1.4.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -419,6 +424,11 @@
           "version": "1.3.0",
           "published_at": "2026-07-08T15:23:39Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/python-architect@v1.3.0/python-architect-v1.3.0.tar.gz"
+        },
+        "1.4.1": {
+          "version": "1.4.1",
+          "published_at": "2026-07-10T19:55:38Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/python-architect@v1.4.1/python-architect-v1.4.1.tar.gz"
         }
       }
     },
