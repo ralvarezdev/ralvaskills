@@ -13,10 +13,11 @@
 | google.golang.org/protobuf | 1.36 | Protocol Buffers runtime |
 | google.golang.org/grpc | 1.81 | gRPC |
 | stretchr/testify | 1.11 | Assertions, mocks, suites |
+| testcontainers/testcontainers-go | 0.42 | Docker-backed integration tests (real Postgres/Redis/Kafka/etc.) |
 | uber-go/fx | 1.24 | DI graph wiring |
 | golang-migrate/migrate | 4.19 | SQL migrations (versioned up/down) |
 | buf | 1.69 | Proto toolchain (linter, breaking-change detector) |
-| golangci-lint | 2.12 | Aggregated linter (staticcheck + govet + revive + goimports + dozens more); v2 config schema |
+| golangci-lint | 2.12.2 | Aggregated linter (staticcheck + govet + revive + goimports + dozens more); v2 config schema |
 
 ## Notes
 
@@ -24,5 +25,5 @@
 - **No ORM.** Database access goes through `sqlx` with raw SQL in `.sql` files embedded via `//go:embed`. This is an architectural opinion enforced by `go-architect`.
 - **Dependency injection:** `uber-go/fx` is the default for larger graphs. `google/wire` is acceptable when compile-time-only wiring is preferred.
 
-_Last reviewed: 2026-07-05_
-_Skill version at last review: 1.2.0_
+_Last reviewed: 2026-07-10_
+_Skill version at last review: 1.6.1_

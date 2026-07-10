@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.5.0
+version: 1.6.1
 description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -76,6 +76,7 @@ Prefer stdlib over hand-rolled or third-party when stdlib now covers it.
 - **Helpers:** `t.Helper()` as the first line in any custom assertion — enforced by `thelper`.
 - **Concurrent code:** Use `testing/synctest` (GA in Go 1.25) — virtualizes time, waits for goroutines to quiesce, makes async tests deterministic.
 - **Library:** `stretchr/testify` for assertions/mocks/suites when stdlib alone is awkward. Use `testifylint` to catch incorrect assertion patterns (`assert` vs `require`).
+- **Integration tests against Docker dependencies:** `testcontainers-go` — spins up real Postgres/Redis/Kafka/etc. containers per test run instead of mocking the driver or relying on a shared dev instance. Gate behind a build tag (e.g. `//go:build integration`) or `testing.Short()` check so `go test ./...` stays fast by default.
 
 ## 10. Packages
 

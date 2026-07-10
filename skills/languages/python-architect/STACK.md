@@ -10,6 +10,7 @@
 | httpx | 0.28 | Async HTTP client |
 | pytest | 9.0 | Test runner — replaces `unittest` entirely |
 | pytest-asyncio | 1.3 | Async test support |
+| testcontainers | 4.14 | Docker-backed integration tests (real Postgres/Redis/Kafka/etc.) |
 | mypy | 2.1 | Static type checking — `--strict` baseline |
 | ruff | 0.15 | Lint + format — replaces black / isort / flake8 / pyupgrade |
 | uv | 0.11 | Environment + packaging — replaces pip / virtualenv / pyenv |
@@ -24,5 +25,5 @@
 - **Free-threaded builds (PEP 703).** Design hot paths to avoid shared mutable state regardless of GIL presence — code should run correctly on both standard and free-threaded interpreters.
 - **No task queue pinned.** Neither `arq` nor `celery` is canonical right now — add when a real use case appears.
 
-_Last reviewed: 2026-07-08_
-_Skill version at last review: 1.3.0_
+_Last reviewed: 2026-07-10_
+_Skill version at last review: 1.4.0_

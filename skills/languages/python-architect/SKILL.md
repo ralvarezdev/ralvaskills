@@ -1,6 +1,6 @@
 ---
 name: python-architect
-version: 1.3.0
+version: 1.4.0
 description: Python 3.14 enterprise standards — modern typing (PEP 649), immutable dataclasses, Protocol-based DI, asyncio discipline, pytest 9, psycopg + .sql files via importlib.resources. Use when writing, reviewing, or scaffolding Python code.
 ---
 
@@ -64,6 +64,7 @@ Targets **Python 3.14**. See [STACK.md](STACK.md) for pinned dependency versions
 - **Finally hazards (PEP 765, 3.14):** `return` / `break` / `continue` inside `finally` now emits SyntaxWarning — refactor it out.
 - **Iterables:** `map(strict=True)` (3.14) when consuming parallel iterables, matching `zip(strict=True)`.
 - **Testing:** `pytest 9` with `conftest.py` fixtures. Never the legacy `unittest` module. `pytest-asyncio` for async tests.
+- **Integration tests against Docker dependencies:** `testcontainers-python` — spins up real Postgres/Redis/Kafka/etc. containers per test run instead of mocking the driver or relying on a shared dev instance. Mark these with a dedicated `pytest` marker (e.g. `@pytest.mark.integration`) and exclude by default so `pytest` stays fast.
 
 ## 8. Documentation
 
