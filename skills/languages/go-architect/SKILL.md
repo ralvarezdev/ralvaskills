@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.6.1
+version: 1.6.2
 description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
