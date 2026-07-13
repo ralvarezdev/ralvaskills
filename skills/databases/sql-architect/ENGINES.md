@@ -10,6 +10,7 @@ Notes for engines other than the PostgreSQL primary. Load this reference when ta
 - **JSON:** native JSON type exists, but JSONB-style indexing is weaker than PostgreSQL. Use **generated columns + secondary index** when you need to query into JSON paths.
 - **Time zones:** `TIMESTAMP` stores in UTC and converts on read; `DATETIME` is naïve. Prefer `TIMESTAMP` with the session timezone fixed to `+00:00`.
 - **CTEs and window functions** are supported in MySQL 8+; no compatibility concern in MySQL 9.
+- **Index naming:** `idx_<cols>`; unique `uniq_<cols>`. Index names are scoped per-table in MySQL (not per-schema like Postgres), so the table name is redundant — omit it.
 
 ## SQLite 3.53
 
@@ -19,3 +20,4 @@ Notes for engines other than the PostgreSQL primary. Load this reference when ta
 - **Concurrency:** single-writer at a time (database-level lock). Fine for embedded / single-process use; not for multi-writer servers.
 - **WAL mode:** enable with `PRAGMA journal_mode = WAL;` for any non-trivial use — allows readers to run concurrently with one writer.
 - **Foreign keys:** off by default. Enable per-connection with `PRAGMA foreign_keys = ON;` or in the application's connection setup.
+- **Index naming:** `idx_<table>_<cols>`; unique `uniq_<table>_<cols>`. Index names are scoped per-database like Postgres, so keep the table name to avoid collisions.

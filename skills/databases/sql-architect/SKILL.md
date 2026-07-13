@@ -1,6 +1,6 @@
 ---
 name: sql-architect
-version: 1.0.0
+version: 1.0.1
 description: SQL standards — UUID v7 PKs, snake_case, soft delete, forward-only migrations, parameter binding, N+1 prevention, EXPLAIN-driven indexing. PostgreSQL 18 primary; MySQL 9 and SQLite 3.53 noted. Use when designing schemas, writing queries, or auditing a database layer.
 ---
 
@@ -24,7 +24,7 @@ Targets **PostgreSQL 18** as the primary engine; MySQL 9 and SQLite 3.53 noted w
 - **Columns:** `snake_case`, **singular** (`email`, `created_at`).
 - **PK:** always `id`.
 - **FKs:** `<reftable_singular>_id` (`user_id`, `order_id`).
-- **Indexes:** `ix_<table>_<cols>`; unique `ux_<table>_<cols>`; partial `ix_<table>_<cols>_active`.
+- **Indexes (PostgreSQL):** `<table>_<cols>_idx`; unique `<table>_<cols>_key`; partial `<table>_<cols>_active_idx` — matches Postgres's own auto-generated names. MySQL and SQLite differ — see [ENGINES.md](ENGINES.md).
 - **Constraints:** `<table>_<purpose>_check`, `<table>_<purpose>_fkey`.
 - **Sequences:** PG generates them; rename only if necessary, never reference manually — UUID v7 PKs avoid the need.
 
