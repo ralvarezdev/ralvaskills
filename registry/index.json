@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-10T19:55:38Z",
+  "generated_at": "2026-07-13T19:06:11Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -529,12 +529,17 @@
     "sql-architect": {
       "name": "sql-architect",
       "description": "SQL standards — UUID v7 PKs, snake_case, soft delete, forward-only migrations, parameter binding, N+1 prevention, EXPLAIN-driven indexing. PostgreSQL 18 primary; MySQL 9 and SQLite 3.53 noted. Use when designing schemas, writing queries, or auditing a database layer.",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/sql-architect@v1.0.0/sql-architect-v1.0.0.tar.gz"
+        },
+        "1.0.1": {
+          "version": "1.0.1",
+          "published_at": "2026-07-13T19:06:11Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/sql-architect@v1.0.1/sql-architect-v1.0.1.tar.gz"
         }
       }
     },
