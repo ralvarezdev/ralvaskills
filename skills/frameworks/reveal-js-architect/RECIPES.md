@@ -53,6 +53,23 @@ Reveal.initialize({
 });
 ```
 
+**Fixed-height slide canvas** (full-bleed background, or a scrollable body panel) — `<section>` never has a set height, so an inner wrapper must use a px height matching `Reveal.initialize`'s `height`, not `%`:
+
+```css
+:root { --slide-height: 720px; } /* keep in sync with Reveal.initialize({ height: 720 }) */
+
+.slide-inner {
+  height: var(--slide-height); /* not 100% — <section> has no set height to inherit */
+  display: flex;
+  flex-direction: column;
+}
+
+.slide-body {
+  flex: 1;
+  overflow-y: auto; /* now has a real box to scroll within */
+}
+```
+
 npm + Vite project instead (`js/main.js` as the Vite entry, referenced from `index.html` with `<script type="module" src="/js/main.js"></script>`):
 
 ```js
