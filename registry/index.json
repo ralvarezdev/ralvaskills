@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-17T03:15:36Z",
+  "generated_at": "2026-07-17T03:17:12Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -571,12 +571,17 @@
       "name": "uru-thesis-defense-architect",
       "description": "Design URU-style thesis defense presentation specs — fixed institutional slide structure (portada, problema, objetivos, antecedentes, variables, metodología, resultados, conclusiones), Spanish-only content, logo placement rules (large centered cover, small top-left from slide 2). Outputs one `.md` slide-by-slide spec. Use when authoring a thesis/tesis defense deck for Universidad Real (URU).",
       "personal": true,
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-07-17T03:15:36Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-thesis-defense-architect@v1.0.0/uru-thesis-defense-architect-v1.0.0.tar.gz"
+        },
+        "1.0.1": {
+          "version": "1.0.1",
+          "published_at": "2026-07-17T03:17:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-thesis-defense-architect@v1.0.1/uru-thesis-defense-architect-v1.0.1.tar.gz"
         }
       }
     },
