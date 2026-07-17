@@ -181,11 +181,12 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── skill-builder/            # ✅ exists (v1.0.0 — meta-skill: scaffolds new skills following ralvaskills standards; no STACK.md)
 │   │   ├── rsk-guide/                # ✅ exists (v0.2.0 — covers .rsk/ project manifest + bundle install; no STACK.md)
 │   │   └── caveman/                  # ✅ exists (communication mode, language-agnostic)
-│
+git add│
 │   └── personal/                     # 📋 new category — personal skills, never auto-bundled
 │       ├── demo-script-architect/    # ✅ exists (moved from workflows/)
 │       ├── demo-presentation-architect/  # ✅ exists (v1.1.0 — slide-deck spec authoring; content distribution + within-slide organization + layout catalog in LAYOUTS.md)
-│       └── pi-iteration-workflow/    # ✅ exists (v1.0.0 — Windows-to-Pi SSH deploy loop for the voldemorbot robot codebase; pixi/ROS2 rebuild triggers, screen for flaky WiFi, PowerShell SSH quoting, Pi Zero sudo caching; no STACK.md)
+│       ├── pi-iteration-workflow/    # ✅ exists (v1.0.0 — Windows-to-Pi SSH deploy loop for the voldemorbot robot codebase; pixi/ROS2 rebuild triggers, screen for flaky WiFi, PowerShell SSH quoting, Pi Zero sudo caching; no STACK.md)
+│       └── uru-thesis-defense-architect/  # ✅ exists (v1.0.0 — URU thesis defense deck spec authoring; fixed 9-section institutional structure, Spanish-only content, logo placement rules, user-supplied logo asset; no STACK.md)
 │
 ├── .github/
 │   └── workflows/
@@ -1005,6 +1006,7 @@ Currently located in `skills/personal/`. Any skill whose path contains a `person
 | `demo-script-architect` | Presenter-centric demo scripts with narrative flow and progressive capability reveals |
 | `demo-presentation-architect` | Slide-deck specifications (`.md` only) with per-slide layouts and exact text; never generates HTML/PDF/PPTX |
 | `pi-iteration-workflow` | Windows-to-Pi SSH edit-test loop for the voldemorbot robot codebase — host access, pixi/ROS2 deploy triggers, flaky-connection handling |
+| `uru-thesis-defense-architect` | URU thesis defense deck specs (`.md` only) — fixed 9-section institutional structure, Spanish-only content, logo placement rules |
 
 ---
 
