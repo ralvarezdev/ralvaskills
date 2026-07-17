@@ -1,12 +1,12 @@
 ---
 name: work-report-generator
-version: 1.1.0
-description: Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{LOG,REPORT}.md`. Use on "reporte de trabajo", "daily report", or /work-report.
+version: 1.1.1
+description: Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{log,report}.md`. Use on "reporte de trabajo", "daily report", or /work-report.
 ---
 
 # Work Report Generator
 
-Turn unstructured daily notes and commit messages into a formal `reports/YYYY-MM-DD/REPORT.md`. Strict no-inference: every task, project assignment, and per-project hour count comes from the user, asked explicitly. Report template, anti-patterns, and closing checklist in [RECIPES.md](RECIPES.md).
+Turn unstructured daily notes and commit messages into a formal `reports/YYYY-MM-DD/report.md`. Strict no-inference: every task, project assignment, and per-project hour count comes from the user, asked explicitly. Report template, anti-patterns, and closing checklist in [RECIPES.md](RECIPES.md).
 
 ## 1. When to use
 
@@ -22,13 +22,13 @@ All artifacts live under `reports/` at the repository root. Each day gets its ow
 reports/
 ├── projects.md            persistent catalog of general projects (one bullet per project, with short description)
 └── YYYY-MM-DD/
-    ├── LOG.md             per-day scratchpad: raw user input, commit dumps, tasks grouped by project, hours per project
-    └── REPORT.md          formal report, generated/regenerated from LOG.md
+    ├── log.md              per-day scratchpad: raw user input, commit dumps, tasks grouped by project, hours per project
+    └── report.md           formal report, generated/regenerated from log.md
 ```
 
 - **`projects.md`** is the single source of truth for project names across all reports. Reuse names verbatim so reports stay linkable.
-- **`LOG.md`** is the working scratchpad — append-only during a session. Paste raw input, record clarification answers, log per-project hours. It is the *input* to the formal report.
-- **`REPORT.md`** is the *output*. Regenerate from `LOG.md` at the end of the session. Never edit it by hand mid-session.
+- **`log.md`** is the working scratchpad — append-only during a session. Paste raw input, record clarification answers, log per-project hours. It is the *input* to the formal report.
+- **`report.md`** is the *output*. Regenerate from `log.md` at the end of the session. Never edit it by hand mid-session.
 
 Create `reports/`, `projects.md`, and the per-day folder lazily on first invocation. Do not pre-seed `projects.md` with example data.
 
@@ -42,13 +42,13 @@ Ask: **"¿En qué idioma quieres el reporte?"** (default question in Spanish; sw
 
 - Store the answer for the rest of the session. Do not re-ask for subsequent reports in the same session.
 - If the user changes language mid-session, honor the new choice for new reports only — do not retroactively rewrite past ones unless asked.
-- **Scope of the language choice:** governs `REPORT.md` only. `LOG.md` keeps the raw input verbatim in its source language — never translate the LOG, never normalize its formatting. Translation rules (§7) apply only when emitting the report.
+- **Scope of the language choice:** governs `report.md` only. `log.md` keeps the raw input verbatim in its source language — never translate the LOG, never normalize its formatting. Translation rules (§7) apply only when emitting the report.
 
 ### 3.2 Date
 
 Ask: **"¿Para qué fecha es el reporte?"** Accept `YYYY-MM-DD`, "today", "yesterday", or a relative reference. Convert to absolute `YYYY-MM-DD` and confirm before continuing.
 
-**One date per invocation.** If the user wants to backfill several days, run the full flow (§3.1 onward) once per date — do not batch multiple days in a single session, do not interleave inputs for different dates. The reason: per-day artifacts (`LOG.md`, `REPORT.md`) and per-project hours must stay scoped to a single calendar day.
+**One date per invocation.** If the user wants to backfill several days, run the full flow (§3.1 onward) once per date — do not batch multiple days in a single session, do not interleave inputs for different dates. The reason: per-day artifacts (`log.md`, `report.md`) and per-project hours must stay scoped to a single calendar day.
 
 ### 3.3 Project catalog review
 
@@ -64,7 +64,7 @@ Ask the user to paste:
 - Optionally, commits as `<sha> <subject>\n\n<body>` — **full body, not just the subject line** (only as *input* — see §6).
 - Optionally, issue/ticket excerpts — title **and** body, not titles alone.
 
-Append everything **verbatim** to `LOG.md` under a `## Raw input` section. Preserve the original formatting, language, indentation, and line breaks of what the user pasted. Do not reformat, translate, summarize, or de-duplicate at this stage.
+Append everything **verbatim** to `log.md` under a `## Raw input` section. Preserve the original formatting, language, indentation, and line breaks of what the user pasted. Do not reformat, translate, summarize, or de-duplicate at this stage.
 
 ### 3.5 Task extraction and project grouping
 
@@ -81,7 +81,7 @@ For each candidate task, ask **one question**:
 
 Do **not** ask hours per task. Hours are tracked at the project level (§3.6).
 
-Record confirmed tasks under a `## Tasks by project` section in `LOG.md`, grouped by project, one bullet per task. Use the user's wording from the clarification, not your paraphrase.
+Record confirmed tasks under a `## Tasks by project` section in `log.md`, grouped by project, one bullet per task. Use the user's wording from the clarification, not your paraphrase.
 
 ### 3.6 Per-project hours
 
@@ -89,20 +89,20 @@ Once every task is grouped, walk through the projects with at least one task tod
 
 - *"¿Cuánto tiempo total le dedicaste a `<Project Name>` hoy? (formato: `2h 30min`)"*
 
-Record under a `## Hours` section in `LOG.md`.
+Record under a `## Hours` section in `log.md`.
 
 Never estimate, round, or derive hours from the number/size of tasks. Ask.
 
 ### 3.7 Confirmation before close
 
-Before generating `REPORT.md`, ask explicitly: **"¿Algo más que agregar antes de cerrar el día?"** Wait for an affirmative close — "listo", "ciérralo", "no, genera", "all done", or equivalent — before proceeding to §3.8.
+Before generating `report.md`, ask explicitly: **"¿Algo más que agregar antes de cerrar el día?"** Wait for an affirmative close — "listo", "ciérralo", "no, genera", "all done", or equivalent — before proceeding to §3.8.
 
 - If the user adds more raw input, return to §3.4 and re-run §3.5–§3.6 on the new input only. Re-ask hours only for projects whose task list changed.
-- **Pause-and-resume is allowed.** The flow does not need to finish in a single uninterrupted exchange. If the user steps away and returns later in the same session (or a future session for the same date), re-read `LOG.md` for that date and resume from the last completed step. Never skip the §3.7 confirmation just because earlier steps already ran.
+- **Pause-and-resume is allowed.** The flow does not need to finish in a single uninterrupted exchange. If the user steps away and returns later in the same session (or a future session for the same date), re-read `log.md` for that date and resume from the last completed step. Never skip the §3.7 confirmation just because earlier steps already ran.
 
 ### 3.8 Report generation
 
-Only after the explicit close confirmation from §3.7 **and** after every project with tasks today has a recorded hours figure, generate `REPORT.md` (§4).
+Only after the explicit close confirmation from §3.7 **and** after every project with tasks today has a recorded hours figure, generate `report.md` (§4).
 
 ### 3.9 Final review
 
@@ -153,13 +153,13 @@ When in doubt, ask one specific question. Better to ask twice than to fabricate 
 
 Commits help the user remember what they did, but they do not appear in the report unless explicitly requested ("incluye los commits", "list the commits", "agrega los SHAs").
 
-- Always paste commits into `LOG.md` under a `## Commits` subsection for traceability. Include the **full message** — subject, blank line, body — not the subject line alone. Same rule for issue/ticket dumps: title + body.
+- Always paste commits into `log.md` under a `## Commits` subsection for traceability. Include the **full message** — subject, blank line, body — not the subject line alone. Same rule for issue/ticket dumps: title + body.
 - Use commit subjects and bodies only as memory aids when asking clarification questions in §3.5. Never write a task bullet directly from a commit message.
-- If the user asks to include them, append a `Referencias` section at the very end of `REPORT.md`, listing `<short-sha> <subject>` one per line, no decoration. References live only in that section — never inline inside task bullets.
+- If the user asks to include them, append a `Referencias` section at the very end of `report.md`, listing `<short-sha> <subject>` one per line, no decoration. References live only in that section — never inline inside task bullets.
 
 ## 7. Language and technical translation
 
-**Scope.** These rules govern `REPORT.md` only. `LOG.md` is verbatim source-language input and is never translated, normalized, or rewritten — translating the LOG would destroy the audit trail.
+**Scope.** These rules govern `report.md` only. `log.md` is verbatim source-language input and is never translated, normalized, or rewritten — translating the LOG would destroy the audit trail.
 
 The report is written in the language chosen in §3.1. Technical English terms follow four rules:
 
@@ -175,10 +175,10 @@ Full examples per category in [RECIPES § 3](RECIPES.md#3-technical-translation-
 At the end of a session:
 
 - `reports/projects.md` — updated with any new projects added during the session.
-- `reports/<date>/LOG.md` — `## Raw input`, `## Commits` (if any), `## Tasks by project` (grouped), `## Hours` (per project).
-- `reports/<date>/REPORT.md` — formal report regenerated from `LOG.md`, following §4 strictly.
+- `reports/<date>/log.md` — `## Raw input`, `## Commits` (if any), `## Tasks by project` (grouped), `## Hours` (per project).
+- `reports/<date>/report.md` — formal report regenerated from `log.md`, following §4 strictly.
 
-If the user comes back the next day or week to amend a past report, re-read `LOG.md` for that date first and re-run the task extraction loop only on new input. Re-ask per-project hours only for projects whose task list changed.
+If the user comes back the next day or week to amend a past report, re-read `log.md` for that date first and re-run the task extraction loop only on new input. Re-ask per-project hours only for projects whose task list changed.
 
 ## 9. Anti-patterns + closing checklist
 

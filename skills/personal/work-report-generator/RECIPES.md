@@ -2,7 +2,7 @@
 
 Report template, anti-patterns, translation examples, and closing checklist for [SKILL.md](SKILL.md). Loaded on demand.
 
-## 1. `REPORT.md` template
+## 1. `report.md` template
 
 ```
 Reporte de Actividades — YYYY-MM-DD
@@ -74,13 +74,13 @@ When the output language is English, this is a no-op — write everything in nat
 | Translating `OPC UA` to `OPC UA (Comunicaciones Unificadas de Plataforma Abierta)` | Leave acronyms untouched |
 | Including commit SHAs in the body when not asked | Use commits only as clarification prompts |
 | Bolding section titles or using `##` headers in the formal report | Use `1.`, `2.`, … plain text headers |
-| Editing `REPORT.md` directly to add a task | Append to `LOG.md`, then regenerate |
+| Editing `report.md` directly to add a task | Append to `log.md`, then regenerate |
 | Describing the source artifact (`Cerró el ticket X`, `Mergeó el commit Y`, `Completó el PR Z`) | Describe the result of the work (`Resolvió el timeout en el worker de despacho`) |
-| Generating `REPORT.md` without the explicit "¿algo más?" close in §3.7 | Wait for affirmative close from the user before generating |
-| Translating `LOG.md` content to the chosen output language | LOG stays verbatim in the source language; only `REPORT.md` is translated |
-| Reformatting / normalizing the raw input pasted into `LOG.md` | Append verbatim; preserve formatting, indentation, line breaks |
+| Generating `report.md` without the explicit "¿algo más?" close in §3.7 | Wait for affirmative close from the user before generating |
+| Translating `log.md` content to the chosen output language | LOG stays verbatim in the source language; only `report.md` is translated |
+| Reformatting / normalizing the raw input pasted into `log.md` | Append verbatim; preserve formatting, indentation, line breaks |
 | Batching multiple dates in a single session | One date per invocation; repeat §3.1–§3.9 per date for backfills |
-| Pasting only commit subjects into `LOG.md` | Paste full commit messages (subject + body); same for issues/tickets |
+| Pasting only commit subjects into `log.md` | Paste full commit messages (subject + body); same for issues/tickets |
 | Section header with decoration: `1. Detector de Anomalías Online (4h 30min)` | Section header is the project name verbatim: `1. Detector de Anomalías Online` |
 | Merging two raw items into one task because they look related | Merge only on explicit user instruction ("junta esos dos") |
 | Splitting one raw item into multiple tasks on your own | Ask when ambiguous; split only on explicit user instruction |
@@ -88,11 +88,11 @@ When the output language is English, this is a no-op — write everything in nat
 ## 5. Closing checklist
 
 - [ ] Language matches user's session choice (REPORT in chosen language; LOG verbatim in source language)
-- [ ] User explicitly confirmed close in §3.7 before `REPORT.md` was generated
+- [ ] User explicitly confirmed close in §3.7 before `report.md` was generated
 - [ ] Single date scope — no content from other dates leaked into this report
 - [ ] Every task has a project from `projects.md`
 - [ ] Every project with tasks today has a `Tiempo del proyecto` figure in `Xh Ymin` format
-- [ ] No per-task time appears anywhere in `REPORT.md`
+- [ ] No per-task time appears anywhere in `report.md`
 - [ ] Day total equals the sum of project totals
 - [ ] No header preamble (Engineer/Project) above section 1
 - [ ] No project-level intro paragraph above the task list
@@ -103,4 +103,4 @@ When the output language is English, this is a no-op — write everything in nat
 - [ ] Technical terms follow the translation rules
 - [ ] No content not traceable to user input or clarification answers
 - [ ] `projects.md` reflects any new projects introduced this session
-- [ ] `reports/<date>/LOG.md` contains raw input (verbatim, with full commit/issue bodies), tasks grouped by project, and per-project hours
+- [ ] `reports/<date>/log.md` contains raw input (verbatim, with full commit/issue bodies), tasks grouped by project, and per-project hours

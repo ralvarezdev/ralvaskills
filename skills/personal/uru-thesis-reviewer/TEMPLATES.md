@@ -2,7 +2,7 @@
 
 Boilerplate for the per-session output files. Used by [SKILL.md](SKILL.md) §4 (output structure) and §5 (file templates). Loaded on demand.
 
-## 1. `01-INDEX.md`
+## 1. `01-index.md`
 
 ```markdown
 # Revisión URU — YYYY-MM-DD
@@ -26,9 +26,9 @@ Boilerplate for the per-session output files. Used by [SKILL.md](SKILL.md) §4 (
 
 ## Mapa de archivos
 
-- `02-RESUMEN.md` — 3 observaciones
-- `03-ABSTRACT.md` — sin observaciones
-- `04-INTRODUCCION.md` — 7 observaciones (1 blocking)
+- `02-resumen.md` — 3 observaciones
+- `03-abstract.md` — sin observaciones
+- `04-introduccion.md` — 7 observaciones (1 blocking)
 - ...
 
 ## Temas transversales
@@ -40,10 +40,10 @@ Boilerplate for the per-session output files. Used by [SKILL.md](SKILL.md) §4 (
 
 1. Resolver primero los `[blocking]` (norm violations, factual errors).
 2. Cap. III necesita reestructuración antes de revisar prosa.
-3. Bibliografía: 4 fuentes débiles identificadas, ver `11-REFERENCIAS.md`.
+3. Bibliografía: 4 fuentes débiles identificadas, ver `11-referencias.md`.
 ```
 
-## 2. `NN-SECTION.md` — one per reviewed section
+## 2. `nn-section.md` — one per reviewed section
 
 ```markdown
 # <Section name as it appears in thesis>
@@ -87,7 +87,7 @@ Boilerplate for the per-session output files. Used by [SKILL.md](SKILL.md) §4 (
 **Por qué:** <reasoning>
 ```
 
-## 3. `11-REFERENCIAS.md` — bibliography section
+## 3. `11-referencias.md` — bibliography section
 
 ```markdown
 # Referencias bibliográficas
@@ -147,24 +147,24 @@ The author makes the substantive call — Claude doesn't write the thesis.
 
 ```
 <output-base>/YYYY-MM-DD/
-  01-INDEX.md
-  02-RESUMEN.md
-  03-ABSTRACT.md
-  04-INTRODUCCION.md
-  05-CAP-I-PROBLEMA.md
-  06-CAP-II-MARCO-TEORICO.md
-  07-CAP-III-MARCO-METODOLOGICO.md
-  08-CAP-IV-RESULTADOS.md
-  09-CONCLUSIONES.md
-  10-RECOMENDACIONES.md
-  11-REFERENCIAS.md
-  12-ANEXOS.md           ← only if anexos have issues
+  01-index.md
+  02-resumen.md
+  03-abstract.md
+  04-introduccion.md
+  05-cap-i-problema.md
+  06-cap-ii-marco-teorico.md
+  07-cap-iii-marco-metodologico.md
+  08-cap-iv-resultados.md
+  09-conclusiones.md
+  10-recomendaciones.md
+  11-referencias.md
+  12-anexos.md           ← only if anexos have issues
 ```
 
 Rules:
 
 - Numbering reflects **thesis order**, not severity.
-- Skip a section file entirely if it has zero feedback — note "sin observaciones" in `01-INDEX.md` instead of creating an empty file.
-- Small sections with few items may be merged with their neighbor (`02-RESUMEN-Y-ABSTRACT.md`) — note merges in the index.
-- `REFERENCIAS` always second-to-last (or last if no anexos).
-- File names: `NN-SECTION-NAME.md`, uppercase, dash-separated, no accents (filesystem safety).
+- Skip a section file entirely if it has zero feedback — note "sin observaciones" in `01-index.md` instead of creating an empty file.
+- Small sections with few items may be merged with their neighbor (`02-resumen-y-abstract.md`) — note merges in the index.
+- `referencias` always second-to-last (or last if no anexos).
+- File names: `nn-section-name.md`, kebab-case (lowercase, dash-separated), no accents (filesystem safety).

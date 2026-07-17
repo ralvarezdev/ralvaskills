@@ -1,6 +1,6 @@
 ---
 name: uru-thesis-reviewer
-version: 0.1.0
+version: 0.1.1
 description: Continuous-feedback reviewer for URU (Universidad Rafael Urdaneta) theses. Emits ordered `.md` diff files (- old / + new) the author applies manually — never edits the `.docx`. Covers substance, structure, prose, citations vs `NORMAS_URU_2020`. Use when the user shares a thesis or chapter.
 ---
 
@@ -55,15 +55,15 @@ After ingestion, identify section boundaries by matching headings against URU's 
 
 ## 4. Output structure
 
-Sessions live under `<output-base>/YYYY-MM-DD/` with one numbered file per thesis section (`01-INDEX.md`, `02-RESUMEN.md`, …, `11-REFERENCIAS.md`, `12-ANEXOS.md`). Full folder layout and naming rules in [TEMPLATES § 5](TEMPLATES.md#5-folder-layout-numbered-thesis-order).
+Sessions live under `<output-base>/YYYY-MM-DD/` with one numbered file per thesis section (`01-index.md`, `02-resumen.md`, …, `11-referencias.md`, `12-anexos.md`), kebab-case (lowercase, dash-separated, no accents). Full folder layout and naming rules in [TEMPLATES § 5](TEMPLATES.md#5-folder-layout-numbered-thesis-order).
 
 ## 5. File templates
 
 Three templates drive the output:
 
-- **`01-INDEX.md`** — executive summary, severity counts, file map, cross-cutting themes. Template in [TEMPLATES § 1](TEMPLATES.md#1-01-indexmd).
-- **`NN-SECTION.md`** — per-section diffs grouped by severity. Template + diff shape in [TEMPLATES § 2](TEMPLATES.md#2-nn-sectionmd--one-per-reviewed-section).
-- **`11-REFERENCIAS.md`** — bibliography-specific structure (missing/orphan sources, weak-source replacements, format fixes). Template in [TEMPLATES § 3](TEMPLATES.md#3-11-referenciasmd--bibliography-section).
+- **`01-index.md`** — executive summary, severity counts, file map, cross-cutting themes. Template in [TEMPLATES § 1](TEMPLATES.md#1-01-indexmd).
+- **`nn-section.md`** — per-section diffs grouped by severity. Template + diff shape in [TEMPLATES § 2](TEMPLATES.md#2-nn-sectionmd--one-per-reviewed-section).
+- **`11-referencias.md`** — bibliography-specific structure (missing/orphan sources, weak-source replacements, format fixes). Template in [TEMPLATES § 3](TEMPLATES.md#3-11-referenciasmd--bibliography-section).
 
 For substantive issues, the `+` side is a **prompt** for the author, not rewritten text — see [TEMPLATES § 4](TEMPLATES.md#4-substantive-feedback-diff-shape).
 
@@ -154,7 +154,7 @@ Formal aspects (URU §IV), redacción (URU §III), grammar/RAE, semantics & clar
 4. **Substantive pass first.** Walk §6.1 then §6.2 across all chapters before touching prose. Substantive `[blocking]` issues reshape downstream work — surface them early.
 5. **Per-section formal/linguistic pass.** Walk [CHECKS.md](CHECKS.md) §1–5 in order. Skip deep prose review on any section flagged with a substantive `[blocking]` — note "prose review deferred pending substantive revision" in INDEX.
 6. **Bibliography pass.** Run [CHECKS § 6](CHECKS.md#6-bibliography-uru-vi) at the end — needs the full source list and may require web searches.
-7. **Write files.** Create `YYYY-MM-DD/` folder. Write section files in order. Write `01-INDEX.md` last. The `Resumen ejecutivo` leads with substantive impression before formal observations.
+7. **Write files.** Create `YYYY-MM-DD/` folder. Write section files in order. Write `01-index.md` last. The `Resumen ejecutivo` leads with substantive impression before formal observations.
 8. **Report.** Brief message to user: session path, severity totals, recommended starting point. Do NOT dump the diffs into chat — point to the files.
 
 ## 8. Reference

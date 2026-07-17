@@ -187,7 +187,10 @@ git add│
 │       ├── demo-script-architect/    # ✅ exists (moved from workflows/)
 │       ├── demo-presentation-architect/  # ✅ exists (v1.1.0 — slide-deck spec authoring; content distribution + within-slide organization + layout catalog in LAYOUTS.md)
 │       ├── pi-iteration-workflow/    # ✅ exists (v1.0.0 — Windows-to-Pi SSH deploy loop for the voldemorbot robot codebase; pixi/ROS2 rebuild triggers, screen for flaky WiFi, PowerShell SSH quoting, Pi Zero sudo caching; no STACK.md)
-│       └── uru-thesis-defense-architect/  # ✅ exists (v1.0.1 — URU thesis defense deck spec authoring; fixed 9-section institutional structure, Spanish-only content, logo placement rules, user-supplied logo asset; no STACK.md)
+│       ├── uru-thesis-defense-architect/  # ✅ exists (v1.0.1 — URU thesis defense deck spec authoring; fixed 9-section institutional structure, Spanish-only content, logo placement rules, user-supplied logo asset; no STACK.md)
+│       ├── uru-scientific-paper-architect/  # ✅ exists (v1.0.0 — Revista Tecnocientífica URU manuscript spec authoring; article-type structures, typography rules, citation/reference formats by source type; no STACK.md)
+│       ├── uru-thesis-reviewer/       # ✅ exists (v0.1.1 — read-only diff feedback on URU theses vs NORMAS_URU_2020; kebab-case session output files; no STACK.md)
+│       └── uru-thesis-architect/      # ✅ exists (v0.1.0 — interview-first section-by-section drafter for URU thesis chapters; writes to the reviewer's evaluation rubric, Spanish-only, self-contained NORMAS copy; no STACK.md)
 │
 ├── .github/
 │   └── workflows/
@@ -1008,6 +1011,9 @@ Currently located in `skills/personal/`. Any skill whose path contains a `person
 | `demo-presentation-architect` | Slide-deck specifications (`.md` only) with per-slide layouts and exact text; never generates HTML/PDF/PPTX |
 | `pi-iteration-workflow` | Windows-to-Pi SSH edit-test loop for the voldemorbot robot codebase — host access, pixi/ROS2 deploy triggers, flaky-connection handling |
 | `uru-thesis-defense-architect` | URU thesis defense deck specs (`.md` only) — fixed 9-section institutional structure, Spanish-only content, logo placement rules |
+| `uru-scientific-paper-architect` | Revista Tecnocientífica URU manuscript specs (`.md` only) — article-type structures, typography rules, citation/reference formats by source type |
+| `uru-thesis-reviewer` | Read-only diff feedback on URU theses vs `NORMAS_URU_2020` — substance, structure, prose, citations; kebab-case session output files; never edits the `.docx` |
+| `uru-thesis-architect` | Interview-first, section-by-section drafter for URU thesis chapters (`.md` only) — writes toward the reviewer's evaluation rubric, Spanish-only, never fabricates data; complements `uru-thesis-reviewer` |
 
 ---
 
