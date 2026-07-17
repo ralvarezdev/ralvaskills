@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-17T11:24:15Z",
+  "generated_at": "2026-07-17T14:52:53Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -589,6 +589,32 @@
         }
       }
     },
+    "uru-scientific-paper-architect": {
+      "name": "uru-scientific-paper-architect",
+      "description": "Format scientific manuscripts for Revista Tecnocientífica URU (Universidad Rafael Urdaneta) — cover page fields, Times New Roman 12pt/16pt typography rules, IMRyD-derived structure by article type, figure/table/equation numbering, bracketed-numeric citations, reference formats by source type, ethics checklist. Outputs one `.md` manuscript spec. Use when preparing a paper for submission to Revista Tecnocientífica URU.",
+      "personal": true,
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-07-17T14:52:53Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-scientific-paper-architect@v1.0.0/uru-scientific-paper-architect-v1.0.0.tar.gz"
+        }
+      }
+    },
+    "uru-thesis-architect": {
+      "name": "uru-thesis-architect",
+      "description": "Interview-first drafter for URU (Universidad Rafael Urdaneta) thesis (TEG) chapters — writes one section at a time toward the evaluation rubric the jury grades against, Spanish output, URU chapter order (I. Problema → V. Propuesta), never fabricates data. Complements uru-thesis-reviewer. Use when drafting or iterating a thesis section.",
+      "personal": true,
+      "latest": "0.1.0",
+      "versions": {
+        "0.1.0": {
+          "version": "0.1.0",
+          "published_at": "2026-07-17T14:52:53Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-thesis-architect@v0.1.0/uru-thesis-architect-v0.1.0.tar.gz"
+        }
+      }
+    },
     "uru-thesis-defense-architect": {
       "name": "uru-thesis-defense-architect",
       "description": "Design URU-style thesis defense presentation specs — fixed institutional slide structure (portada, problema, objetivos, antecedentes, variables, metodología, resultados, conclusiones), Spanish-only content, logo placement rules (large centered cover, small top-left from slide 2). Outputs one `.md` slide-by-slide spec. Use when authoring a thesis/tesis defense deck for Universidad Real (URU).",
@@ -611,12 +637,17 @@
       "name": "uru-thesis-reviewer",
       "description": "Continuous-feedback reviewer for URU (Universidad Rafael Urdaneta) theses. Emits ordered `.md` diff files (- old / + new) the author applies manually — never edits the `.docx`. Covers substance, structure, prose, citations vs `NORMAS_URU_2020`. Use when the user shares a thesis or chapter.",
       "personal": true,
-      "latest": "0.1.0",
+      "latest": "0.1.1",
       "versions": {
         "0.1.0": {
           "version": "0.1.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-thesis-reviewer@v0.1.0/uru-thesis-reviewer-v0.1.0.tar.gz"
+        },
+        "0.1.1": {
+          "version": "0.1.1",
+          "published_at": "2026-07-17T14:52:53Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-thesis-reviewer@v0.1.1/uru-thesis-reviewer-v0.1.1.tar.gz"
         }
       }
     },
@@ -634,9 +665,9 @@
     },
     "work-report-generator": {
       "name": "work-report-generator",
-      "description": "Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{LOG,REPORT}.md`. Use on \"reporte de trabajo\", \"daily report\", or /work-report.",
+      "description": "Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{log,report}.md`. Use on \"reporte de trabajo\", \"daily report\", or /work-report.",
       "personal": true,
-      "latest": "1.1.0",
+      "latest": "1.1.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -647,6 +678,11 @@
           "version": "1.1.0",
           "published_at": "2026-05-23T19:19:40Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/work-report-generator@v1.1.0/work-report-generator-v1.1.0.tar.gz"
+        },
+        "1.1.1": {
+          "version": "1.1.1",
+          "published_at": "2026-07-17T14:52:53Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/work-report-generator@v1.1.1/work-report-generator-v1.1.1.tar.gz"
         }
       }
     }
