@@ -53,7 +53,28 @@ Reveal.initialize({
 });
 ```
 
-npm + Vite project instead uses `import Reveal from 'reveal.js'` plus per-plugin imports from `reveal.js/plugin/<name>/<name>.esm.js`, called from a small entry module that mounts into `.reveal`.
+npm + Vite project instead (`js/main.js` as the Vite entry, referenced from `index.html` with `<script type="module" src="/js/main.js"></script>`):
+
+```js
+import Reveal from 'reveal.js';
+import 'reveal.js/reveal.css';
+import 'reveal.js/theme/black.css';
+
+import Markdown from 'reveal.js/plugin/markdown';
+import Highlight from 'reveal.js/plugin/highlight';
+import Notes from 'reveal.js/plugin/notes';
+
+Reveal.initialize({
+  hash: true,
+  controls: true,
+  progress: true,
+  center: true,
+  transition: 'slide',
+  plugins: [ Markdown, Highlight, Notes ],
+});
+```
+
+**The 6.0.1 package `exports` map has no `dist/` prefix and no `.esm.js` suffix** on these subpaths — `reveal.js/dist/reveal.css` and `reveal.js/plugin/notes/notes.esm.js` (patterns that work with the CDN build above) both 404 under npm/Vite. Verify with `npm view reveal.js@6.0.1 exports` before assuming a path.
 
 ## React project skeleton
 
@@ -72,8 +93,8 @@ src/
 
 ```tsx
 import { Reveal, Slide, Fragment } from '@revealjs/react';
-import 'reveal.js/dist/reveal.css';
-import 'reveal.js/dist/theme/black.css';
+import 'reveal.js/reveal.css';
+import 'reveal.js/theme/black.css';
 
 export function App() {
   return (

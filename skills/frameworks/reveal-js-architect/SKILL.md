@@ -1,6 +1,6 @@
 ---
 name: reveal-js-architect
-version: 1.0.0
+version: 1.0.1
 description: reveal.js 6.0.1 presentation architecture — section/fragment structure, HTML vs Markdown-mode authoring, theming, plugin config, Reveal.initialize() options, vanilla setup, React extension via @revealjs/react 0.2.1. Use when building, structuring, or reviewing a reveal.js deck.
 ---
 
@@ -32,6 +32,7 @@ Targets **reveal.js 6.0.1** (vanilla) with an extension for **@revealjs/react 0.
 - **Fragments (`class="fragment"`) reveal progressively within a slide** — use for build-up bullets or step-by-step diagrams, not as a substitute for splitting a slide.
 - **Speaker notes** go in `<aside class="notes">` inside each section — visible only in speaker view (`S` key), never on the audience-facing screen.
 - **`data-transition` overrides per-slide** when a specific slide needs a different transition than the deck default — use sparingly, inconsistent transitions read as sloppy.
+- **Never set `position`, `overflow`, or `display` directly on `<section>`.** reveal.js owns those properties on slide elements to drive its stacking and transition system (e.g. `position: absolute` on non-present slides, toggling `display` via the `.present` class). Custom CSS that overrides them breaks navigation silently — slides go blank on advance with no console error. Style content *inside* the section (a wrapper `<div>`), never the section itself.
 
 ## 4. Content authoring mode
 
@@ -84,6 +85,7 @@ CDN link for a single-file deck, or an npm + Vite project for anything version-c
 - Registering plugins that aren't used anywhere in the deck.
 - Speaker notes that duplicate on-slide text instead of adding presenter-only context.
 - Hardcoded pixel layouts fighting reveal.js's auto-scaling instead of using its centering/sizing config.
+- Custom CSS setting `position`, `overflow`, or `display` on `<section>` — silently breaks the stacking/transition system (blank slides on advance, no console error).
 - React extension reached for out of habit when a static vanilla deck would do.
 
 Before handing off: every slide has a clear single idea, plugins list matches what's actually used, transitions are consistent unless a specific slide has a stated reason to diverge, and speaker notes (if any) are present only where they add value.
