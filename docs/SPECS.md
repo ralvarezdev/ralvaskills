@@ -186,7 +186,7 @@ git add│
 │       ├── demo-script-architect/    # ✅ exists (moved from workflows/)
 │       ├── demo-presentation-architect/  # ✅ exists (v1.1.0 — slide-deck spec authoring; content distribution + within-slide organization + layout catalog in LAYOUTS.md)
 │       ├── pi-iteration-workflow/    # ✅ exists (v1.0.0 — Windows-to-Pi SSH deploy loop for the voldemorbot robot codebase; pixi/ROS2 rebuild triggers, screen for flaky WiFi, PowerShell SSH quoting, Pi Zero sudo caching; no STACK.md)
-│       └── uru-thesis-defense-architect/  # ✅ exists (v1.0.0 — URU thesis defense deck spec authoring; fixed 9-section institutional structure, Spanish-only content, logo placement rules, user-supplied logo asset; no STACK.md)
+│       └── uru-thesis-defense-architect/  # ✅ exists (v1.0.1 — URU thesis defense deck spec authoring; fixed 9-section institutional structure, Spanish-only content, logo placement rules, user-supplied logo asset; no STACK.md)
 │
 ├── .github/
 │   └── workflows/

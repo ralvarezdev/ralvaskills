@@ -1,6 +1,6 @@
 ---
 name: uru-thesis-defense-architect
-version: 1.0.0
+version: 1.0.1
 description: Design URU-style thesis defense presentation specs — fixed institutional slide structure (portada, problema, objetivos, antecedentes, variables, metodología, resultados, conclusiones), Spanish-only content, logo placement rules (large centered cover, small top-left from slide 2). Outputs one `.md` slide-by-slide spec. Use when authoring a thesis/tesis defense deck for Universidad Real (URU).
 ---
 
