@@ -1,0 +1,20 @@
+# .golangci.doccheck.yml — on-demand doc-comment coverage.
+# The main .golangci.yml disables these as too noisy for the standard gate.
+# Run explicitly: `task lint:doccheck` (golangci-lint run -c .golangci.doccheck.yml ./...).
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - revive
+  settings:
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [revive]
+      - path: db/            # sqlc-generated code
+        linters: [revive]

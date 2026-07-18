@@ -1,0 +1,80 @@
+# Taskfile.yml — pre-commit gate for a ralvarezdev Go library (Task v3).
+# Set MODULE to the module path so `fmt` and lint use the right local prefix.
+version: "3"
+
+vars:
+  MODULE: github.com/ralvarezdev/CHANGEME
+
+tasks:
+  build:
+    desc: Compile everything.
+    cmds:
+      - go build ./...
+
+  test:
+    desc: Full test suite with race detector (starts containers).
+    cmds:
+      - go test -race -count=1 ./...
+
+  test:short:
+    desc: Fast tests only — skips container-backed integration tests.
+    cmds:
+      - go test -short -count=1 ./...
+
+  tidy:
+    cmds:
+      - go mod tidy
+
+  fmt:
+    desc: goimports with the module as local prefix, then gofmt.
+    cmds:
+      - goimports -w -local {{.MODULE}} .
+      - go fmt ./...
+
+  lint:
+    desc: Main golangci-lint gate.
+    cmds:
+      - golangci-lint run ./...
+
+  lint:fix:
+    cmds:
+      - golangci-lint run --fix ./...
+
+  lint:doccheck:
+    desc: On-demand doc-comment coverage (separate config).
+    cmds:
+      - golangci-lint run -c .golangci.doccheck.yml ./...
+
+  modernize:
+    desc: Rewrite legacy patterns toward current stdlib APIs.
+    cmds:
+      - go fix ./...
+
+  align:check:
+    cmds:
+      - betteralign ./...
+
+  align:fix:
+    cmds:
+      - betteralign -apply ./...
+
+  scan:
+    desc: Trivy filesystem + secret scan.
+    cmds:
+      - trivy fs --scanners vuln,secret,misconfig .
+
+  tag:
+    desc: 'Validate semver and tag: task tag VERSION=0.1.0'
+    cmds:
+      - |
+        echo "{{.VERSION}}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "VERSION must be X.Y.Z"; exit 1; }
+      - git tag "v{{.VERSION}}"
+      - git push origin "v{{.VERSION}}"
+
+  check:
+    desc: Pre-commit gate — fmt, align, lint, scan.
+    cmds:
+      - task: fmt
+      - task: align:fix
+      - task: lint
+      - task: scan

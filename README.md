@@ -26,11 +26,14 @@ Skills are grouped by what they shape. Every folder with a `SKILL.md` is a skill
 - **`nethttp-architect`** — Go stdlib `net/http` (1.22+ ServeMux, no router): feature layout, struct-tag validation, RFC 7807, JWT, graceful shutdown, OpenAPI via kin-openapi.
 - **`nextjs-architect`** — Next.js 16 with React 19, App Router only: server components by default with explicit `"use client"` boundaries, server actions, streaming Suspense, edge vs node runtime.
 - **`react-architect`** — React 19 + TypeScript strict: feature-based components, hooks-first composition, TanStack Query for server state, zustand for cross-tree client state, Suspense + ErrorBoundary, Radix for a11y.
+- **`hugo-architect`** — Hugo 0.161 Extended static sites: project layout, front matter conventions, template hierarchy, Hugo Modules over submodules, Page Bundles, Hugo Pipes asset pipeline, i18n, render hooks.
+- **`reveal-js-architect`** — reveal.js 6.0.1 presentations: section/fragment structure, HTML vs Markdown-mode authoring, theming, plugin config, vanilla setup or the `@revealjs/react` extension.
 
 ### `protocols/` — wire-level conventions
 
 - **`rest-api-architect`** — Cross-language REST conventions: resource URLs, method semantics, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 7807, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth.
 - **`grpc-architect`** — Vanilla gRPC: `.proto` services, `status.Error` with standard codes, domain→code mapping, interceptor chain (auth/log/recovery/validation/metrics), client deadlines, context propagation, bufconn testing.
+- **`mcp-architect`** — MCP 2025-11-25 servers: tool/resource/prompt primitives, capability negotiation, Streamable HTTP + `Mcp-Session-Id`, OAuth 2.1 + RFC 8707, tool annotations, structured output, prompt-injection/SSRF defenses. Python (FastMCP) and Go SDK recipes.
 
 ### `encoding/` — schemas and wire formats
 
@@ -47,6 +50,7 @@ Skills are grouped by what they shape. Every folder with a `SKILL.md` is a skill
 ### `frontend/` — UI and accessibility
 
 - **`ui-ux-architect`** — WCAG 2.2 AA, Radix + Tailwind 4 + shadcn/ui, design-token theming, mandatory loading/error/empty/success states, mobile-first responsive, keyboard parity, contrast checked in CI.
+- **`website-concept-architect`** — Pre-code website concepting: purpose, audience, content inventory, tone, visual archetype, structure; outputs 2-3 concept directions plus an ASCII homepage wireframe. Hands off to `ui-ux-architect` / `frontend-design`.
 
 ### `design/` — architectural patterns
 
@@ -56,6 +60,7 @@ Skills are grouped by what they shape. Every folder with a `SKILL.md` is a skill
 ### `infra/` — runtime, packaging, observability
 
 - **`docker-architect`** — Multi-stage builds, per-language base defaults (distroless Go, slim Python/Node), BuildKit cache mounts, non-root, multi-arch amd64+arm64, digest-pinned bases, Trivy scanning, Compose v2.
+- **`ci-cd-architect`** — CI/CD principles: pipeline taxonomy, trigger design, SHA-pinned supply-chain hygiene, OIDC cloud auth, caching, matrix strategy, test gates, release automation. Suggestion-mode; GitHub Actions recipes.
 - **`observability-architect`** — Application-side signal production: structured logs, Prometheus metrics, OTel traces, signal correlation, head sampling, PII discipline, RED+USE.
 - **`grafana-architect`** — Signal consumption: dashboards-as-code (Grizzly), per-service folders, one-question-per-panel, unified alerting with runbooks, low-cardinality discipline.
 
@@ -104,8 +109,13 @@ These are personal to me and excluded from bundle installs. Listed here for tran
 
 - **`demo-presentation-architect`** — Slide-deck specifications in markdown: content distribution across slides, within-slide organization, layout from a fixed catalog. Outputs `.md` only.
 - **`demo-script-architect`** — Presenter-centric demo scripts with narrative flow, visual-cue mapping, progressive capability reveals.
+- **`pi-iteration-workflow`** — Windows-to-Pi SSH edit-test loop for the `voldemorbot` robot codebase: pixi/ROS2 rebuild triggers, `screen` for flaky-WiFi survival, PowerShell SSH quoting pitfalls, Pi Zero sudo caching.
+- **`uru-thesis-architect`** — Interview-first, section-by-section drafter for URU thesis (TEG) chapters, Spanish output, URU chapter order, never fabricates data. Complements `uru-thesis-reviewer`.
 - **`uru-thesis-reviewer`** — Continuous-feedback reviewer for URU (Universidad Rafael Urdaneta) Trabajos Especiales de Grado. Produces ordered `.md` diff files; never edits the source `.docx`.
+- **`uru-thesis-defense-architect`** — URU-style thesis defense deck specs: fixed institutional slide structure, Spanish-only content, logo placement rules. Outputs `.md` only.
+- **`uru-scientific-paper-architect`** — Manuscript formatting for Revista Tecnocientífica URU: typography rules, IMRyD-derived structure by article type, citation/reference formats. Outputs one `.md` manuscript spec.
 - **`work-report-generator`** — Generates formal daily work reports from unstructured input; persistent project catalog, per-day `LOG.md` + `REPORT.md`.
+- **`go-library-builder`** — Scaffolds reusable Go 1.26 library modules in the ralvarezdev DDD + hexagonal house style: domain-pure root package, narrow composed ports, technology-named adapter subpackages (prod/dev/test), config structs over options, testcontainers over mocks. Module namespace is a parameter.
 
 ---
 

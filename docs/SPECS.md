@@ -190,7 +190,8 @@ git add│
 │       ├── uru-thesis-defense-architect/  # ✅ exists (v1.0.1 — URU thesis defense deck spec authoring; fixed 9-section institutional structure, Spanish-only content, logo placement rules, user-supplied logo asset; no STACK.md)
 │       ├── uru-scientific-paper-architect/  # ✅ exists (v1.0.0 — Revista Tecnocientífica URU manuscript spec authoring; article-type structures, typography rules, citation/reference formats by source type; no STACK.md)
 │       ├── uru-thesis-reviewer/       # ✅ exists (v0.1.1 — read-only diff feedback on URU theses vs NORMAS_URU_2020; kebab-case session output files; no STACK.md)
-│       └── uru-thesis-architect/      # ✅ exists (v0.1.0 — interview-first section-by-section drafter for URU thesis chapters; writes to the reviewer's evaluation rubric, Spanish-only, self-contained NORMAS copy; no STACK.md)
+│       ├── uru-thesis-architect/      # ✅ exists (v0.1.0 — interview-first section-by-section drafter for URU thesis chapters; writes to the reviewer's evaluation rubric, Spanish-only, self-contained NORMAS copy; no STACK.md)
+│       └── go-library-builder/        # ✅ exists (v1.0.0 — scaffolds reusable Go 1.26 library modules in the ralvarezdev DDD+hexagonal house style; composes go-architect/hexagonal-arch/ddd-architect; has STACK.md + assets/)
 │
 ├── .github/
 │   └── workflows/
@@ -1014,6 +1015,7 @@ Currently located in `skills/personal/`. Any skill whose path contains a `person
 | `uru-scientific-paper-architect` | Revista Tecnocientífica URU manuscript specs (`.md` only) — article-type structures, typography rules, citation/reference formats by source type |
 | `uru-thesis-reviewer` | Read-only diff feedback on URU theses vs `NORMAS_URU_2020` — substance, structure, prose, citations; kebab-case session output files; never edits the `.docx` |
 | `uru-thesis-architect` | Interview-first, section-by-section drafter for URU thesis chapters (`.md` only) — writes toward the reviewer's evaluation rubric, Spanish-only, never fabricates data; complements `uru-thesis-reviewer` |
+| `go-library-builder` | Scaffolds reusable Go 1.26 library modules in the ralvarezdev DDD + hexagonal house style — domain-pure root package, narrow composed ports, technology-named adapter subpackages (prod/dev/test), config structs over options, testcontainers over mocks; composes `go-architect`, `hexagonal-arch`, `ddd-architect` |
 
 ---
 
@@ -1225,6 +1227,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | `demo-script-architect` | ✅ | Personal use only — not bundled, requires `--personal` flag |
 | `demo-presentation-architect` | ✅ | v1.1.0 — slide-deck spec authoring (`.md` output only). Interview-first (language → main info). Cross-slide content distribution (slide budget, fixed slots, 5 narrative arcs, splitting + repetition discipline) and within-slide organization (takeaway-led titles, ordering by layout family, body word budgets). 14-layout catalog in `LAYOUTS.md` with primitive blocks, decision flow, and deck-wide design conventions; reference HTML exemplar in the skill folder. Personal use only — not bundled, requires `--personal` flag |
 | `pi-iteration-workflow` | ✅ | v1.0.0 — Windows-to-Pi SSH edit-test loop for the `voldemorbot` robot codebase. Host access table (prefer `rpi-5-direct` over WiFi/tunnel aliases), pixi/ROS2 rebuild triggers, `screen` for flaky-WiFi survival, PowerShell SSH quoting pitfall, Pi Zero sudo credential caching. Companion to `ros2-architect` for workspace conventions. Personal use only — not bundled, requires `--personal` flag; exempt from `STACK.md` (operational, not library-version-sensitive) |
+| `go-library-builder` | ✅ | v1.0.0 — scaffolds reusable Go 1.26 library modules in the ralvarezdev DDD + hexagonal house style (derived from `identity`, `ratelimit`, `email`). Domain-pure root package (stdlib + uuid only), narrow composed ports, technology-named adapter subpackages (prod/dev/test), config structs over functional options, testcontainers over mocks, mise + Task + golangci tooling. Two scales: flat single-port lib and vertical-slice lib with `app/` + `internal/acl/`. Composes `go-architect`, `hexagonal-arch`, `ddd-architect`; has `STACK.md` + `assets/`. Personal use only — not bundled, requires `--personal` flag |
 
 ---
 

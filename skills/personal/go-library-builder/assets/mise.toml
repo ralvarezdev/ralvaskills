@@ -1,0 +1,17 @@
+# mise.toml — toolchain pinning for a ralvarezdev Go library.
+# Run `mise install` after copying. Drop sqlc/goose if the library has no DB adapter.
+[tools]
+go = "1.26.5"
+task = "3.52.0"
+golangci-lint = "2.12.2"
+trivy = "0.72.0"
+"go:golang.org/x/tools/cmd/goimports" = "0.48.0"
+"go:github.com/dkorunic/betteralign/cmd/betteralign" = "0.14.0"
+
+# DB adapters only:
+# sqlc = "1.31.1"
+# "aqua:pressly/goose" = "3"
+
+[env]
+# Keep tool builds inside the repo cache; overridable per machine.
+GOFLAGS = "-mod=readonly"

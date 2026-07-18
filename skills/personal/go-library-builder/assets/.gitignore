@@ -1,0 +1,16 @@
+# Build / test artifacts
+/bin/
+*.out
+coverage.*
+
+# Local tool + editor state
+.claude/
+.idea/
+.vscode/
+
+# Internal design notes not meant for the public repo
+docs/internal/
+
+# OS cruft
+.DS_Store
+Thumbs.db

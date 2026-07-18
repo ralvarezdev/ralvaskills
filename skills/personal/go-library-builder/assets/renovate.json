@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "vulnerabilityAlerts": { "labels": ["security"] },
+  "packageRules": [
+    {
+      "description": "Group non-major Go module updates into one PR.",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "go modules (minor + patch)"
+    },
+    {
+      "description": "Go major bumps get their own PR and manual review.",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["major"],
+      "labels": ["language-bump"],
+      "automerge": false
+    }
+  ]
+}
