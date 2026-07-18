@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-17T14:52:53Z",
+  "generated_at": "2026-07-18T00:51:31Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -233,6 +233,19 @@
           "version": "1.6.2",
           "published_at": "2026-07-10T19:55:38Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.6.2/go-architect-v1.6.2.tar.gz"
+        }
+      }
+    },
+    "go-library-builder": {
+      "name": "go-library-builder",
+      "description": "Scaffolds reusable Go 1.26 library modules in the ralvarezdev DDD + hexagonal house style — domain-pure root package, ports as narrow interfaces, technology-named adapter subpackages (prod/dev/test), config structs over options, testcontainers over mocks, mise + Task + golangci tooling. Module namespace is a parameter (default github.com/ralvarezdev). Use when bootstrapping a new Go library, adding an adapter, or auditing one against the house style.",
+      "personal": true,
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-07-18T00:51:31Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-library-builder@v1.0.0/go-library-builder-v1.0.0.tar.gz"
         }
       }
     },
