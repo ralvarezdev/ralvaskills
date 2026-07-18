@@ -1,6 +1,6 @@
 ---
 name: rest-api-architect
-version: 1.0.0
+version: 1.1.0
 description: Cross-language REST conventions — resource URLs, method semantics, status codes, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 7807 errors, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth. Framework-agnostic. Use when designing or auditing REST endpoints.
 ---
 
@@ -122,7 +122,9 @@ Framework-specific implementation:
 - **OpenAPI 3.1** spec is the contract. Every endpoint, every model, every error code, every header documented.
 - **Generated from the code, not hand-written** — frameworks (FastAPI, gin-openapi, etc.) emit it from the route definitions. Hand-written specs rot the day after they ship.
 - **CI snapshot-tests the spec** — diff against `openapi.snapshot.json` on every PR; any change is reviewed.
+- **CI lints the spec with `redocly lint`** — catches missing descriptions, broken `$ref`s, and style violations before the diff review even starts.
 - **Spec is published** at a stable URL (e.g. `/v1/openapi.json`) and consumed by client-SDK generators, Postman collections, and API documentation tooling.
+- **Rendered docs UI is project-dependent** — [Scalar](https://github.com/scalar/scalar) is a good modern default (open-source, fast, themeable), but Redoc, Swagger UI, or a generated static site are equally valid depending on the project's constraints.
 - **Examples on every model and parameter.** They drive the rendered docs and seed mock servers.
 
 ## What this skill does NOT cover

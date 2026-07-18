@@ -30,6 +30,7 @@ This skill pins **specifications**, not libraries. Library choices live in the f
   - Idempotency: **`Idempotency-Key` mandatory** on POST/PATCH
   - Concurrency: **`ETag` + `If-Match` mandatory** on PUT/PATCH
 - **No library pinning here.** For Python implementations see [fastapi-architect/STACK.md](../../frameworks/fastapi-architect/STACK.md); for Go see (planned) `gin-architect/STACK.md`.
+- **OpenAPI tooling (CI, not library):** [Redocly CLI](https://redocly.com/docs/cli/) for `lint`/`bundle` on every PR. Rendered docs UI is project-dependent — [Scalar](https://github.com/scalar/scalar) is a solid modern default, but not mandatory.
 
-_Last reviewed: 2026-05-20_
-_Skill version at last review: 1.0.0_
+_Last reviewed: 2026-07-18_
+_Skill version at last review: 1.1.0_
