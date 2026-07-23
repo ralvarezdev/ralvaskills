@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-18T13:48:56Z",
+  "generated_at": "2026-07-23T02:49:25Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -653,9 +653,9 @@
     },
     "uru-thesis-reviewer": {
       "name": "uru-thesis-reviewer",
-      "description": "Continuous-feedback reviewer for URU (Universidad Rafael Urdaneta) theses. Emits ordered `.md` diff files (- old / + new) the author applies manually — never edits the `.docx`. Covers substance, structure, prose, citations vs `NORMAS_URU_2020`. Use when the user shares a thesis or chapter.",
+      "description": "Continuous-feedback reviewer for URU (Universidad Rafael Urdaneta) theses. Emits ordered `.md` diff files (- old / + new) the author applies manually — never edits the `.docx`. Covers substance, structure, prose, citations vs `NORMAS_URU_2020`. Tracks issues across sessions via stable IDs and carry-forward. Use when the user shares a thesis or chapter.",
       "personal": true,
-      "latest": "0.1.1",
+      "latest": "0.2.0",
       "versions": {
         "0.1.0": {
           "version": "0.1.0",
@@ -666,6 +666,11 @@
           "version": "0.1.1",
           "published_at": "2026-07-17T14:52:53Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-thesis-reviewer@v0.1.1/uru-thesis-reviewer-v0.1.1.tar.gz"
+        },
+        "0.2.0": {
+          "version": "0.2.0",
+          "published_at": "2026-07-23T02:49:25Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-thesis-reviewer@v0.2.0/uru-thesis-reviewer-v0.2.0.tar.gz"
         }
       }
     },
@@ -683,9 +688,9 @@
     },
     "work-report-generator": {
       "name": "work-report-generator",
-      "description": "Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{log,report}.md`. Use on \"reporte de trabajo\", \"daily report\", or /work-report.",
+      "description": "Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{raw,commit,report}.md`. Use on \"reporte de trabajo\", \"daily report\", or /work-report.",
       "personal": true,
-      "latest": "1.1.1",
+      "latest": "1.3.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -701,6 +706,11 @@
           "version": "1.1.1",
           "published_at": "2026-07-17T14:52:53Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/work-report-generator@v1.1.1/work-report-generator-v1.1.1.tar.gz"
+        },
+        "1.3.0": {
+          "version": "1.3.0",
+          "published_at": "2026-07-23T02:49:25Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/work-report-generator@v1.3.0/work-report-generator-v1.3.0.tar.gz"
         }
       }
     }
