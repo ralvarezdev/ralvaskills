@@ -26,10 +26,26 @@ Boilerplate for the per-session output files. Used by [SKILL.md](SKILL.md) §4 (
 
 ## Mapa de archivos
 
-- `02-resumen.md` — 3 observaciones
-- `03-abstract.md` — sin observaciones
-- `04-introduccion.md` — 7 observaciones (1 blocking)
+Every file this session produced, tagged by type — not just severity-tagged review files.
+
+- `02-resumen.md` [review] — 3 observaciones
+- `03-abstract.md` [review] — sin observaciones
+- `04-introduccion.md` [review] — 7 observaciones (1 blocking)
+- `redaccion-cap-ii-antecedentes.md` [redacción] — borrador de reescritura para §2.3, pendiente de que el autor lo pegue en el `.docx`
+- `00-handoff.md` [handoff] — pendientes para la próxima sesión
 - ...
+
+## Seguimiento de issues
+
+Running record across **all** sessions, not just this one. Carry every row forward from the previous session's `01-index.md` (§4.2 of SKILL.md) — update status in place, never delete a row (use `rechazado` instead of removing it).
+
+| ID | Chapter | Resumen | Severidad | Estado | Sesión origen | Última sesión | Por qué se revirtió |
+|---|---|---|---|---|---|---|---|
+| `2026-06-06-cap-ii-mcp-como-agente` | Cap. II | MCP descrito como agente de IA, no como protocolo | blocking | resuelto-en-borrador | 2026-06-06 | 2026-07-19 | |
+| `2026-07-10-metodologia-acl-write-scope` | Cap. III | Extensión de ACL/write-scope propuesta y luego retirada | suggest | rechazado | 2026-07-10 | 2026-07-19 | Autor decidió mantener alcance original — la extensión ampliaba el scope más allá de los objetivos específicos |
+| ... | | | | | | | |
+
+Estado values: `abierto` → `resuelto-en-borrador` → `aplicado` (only the author confirms this) → `rechazado` / `needs-decision`. When a row's status moves backward (e.g. `aplicado` → `abierto` because a later check found it wasn't actually fixed) or a prior decision is overturned outright, fill **Por qué se revirtió** — a diff alone isn't a record of *why*.
 
 ## Temas transversales
 
@@ -147,6 +163,7 @@ The author makes the substantive call — Claude doesn't write the thesis.
 
 ```
 <output-base>/YYYY-MM-DD/
+  00-handoff.md          ← only if this session leaves open work for the next one
   01-index.md
   02-resumen.md
   03-abstract.md
@@ -159,6 +176,7 @@ The author makes the substantive call — Claude doesn't write the thesis.
   10-recomendaciones.md
   11-referencias.md
   12-anexos.md           ← only if anexos have issues
+  redaccion-<slug>.md    ← free-form drafting, as many as needed, any point in the session
 ```
 
 Rules:
@@ -167,4 +185,5 @@ Rules:
 - Skip a section file entirely if it has zero feedback — note "sin observaciones" in `01-index.md` instead of creating an empty file.
 - Small sections with few items may be merged with their neighbor (`02-resumen-y-abstract.md`) — note merges in the index.
 - `referencias` always second-to-last (or last if no anexos).
-- File names: `nn-section-name.md`, kebab-case (lowercase, dash-separated), no accents (filesystem safety).
+- Handoff notes always use the exact name `00-handoff.md` — never a variant (e.g. not `09-pendientes-proxima-sesion.md`). Sorts first so the next session reads it before anything else.
+- File names: `nn-section-name.md`, kebab-case (lowercase, dash-separated), no accents (filesystem safety). `00-handoff.md` and `redaccion-*.md` are the only unnumbered/differently-prefixed names permitted, and both must still be listed in `01-index.md`'s Mapa de archivos.

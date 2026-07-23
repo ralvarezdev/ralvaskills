@@ -1,7 +1,7 @@
 ---
 name: uru-thesis-reviewer
-version: 0.1.1
-description: Continuous-feedback reviewer for URU (Universidad Rafael Urdaneta) theses. Emits ordered `.md` diff files (- old / + new) the author applies manually — never edits the `.docx`. Covers substance, structure, prose, citations vs `NORMAS_URU_2020`. Use when the user shares a thesis or chapter.
+version: 0.2.0
+description: Continuous-feedback reviewer for URU (Universidad Rafael Urdaneta) theses. Emits ordered `.md` diff files (- old / + new) the author applies manually — never edits the `.docx`. Covers substance, structure, prose, citations vs `NORMAS_URU_2020`. Tracks issues across sessions via stable IDs and carry-forward. Use when the user shares a thesis or chapter.
 ---
 
 # URU Thesis Reviewer
@@ -53,15 +53,31 @@ The intermediate `.review.md` (from pandoc) is **scratch** — don't commit it, 
 
 After ingestion, identify section boundaries by matching headings against URU's expected structure (§6.1).
 
-## 4. Output structure
+## 4. Output structure & cross-session tracking
+
+### 4.1 Session folder
 
 Sessions live under `<output-base>/YYYY-MM-DD/` with one numbered file per thesis section (`01-index.md`, `02-resumen.md`, …, `11-referencias.md`, `12-anexos.md`), kebab-case (lowercase, dash-separated, no accents). Full folder layout and naming rules in [TEMPLATES § 5](TEMPLATES.md#5-folder-layout-numbered-thesis-order).
+
+`01-index.md` is **mandatory every session**, even one that only drafted prose and touched no tracked issue — a 5-line index (executive summary + "sin cambios en seguimiento de issues") beats a missing one. There is no separate cross-session registry file: `01-index.md` *is* the record, session over session.
+
+Any file the session produces that isn't a numbered section review — free-form drafting (`redaccion-*.md`), a handoff note — still gets listed in `01-index.md`'s Mapa de archivos, tagged by type (see [TEMPLATES § 1](TEMPLATES.md#1-01-indexmd)).
+
+### 4.2 Cross-session issue tracking
+
+Each `01-index.md` carries a **Seguimiento de issues** table (template in [TEMPLATES § 1](TEMPLATES.md#1-01-indexmd)) that is the running state of every issue ever raised, not just this session's.
+
+- **Stable IDs.** Assign each issue an ID at first discovery: `yyyy-mm-dd-<chapter>-<slug>` (e.g. `2026-06-06-cap-ii-mcp-como-agente`). On recurrence, reference the existing ID — never restate the finding as new.
+- **Status is orthogonal to severity.** Severity (`[blocking]/[suggest]/[nit]`) says how bad it is; status says where it stands: `abierto` (found, not addressed) → `resuelto-en-borrador` (fix drafted in a review file, not yet in the `.docx`) → `aplicado` (author confirmed it's in the `.docx`) → `rechazado` (author declined) → `needs-decision` (open question for the author/tutor). Only the author can move an issue to `aplicado` — Claude cannot verify the `.docx` was edited.
+- **Carry-forward, mandatory.** At the start of every session after the first, read the previous session's `01-index.md` Seguimiento table before writing anything new. Copy every issue not at `aplicado`/`rechazado` forward into this session's table unchanged unless its status actually moved. This is what makes the per-session file sufficient as a registry — skipping it is how issues silently go stale.
+- **Reversed decisions need a reason.** If this session overturns or drops a prior decision (not just a status update — an actual reversal), add a one-line `**Por qué se revirtió:**` next to that issue's row. A diff showing the old text gone is not enough.
+- **Tutor comment numbers drift.** `.docx` comment numbers renumber across edits. Always pair a referenced comment number with the verbatim quoted text it points to — never cite the number alone.
 
 ## 5. File templates
 
 Three templates drive the output:
 
-- **`01-index.md`** — executive summary, severity counts, file map, cross-cutting themes. Template in [TEMPLATES § 1](TEMPLATES.md#1-01-indexmd).
+- **`01-index.md`** — executive summary, severity counts, file map, cross-cutting themes, and the cross-session Seguimiento de issues table (§4.2). Template in [TEMPLATES § 1](TEMPLATES.md#1-01-indexmd).
 - **`nn-section.md`** — per-section diffs grouped by severity. Template + diff shape in [TEMPLATES § 2](TEMPLATES.md#2-nn-sectionmd--one-per-reviewed-section).
 - **`11-referencias.md`** — bibliography-specific structure (missing/orphan sources, weak-source replacements, format fixes). Template in [TEMPLATES § 3](TEMPLATES.md#3-11-referenciasmd--bibliography-section).
 
@@ -148,14 +164,15 @@ Formal aspects (URU §IV), redacción (URU §III), grammar/RAE, semantics & clar
 
 ## 7. Workflow
 
-1. **Ingest.** `.docx` → reviewable text via §3. Identify section boundaries.
-2. **Inventory.** List every section found. Compare against URU expected structure (§6.1). Flag missing/extra sections as `[blocking]`.
-3. **Scope.** If the user specified a filter, restrict to those sections.
-4. **Substantive pass first.** Walk §6.1 then §6.2 across all chapters before touching prose. Substantive `[blocking]` issues reshape downstream work — surface them early.
-5. **Per-section formal/linguistic pass.** Walk [CHECKS.md](CHECKS.md) §1–5 in order. Skip deep prose review on any section flagged with a substantive `[blocking]` — note "prose review deferred pending substantive revision" in INDEX.
-6. **Bibliography pass.** Run [CHECKS § 6](CHECKS.md#6-bibliography-uru-vi) at the end — needs the full source list and may require web searches.
-7. **Write files.** Create `YYYY-MM-DD/` folder. Write section files in order. Write `01-index.md` last. The `Resumen ejecutivo` leads with substantive impression before formal observations.
-8. **Report.** Brief message to user: session path, severity totals, recommended starting point. Do NOT dump the diffs into chat — point to the files.
+1. **Carry forward.** If a prior session exists, read its `01-index.md` Seguimiento de issues table (§4.2) before doing anything else. This seeds the current session's tracking table.
+2. **Ingest.** `.docx` → reviewable text via §3. Identify section boundaries.
+3. **Inventory.** List every section found. Compare against URU expected structure (§6.1). Flag missing/extra sections as `[blocking]`.
+4. **Scope.** If the user specified a filter, restrict to those sections.
+5. **Substantive pass first.** Walk §6.1 then §6.2 across all chapters before touching prose. Substantive `[blocking]` issues reshape downstream work — surface them early.
+6. **Per-section formal/linguistic pass.** Walk [CHECKS.md](CHECKS.md) §1–5 in order. Skip deep prose review on any section flagged with a substantive `[blocking]` — note "prose review deferred pending substantive revision" in INDEX.
+7. **Bibliography pass.** Run [CHECKS § 6](CHECKS.md#6-bibliography-uru-vi) at the end — needs the full source list and may require web searches.
+8. **Write files.** Create `YYYY-MM-DD/` folder. Write section files in order. Write `01-index.md` last, including the carried-forward + updated Seguimiento de issues table. The `Resumen ejecutivo` leads with substantive impression before formal observations. If the session hands off open work, write it as `00-handoff.md` — always that name, never a variant.
+9. **Report.** Brief message to user: session path, severity totals, recommended starting point. Do NOT dump the diffs into chat — point to the files.
 
 ## 8. Reference
 

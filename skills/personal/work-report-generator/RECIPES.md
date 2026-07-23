@@ -74,13 +74,14 @@ When the output language is English, this is a no-op — write everything in nat
 | Translating `OPC UA` to `OPC UA (Comunicaciones Unificadas de Plataforma Abierta)` | Leave acronyms untouched |
 | Including commit SHAs in the body when not asked | Use commits only as clarification prompts |
 | Bolding section titles or using `##` headers in the formal report | Use `1.`, `2.`, … plain text headers |
-| Editing `report.md` directly to add a task | Append to `log.md`, then regenerate |
+| Editing `report.md` directly to add a task | Append to `raw.md`, then regenerate |
 | Describing the source artifact (`Cerró el ticket X`, `Mergeó el commit Y`, `Completó el PR Z`) | Describe the result of the work (`Resolvió el timeout en el worker de despacho`) |
 | Generating `report.md` without the explicit "¿algo más?" close in §3.7 | Wait for affirmative close from the user before generating |
-| Translating `log.md` content to the chosen output language | LOG stays verbatim in the source language; only `report.md` is translated |
-| Reformatting / normalizing the raw input pasted into `log.md` | Append verbatim; preserve formatting, indentation, line breaks |
+| Translating `raw.md` content to the chosen output language | It stays verbatim in the source language; only `report.md` is translated |
+| Reformatting / normalizing the raw input pasted into `raw.md` | Append verbatim; preserve formatting, indentation, line breaks |
 | Batching multiple dates in a single session | One date per invocation; repeat §3.1–§3.9 per date for backfills |
-| Pasting only commit subjects into `log.md` | Paste full commit messages (subject + body); same for issues/tickets |
+| Pasting only commit subjects into `commit.md` | Paste full commit messages (subject + body); same for issues/tickets |
+| Pasting commit dumps into `raw.md`'s raw input | Commits live in `commit.md`, separate from manual raw input |
 | Section header with decoration: `1. Detector de Anomalías Online (4h 30min)` | Section header is the project name verbatim: `1. Detector de Anomalías Online` |
 | Merging two raw items into one task because they look related | Merge only on explicit user instruction ("junta esos dos") |
 | Splitting one raw item into multiple tasks on your own | Ask when ambiguous; split only on explicit user instruction |
@@ -103,4 +104,5 @@ When the output language is English, this is a no-op — write everything in nat
 - [ ] Technical terms follow the translation rules
 - [ ] No content not traceable to user input or clarification answers
 - [ ] `projects.md` reflects any new projects introduced this session
-- [ ] `reports/<date>/log.md` contains raw input (verbatim, with full commit/issue bodies), tasks grouped by project, and per-project hours
+- [ ] `reports/<date>/raw.md` contains raw input (verbatim, manual notes only), tasks grouped by project, and per-project hours
+- [ ] `reports/<date>/commit.md`, if present, holds the day's commit dump (full bodies, grouped by repo) — not duplicated into `raw.md`
