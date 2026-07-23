@@ -44,6 +44,21 @@ Rules:
 
 Don't embellish. Adjectives implying impact, scope, or difficulty ("critical", "major", "comprehensive") only if the user used them.
 
+**Level of detail — no exact failure/lint/pass-rate counts.** Don't enumerate precise quantities of failures, errors, lint findings, or test/benchmark pass rates (e.g. "74 lint violations", "380/412 diagnostics (92%)", "21/21 tests passing", "48/80 pass rate"). Summarize qualitatively instead ("se remediaron la mayoría de las violaciones de lint", "se validó exitosamente el harness de pruebas"), unless the user explicitly asks for the precise figures. This does not apply to numbers describing the scope of the actual deliverable (files touched, tasks completed, corpus/dataset size) — those stay as given.
+
+- ✗ "se ejecutó una limpieza de análisis estático, remediando 380 de 412 diagnósticos iniciales (92%)"
+- ✓ "se ejecutó una limpieza de análisis estático, remediando la gran mayoría de los diagnósticos iniciales"
+
+**Verb precision.** Don't default to one verb for every deliverable — match the verb to what actually happened.
+
+- `generó`/`generaron` — for produced artifacts: documentation, diagrams, scaffolds, schema/migration files.
+- `desarrolló`/`desarrollaron` — for actively built/coded things: tools, adapters, CI pipelines, backend services, features with real logic.
+- `entregó`/`entregaron` — only if the work was actually delivered or shared with someone. Finishing something is not the same as delivering it — most day-to-day work bullets should use `generó`/`desarrolló`/`implementó`/etc., not `entregó`.
+
+**Costs and pricing — ask, don't assume.** If raw input or commit content touches costs, pricing, or dollar figures, ask the user whether to include that in the report before writing the bullet. Don't default to including it (it's rarely relevant to a work-activity report) and don't default to silently omitting it either — some users may want it kept. When in doubt, ask once and remember the answer for the rest of the session.
+
+**No personal-tooling references.** Don't mention the user's own Claude Code skills, prompts, or internal AI tooling as if they were part of the technical work being reported (e.g. "se habilitaron linters del skill go-architect"). Describe the underlying practice or standard instead ("se habilitaron linters siguiendo las buenas prácticas de Go").
+
 ## 3. Technical translation — examples
 
 1. **Established translation exists** → use the translated term, with the English term in parentheses on first use only.
@@ -52,6 +67,8 @@ Don't embellish. Adjectives implying impact, scope, or difficulty ("critical", "
    - `handshake` → `handshake` (no widely accepted Spanish equivalent — keep English)
 2. **No clean translation** → keep the English term as-is.
    - `keep-alive`, `timeout`, `bridge`, `pool`, `endpoint`, `dashboard`, `commit`, `runtime`.
+   - Watch for anglicisms with a clean, natural Spanish equivalent that's easy to default to in English out of habit — these should be translated, not kept: `tracking` → `seguimiento`, `hyperlinks` → `enlaces`, `de-duplicaron`/`de-duplicated` → `se eliminó la duplicación de` / `se depuraron duplicados` (avoid the hyphenated calque).
+   - Some terms have a "technically correct" Spanish translation that's still a stiff calque in narrative prose — prefer natural phrasing over the dictionary-accurate cognate. `git submodule deinit` → don't write `se desinicializó el submódulo` (accurate but stilted); write `se eliminó por completo el submódulo, dando de baja su registro en Git`.
 3. **Acronyms and product names** → never translate.
    - `OPC UA`, `SCADA`, `HMI`, `VTScada`, `YOLOv11`, `Raspberry Pi`, `Hailo-8L`.
 4. **Function/symbol names from code** → preserve verbatim, no translation, no quoting.
@@ -83,8 +100,13 @@ When the output language is English, this is a no-op — write everything in nat
 | Pasting only commit subjects into `commit.md` | Paste full commit messages (subject + body); same for issues/tickets |
 | Pasting commit dumps into `raw.md`'s raw input | Commits live in `commit.md`, separate from manual raw input |
 | Section header with decoration: `1. Detector de Anomalías Online (4h 30min)` | Section header is the project name verbatim: `1. Detector de Anomalías Online` |
+| Enumerating exact failure/lint/test-pass-rate counts (`74 violations`, `21/21 tests`, `48/80 pass rate`) | Summarize qualitatively; keep deliverable-scope numbers (files touched, tasks completed) as-is |
 | Merging two raw items into one task because they look related | Merge only on explicit user instruction ("junta esos dos") |
 | Splitting one raw item into multiple tasks on your own | Ask when ambiguous; split only on explicit user instruction |
+| Expanding ambiguous shorthand from raw input based on the most plausible guess (e.g. "la Pi" silently expanded to "Raspberry Pi") | Ask what it refers to — the same shorthand can mean different things across sessions (hardware, an API, a typo, a codename); never hardcode one interpretation |
+| Mentioning costs, pricing, or dollar figures because the underlying commit/raw input had them | Ask the user first whether cost content should be included in the report |
+| Describing the user's own Claude Code skill/tooling as part of the technical work ("siguiendo el skill go-architect") | Describe the underlying practice/standard instead ("siguiendo las buenas prácticas de Go") |
+| Defaulting every deliverable bullet to "se entregó" | Match the verb to what happened: "generó" for artifacts, "desarrolló" for built things, "entregó" only if actually shared |
 
 ## 5. Closing checklist
 
@@ -106,3 +128,6 @@ When the output language is English, this is a no-op — write everything in nat
 - [ ] `projects.md` reflects any new projects introduced this session
 - [ ] `reports/<date>/raw.md` contains raw input (verbatim, manual notes only), tasks grouped by project, and per-project hours
 - [ ] `reports/<date>/commit.md`, if present, holds the day's commit dump (full bodies, grouped by repo) — not duplicated into `raw.md`
+- [ ] No costs/pricing content unless the user was explicitly asked and opted in
+- [ ] No reference to the user's own Claude Code skills/tooling in the technical narrative
+- [ ] Verbs match what happened ("generó" for artifacts, "desarrolló" for built things, "entregó" only if actually shared)

@@ -1,6 +1,6 @@
 ---
 name: work-report-generator
-version: 1.3.0
+version: 1.4.0
 description: Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{raw,commit,report}.md`. Use on "reporte de trabajo", "daily report", or /work-report.
 ---
 
@@ -110,6 +110,10 @@ Before generating `report.md`, ask explicitly: **"¿Algo más que agregar antes 
 
 Only after the explicit close confirmation from §3.7 **and** after every project with tasks today has a recorded hours figure, generate `report.md` (§4).
 
+**Bullet-count check.** Before generating, scan each project section's draft bullet count. If any section would end up with a large number of bullets (roughly 6+), ask the user whether to consolidate related ones into denser, theme-grouped bullets before finalizing — many fragmented bullets describing the same underlying effort make the report harder to follow. Only consolidate after the user agrees; apply the same fact-preservation rule as post-hoc consolidation (§8).
+
+**Section-count check.** Also scan the number of distinct project sections the day would end up with. If there are many (roughly 6+) and some look like they could plausibly be the same underlying effort — or like one section's work is purely a side-effect of another's — flag which ones look mergeable and ask the user whether to combine them (§8's cross-project consolidation / full section merge), rather than silently generating a long flat list of sections. Don't merge on your own judgment; surfacing the candidates is enough, the user decides.
+
 ### 3.9 Final review
 
 Print the report path and a one-line summary of project totals + day total. Ask if the user wants edits before closing.
@@ -150,6 +154,7 @@ The user's hard rule: **never infer what was done**. Concretely:
 - If per-project hours are missing for any project with tasks today, do not estimate, round, or distribute time from the day total. Ask.
 - If a project assignment is unclear for a task, do not pick the most recent project. Ask.
 - If translation of a technical term is uncertain, follow §7 — do not invent a translation.
+- If raw input contains an ambiguous abbreviation, shorthand, or apparent typo (e.g. "la Pi" — could be Raspberry Pi, a mistyped "la API", a project codename, or something else entirely), do not silently expand it to the most plausible reading. Ask what it means. The right expansion can genuinely be "Raspberry Pi" some days and something else entirely on others — the point isn't to avoid one specific answer, it's to never guess when the raw input itself is ambiguous.
 
 When in doubt, ask one specific question. Better to ask twice than to fabricate once.
 
@@ -186,6 +191,19 @@ At the end of a session:
 - `reports/<date>/report.md` — formal report regenerated from `raw.md` + `commit.md`, following §4 strictly.
 
 If the user comes back the next day or week to amend a past report, re-read `raw.md` and `commit.md` for that date first and re-run the task extraction loop only on new input. Re-ask per-project hours only for projects whose task list changed.
+
+**Post-hoc consolidation.** The user may separately ask, in a later review pass, to consolidate or reword bullets in an already-generated `report.md` — e.g. merging bullets that describe the same action twice, grouping fragmented same-theme bullets under one denser bullet, or fixing wording/anglicisms. This is allowed **only on explicit request** — never do it proactively while generating a report for the first time (though §3.8's bullet-count check does allow *asking* about it at generation time). Any consolidation must preserve every distinct fact from the bullets being merged; it's about density, not about dropping content. Re-verify `Tiempo del proyecto`/`Tiempo total del día` are unchanged after any consolidation pass, and check whether the host project syncs `report.md` content to any external system (time tracker, invoicing, etc.) that would need re-syncing after the edit — see that project's own CLAUDE.md for specifics.
+
+**Cross-project consolidation.** When the same underlying action spans multiple repos/projects (e.g. a shared dependency version bump applied across several unrelated services as a side effect of one upgrade effort), prefer consolidating the full narrative under the project section that represents its actual destination or consequence, and leave only a brief cross-reference in the other sections' bullets (e.g. "...(ver <Project>)") instead of repeating the full mechanics in each one. This still requires the same explicit-request gate as other post-hoc consolidation.
+
+**Full section merge (hours included).** The user may go further and ask to fully merge one project section into another — not just cross-reference it, but remove it as a separate section entirely (e.g. when a day's entries under two small side-project sections turn out to be pure side-effects of that day's work on a third, larger project). This is a bigger step than bullet-level consolidation: it moves a `Tiempo del proyecto` figure between sections, which changes which project/issue the hours are billed under downstream — always confirm explicitly before doing it, and confirm *which* sections merge into *which* survivor. When merging:
+
+- Sum the merged section's hours into the surviving section's `Tiempo del proyecto` — never drop them, and never split them by guessing which part belongs where.
+- Fold the merged section's bullet(s) into the surviving section's task list, keeping every distinct fact.
+- Remove the merged section entirely and renumber the remaining sections.
+- Re-verify `Tiempo total del día` is unchanged (it should be — same total time, just regrouped).
+- Update the day's `raw.md`/`LOG.md` `## Hours` section to match the new grouping, so a future amendment doesn't work from a stale record.
+- If the host project syncs hours to an external system per project/issue (time tracker, invoicing, etc.), the now-removed section's entry there will be stale, not just outdated — check that project's own CLAUDE.md for how to reconcile it (e.g. explicitly deleting the stale entry, not just re-pushing).
 
 ## 9. Anti-patterns + closing checklist
 
