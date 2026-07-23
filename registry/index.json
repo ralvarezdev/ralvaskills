@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-23T02:49:25Z",
+  "generated_at": "2026-07-23T15:36:35Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -690,7 +690,7 @@
       "name": "work-report-generator",
       "description": "Generate formal daily work reports from unstructured input. Asks output language once, processes one date per invocation, never infers tasks or hours, requires explicit close confirmation before generating, keeps `reports/projects.md` + `reports/YYYY-MM-DD/{raw,commit,report}.md`. Use on \"reporte de trabajo\", \"daily report\", or /work-report.",
       "personal": true,
-      "latest": "1.3.0",
+      "latest": "1.4.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -711,6 +711,11 @@
           "version": "1.3.0",
           "published_at": "2026-07-23T02:49:25Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/work-report-generator@v1.3.0/work-report-generator-v1.3.0.tar.gz"
+        },
+        "1.4.0": {
+          "version": "1.4.0",
+          "published_at": "2026-07-23T15:36:35Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/work-report-generator@v1.4.0/work-report-generator-v1.4.0.tar.gz"
         }
       }
     }
