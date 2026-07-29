@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-23T15:36:35Z",
+  "generated_at": "2026-07-29T02:03:15Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -611,12 +611,17 @@
       "name": "uru-scientific-paper-architect",
       "description": "Format scientific manuscripts for Revista Tecnocientífica URU (Universidad Rafael Urdaneta) — cover page fields, Times New Roman 12pt/16pt typography rules, IMRyD-derived structure by article type, figure/table/equation numbering, bracketed-numeric citations, reference formats by source type, ethics checklist. Outputs one `.md` manuscript spec. Use when preparing a paper for submission to Revista Tecnocientífica URU.",
       "personal": true,
-      "latest": "1.0.0",
+      "latest": "1.1.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-07-17T14:52:53Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-scientific-paper-architect@v1.0.0/uru-scientific-paper-architect-v1.0.0.tar.gz"
+        },
+        "1.1.0": {
+          "version": "1.1.0",
+          "published_at": "2026-07-29T02:03:15Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/uru-scientific-paper-architect@v1.1.0/uru-scientific-paper-architect-v1.1.0.tar.gz"
         }
       }
     },
