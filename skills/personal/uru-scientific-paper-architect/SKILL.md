@@ -1,6 +1,6 @@
 ---
 name: uru-scientific-paper-architect
-version: 1.0.0
+version: 1.1.0
 description: Format scientific manuscripts for Revista Tecnocientífica URU (Universidad Rafael Urdaneta) — cover page fields, Times New Roman 12pt/16pt typography rules, IMRyD-derived structure by article type, figure/table/equation numbering, bracketed-numeric citations, reference formats by source type, ethics checklist. Outputs one `.md` manuscript spec. Use when preparing a paper for submission to Revista Tecnocientífica URU.
 ---
 
@@ -55,7 +55,8 @@ Definitions of each type live in [RECIPES §2](RECIPES.md#2-article-type-definit
 
 ## 5. Cover page (Portada)
 
-- **Título:** ES and EN, mayúsculas y minúsculas — except acronyms/siglas, which stay uppercase.
+- **Título:** ES and EN, mayúsculas y minúsculas — except acronyms/siglas, which stay uppercase. No siglas/acrónimos/abreviaturas in the title unless of universal public domain.
+- **Acronym first-use rule** (applies to the title, resumen/abstract, and body text alike): the first time an acronym or sigla is used anywhere in the manuscript, it must appear in parentheses immediately after its full name/meaning — e.g. `Organización Mundial de la Salud (OMS)`. Sustained uppercase (mayúsculas sostenidas) elsewhere in the text is reserved strictly for siglas/acrónimos.
 - **Autores:** up to 6. Name format is fixed: `Primer nombre, inicial del segundo nombre, Primer apellido-Segundo apellido` (e.g. *Juan P. Pérez-Gómez*). Each author declares: institutional affiliation, city, country, email, ORCID.
 - **Resumen/Abstract:** ES + EN, ≤200 words each, single paragraph, no indentation. Must briefly cover: objetivo general, metodología empleada, resultados más relevantes, conclusión global — in that order of emphasis, not necessarily labeled.
 - **Palabras clave/Key words:** ES + EN, ≤5 each.

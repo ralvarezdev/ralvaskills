@@ -123,6 +123,7 @@ Before handing off the manuscript spec:
 - [ ] Nombres de sección en negrita y centrados; nombres de subsección en negrita, alineados a la izquierda, mayúsculas y minúsculas
 - [ ] Interlineado doble en el cuerpo; interlineado sencillo en resumen, agradecimiento y referencias
 - [ ] Portada completa: título ES/EN, hasta 6 autores con adscripción/ciudad/país/correo/ORCID, formato de nombre correcto
+- [ ] Primera aparición de cada sigla/acrónimo (título, resumen, cuerpo) va entre paréntesis junto a su nombre completo
 - [ ] Resumen/Abstract ≤200 palabras cada uno, un solo párrafo, sin sangría, cubre objetivo/metodología/resultados/conclusión
 - [ ] Palabras clave/Key words ≤5 cada una
 - [ ] Figuras numeradas como "Figura", con título/leyenda, mencionadas en el texto, fuente entre corchetes si no es propia
