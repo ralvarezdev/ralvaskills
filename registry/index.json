@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-07-29T02:03:15Z",
+  "generated_at": "2026-08-10T13:30:11Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -326,6 +326,18 @@
         }
       }
     },
+    "latex-architect": {
+      "name": "latex-architect",
+      "description": "LaTeX document standards on TeX Live 2026 — latexmk-only builds, preamble and package-order discipline, biblatex + biber bibliographies, semantic cross-references (cleveref, siunitx, booktabs), float and math conventions, chktex/latexindent gates. Use when writing, building, structuring, or reviewing LaTeX documents, papers, reports, or theses.",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-08-10T13:30:11Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/latex-architect@v1.0.0/latex-architect-v1.0.0.tar.gz"
+        }
+      }
+    },
     "logic-cleaner": {
       "name": "logic-cleaner",
       "description": "Expression-level code cleanup — guard clauses, naming, magic values, conditional simplification, duplication. Language-agnostic. Out of scope: architecture, module decomposition. Use when user asks to clean code, simplify expressions, flatten nesting, or invokes /logic-cleaner.",
@@ -347,6 +359,18 @@
           "version": "1.0.0",
           "published_at": "2026-05-23T19:19:40Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/mcp-architect@v1.0.0/mcp-architect-v1.0.0.tar.gz"
+        }
+      }
+    },
+    "ml-conference-paper-architect": {
+      "name": "ml-conference-paper-architect",
+      "description": "ML conference paper formatting for NeurIPS, ICML, ICLR, and AAAI — official style-file usage, anonymization and camera-ready toggles, page-limit accounting, natbib citations, standard paper skeleton, reproducibility checklists, appendix and supplementary rules, desk-reject checks. Use when writing, formatting, or submitting a machine-learning conference paper.",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-08-10T13:30:11Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/ml-conference-paper-architect@v1.0.0/ml-conference-paper-architect-v1.0.0.tar.gz"
         }
       }
     },
