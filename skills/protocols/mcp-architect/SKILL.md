@@ -1,12 +1,12 @@
 ---
 name: mcp-architect
-version: 1.0.0
-description: MCP (Model Context Protocol) 2025-11-25 server standards — tool/resource/prompt primitives, capability negotiation, Streamable HTTP transport with Mcp-Session-Id, OAuth 2.1 + RFC 8707 resource indicators, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server.
+version: 2.0.0
+description: MCP (Model Context Protocol) 2026-07-28 server standards — tool/resource/prompt primitives, stateless protocol core (no initialize handshake, no Mcp-Session-Id), Mcp-Method/Mcp-Name header routing, Multi Round-Trip Requests (MRTR) for elicitation/sampling, cacheable list results (ttlMs/cacheScope), OAuth 2.1 + RFC 8707 resource indicators + RFC 9207 issuer validation, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server.
 ---
 
 # MCP Architecture
 
-Vanilla MCP servers exposing **tools**, **resources**, and **prompts** to LLM clients over JSON-RPC 2.0. Spec target: **2025-11-25** (current stable; the 2026-07-28 release candidate is locked but not yet final — see [§12](#12-versioning--deprecation)). Server-focused; brief client section in [RECIPES §10](RECIPES.md#10-client-quick-reference). Pinned deps in [STACK.md](STACK.md).
+Vanilla MCP servers exposing **tools**, **resources**, and **prompts** to LLM clients over JSON-RPC 2.0. Spec target: **2026-07-28** (current stable, published final 2026-07-28; supersedes 2025-11-25 with a stateless protocol core — see [§12](#12-versioning--deprecation)). Server-focused; brief client section in [RECIPES §10](RECIPES.md#10-client-quick-reference). Pinned deps in [STACK.md](STACK.md).
 
 Pairs with:
 - [security-reviewer](../../quality/security-reviewer/SKILL.md) — MCP servers expand the agent's blast radius; treat every tool call as untrusted input.
@@ -106,9 +106,10 @@ Resources are read-only data accessed via URI. Use them for content the model sh
 - **Stable URI scheme.** Pick a scheme that reflects ownership: `myapp://workspace/{id}/file/{path}`, not `file://` (collides with local FS in clients).
 - **Resource templates** for parameterized resources: `db://schemas/{database}/{table}`. Templates appear in `resources/templates/list`; concrete instances appear in `resources/list`.
 - **`mimeType` on every resource.** Drives client rendering. `text/markdown`, `application/json`, `image/png` are the common ones.
-- **`ttlMs` + `cacheScope`** (since 2026-07-28 RC; backport graceful — clients ignoring it just re-fetch) — declare how long a `resources/read` result is fresh and whether the result is per-user or shareable.
-- **Subscriptions** (`resources/subscribe` + `notifications/resources/updated`) only for resources that change in observable ways while a session is open. Don't subscribe to static config.
-- **`list_changed` notification** when your set of resources changes (new file appeared, table dropped). Cheap to send; clients re-fetch `resources/list`.
+- **`ttlMs` + `cacheScope` are mandatory** (`CacheableResult`, spec 2026-07-28) on `tools/list`, `prompts/list`, `resources/list`, `resources/read`, and `resources/templates/list`. `ttlMs` is a freshness hint in milliseconds; `cacheScope` is `"public"` (shared intermediaries may cache) or `"private"`. Modeled on HTTP `Cache-Control` — since list endpoints are now connection-independent (no session to invalidate on), this is how clients avoid re-fetching the same catalog every call. Populate both fields; the SDKs default them but pick real values for anything that doesn't change often (a static catalog can carry `ttlMs: 300000`).
+- **List order is now deterministic.** Clients rely on stable ordering to keep upstream prompt caches warm across reconnects — don't shuffle `tools/list`/`resources/list` output between calls unless the underlying set actually changed.
+- **Subscriptions moved off the held-open GET stream.** `resources/subscribe` still registers interest, but change notifications now flow over `subscriptions/listen` — a single stream clients opt into per notification type — instead of the old per-connection SSE GET. Use it only for resources that change in observable ways; don't subscribe to static config.
+- **`list_changed` notification** when your set of resources changes (new file appeared, table dropped). Cheap to send; clients re-fetch `resources/list` and get a fresh `ttlMs`.
 
 ## 6. Prompt design
 
@@ -121,15 +122,29 @@ Prompts are *user-invoked* templates surfaced as slash commands in clients that 
 
 ## 7. Transport — Streamable HTTP first
 
-Two transports matter in practice. **stdio** for local subprocess servers; **Streamable HTTP** for remote. Plain SSE is deprecated as of the 2025-03-26 revision — don't build new servers on it.
+Two transports matter in practice. **stdio** for local subprocess servers; **Streamable HTTP** for remote. Legacy HTTP+SSE is deprecated as of spec 2026-07-28 (twelve-month offramp) — don't build new servers on it; it was already discouraged since 2025-03-26.
 
 ### Streamable HTTP (the default for networked servers)
 
-A single endpoint (conventionally `/mcp`) handles both directions:
+A single endpoint (conventionally `/mcp`) handles both directions. As of spec 2026-07-28 the protocol has **no handshake and no session** ([SEP-2567](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2567), [SEP-2575](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2575)) — every request is self-contained and can land on any server instance behind a plain round-robin load balancer:
 
-- **Client → Server:** HTTP `POST /mcp` with a JSON-RPC request body. Response is either a single JSON response (simple case) or a `text/event-stream` for streamed responses + server-initiated notifications.
-- **Server → Client notifications (long-lived):** Optional HTTP `GET /mcp` with `Accept: text/event-stream` — the server holds the connection open and pushes notifications and server-initiated requests (e.g., sampling).
-- **Session termination:** HTTP `DELETE /mcp` with the `Mcp-Session-Id` header.
+```http
+POST /mcp HTTP/1.1
+MCP-Protocol-Version: 2026-07-28
+Mcp-Method: tools/call
+Mcp-Name: search
+Content-Type: application/json
+
+{"jsonrpc":"2.0","id":1,"method":"tools/call",
+ "params":{"name":"search","arguments":{"q":"otters"},
+ "_meta":{"io.modelcontextprotocol/clientInfo":{"name":"my-app","version":"1.0"}}}}
+```
+
+- **`MCP-Protocol-Version` header** on every request — pin the version you speak; mismatches return `UnsupportedProtocolVersionError`.
+- **`Mcp-Method` and `Mcp-Name` headers are mandatory on Streamable HTTP POST** ([SEP-2243](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2243)) — mirror the JSON-RPC `method` and the tool/prompt/resource name so gateways, rate limiters, and WAFs can route and meter without parsing the body. The same SEP adds `x-mcp-header` for exposing custom headers from tool parameters.
+- **Client identity travels in `_meta`**, not a session header — keys `io.modelcontextprotocol/clientInfo`, `/clientCapabilities`, `/protocolVersion`.
+- **`server/discover` RPC** — servers MUST implement it; it returns supported protocol versions, capabilities, and server identity. Clients MAY call it up front for version selection, but nothing requires it before the first real call.
+- **Session termination and `DELETE /mcp` are gone** along with `Mcp-Session-Id` — there's no session to terminate.
 
 Server skeleton in [RECIPES §5 (Python)](RECIPES.md#5-streamable-http-server-python) and [§6 (Go)](RECIPES.md#6-streamable-http-server-go).
 
@@ -139,24 +154,23 @@ The client spawns your server; JSON-RPC frames flow over stdin/stdout, newline-d
 
 - Use stdio when the server is bundled with the client (Claude Desktop config, `npx`-launched tools, `uvx`-launched Python tools).
 - Single-process, single-client by definition. Don't bolt concurrency on; spawn another process.
-- Per [§10](#10-error-handling): structured logs go to stderr in NDJSON; never write debug prints to stdout (corrupts the frame stream).
+- Per [§10](#10-error-handling): structured logs go to stderr in NDJSON; never write debug prints to stdout (corrupts the frame stream). Note `Logging` (the JSON-RPC `notifications/message` primitive) is deprecated as of 2026-07-28 — stderr is the forward-compatible answer either way. See [§12](#12-versioning--deprecation).
 
-## 8. Session lifecycle — Streamable HTTP
+## 8. Request model — the stateless core
 
-The protocol is request-scoped at the JSON-RPC level but *session*-scoped at the transport level. Get this wrong and clients silently drop after the first call.
+MCP moved from a bidirectional stateful protocol to request/response stateless ([SEP-2567](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2567) + [SEP-2575](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2575)). There is no `initialize`/`notifications/initialized` handshake and no `Mcp-Session-Id` to track — get this wrong (by still hunting for a session header) and you'll be debugging against a protocol version that no longer exists.
 
-1. **Initialization:** client `POST /mcp` with `initialize` → server responds with capabilities, server info, and (if stateful) sets the `Mcp-Session-Id` response header to a cryptographically-random ID (≥16 bytes, Base64Url).
-2. **Client confirms:** `notifications/initialized` — only after this may the server begin sending server-initiated requests.
-3. **Every subsequent request** carries `Mcp-Session-Id` header. Missing header on a non-`initialize` request → respond `400 Bad Request`.
-4. **Server may terminate** the session at any time; subsequent requests with that ID → `404 Not Found`.
-5. **Client terminates:** `DELETE /mcp` with the session ID header.
+- **Every request carries everything needed to process it** — protocol version, client identity, client capabilities — in `_meta`. Nothing is pinned to a prior handshake, so a request can hit a fresh server instance with zero shared state.
+- **`tools/list`, `resources/list`, `prompts/list` no longer vary per connection.** Combined with [§5](#5-resource-design)'s mandatory `ttlMs`/`cacheScope`, this is how clients avoid re-fetching the catalog on every call without needing a session to key the cache on.
+- **Need cross-call state anyway?** Use the **explicit-handle pattern**: a tool returns an identifier (`basket_id`, `session_token`, whatever your domain calls it) and the model threads it back as an ordinary argument on later calls. This beats session state hidden in the transport — the model can see the handle and reason about it, and your server can validate/expire it like any other input. Don't reach for out-of-band session storage keyed on a transport-level ID; that ID doesn't exist anymore.
+- **Mid-call input needed from the user or an LLM?** That's **Multi Round-Trip Requests (MRTR)**, replacing the old server-initiated `elicitation/create`, `sampling/createMessage`, and `roots/list` calls that required a held-open stream ([SEP-2322](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2322)):
+  1. Instead of completing, your `tools/call` (or `prompts/get`/`resources/read`) handler returns an `InputRequiredResult`: `resultType: "input_required"`, an `inputRequests` map (each a full elicitation or sampling request), and an opaque `requestState` blob.
+  2. The client resolves the requests (prompts the user, calls its LLM) and re-issues the *original* call with `inputResponses` (keyed identically) plus the echoed `requestState`.
+  3. Because all state rides in the payload, the retry can land on a different server instance and still resume correctly. Encode everything you need to continue into `requestState` — don't rely on any server-side memory of the first call.
+  - One `InputRequiredResult` can batch an elicitation and a sampling request in a single round trip.
+  - Sampling stays human-in-the-loop by design: the client picks the model, can edit the prompt, and can deny. Your server never sees API keys.
 
-**Stateful vs stateless servers:**
-
-- **Stateful** (default for most servers) — issue session IDs, keep per-session resources (subscriptions, in-flight tasks). Required for resource subscriptions, sampling, long-running operations.
-- **Stateless** — don't issue a session ID; each `POST` is independent. Simpler to scale horizontally; mandatory for `2026-07-28`-spec "stateless core" deployments behind plain HTTP load balancers. No subscriptions, no server-initiated requests.
-
-Pick stateless if you can. Add state only when a capability requires it.
+Sample skeleton in [RECIPES §5](RECIPES.md#5-streamable-http-server-python)/[§6](RECIPES.md#6-streamable-http-server-go). Roots, Sampling (as a *server-initiated push*, superseded by MRTR for the request/response shape), and Logging are formally deprecated primitives — see [§12](#12-versioning--deprecation) for the replacement guidance and grace period.
 
 ## 9. Authorization — OAuth 2.1 + RFC 8707
 
@@ -165,9 +179,11 @@ Remote MCP servers are OAuth 2.1 **resource servers**. The spec is strict; mis-i
 - **Discovery via Protected Resource Metadata** (RFC 9728): host `/.well-known/oauth-protected-resource` listing the authorization server(s) you accept tokens from. Clients fetch this to bootstrap.
 - **Resource indicators are MANDATORY** (RFC 8707): the client MUST include `resource=<your MCP server's canonical URI>` in both `/authorize` and `/token` requests. The server MUST reject tokens whose audience claim doesn't match. This is the only thing stopping a malicious MCP server from re-using a stolen token elsewhere.
 - **PKCE is mandatory.** OAuth 2.1 deprecates the implicit and ROPC flows; remote MCP servers MUST require Authorization Code + PKCE.
-- **Dynamic Client Registration (RFC 7591)** is the practical way clients onboard without ops tickets — support it if your auth server allows.
-- **Bearer tokens in `Authorization: Bearer <token>` header on every request** (not `Mcp-Session-Id`; that's transport, not auth).
-- **Validate audience server-side** — verify the token's `aud` claim equals your canonical URI. The 2026 spec hardens this; the 2025-11-25 spec already requires it.
+- **Issuer validation is now required** (RFC 9207, [SEP-2468](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2468), spec 2026-07-28): authorization servers return `iss` on the authorization response, and clients MUST validate it before redeeming a code. Closes an AS-mix-up attack where a code minted by one authorization server gets redeemed against another.
+- **Client credentials are bound to the issuer that minted them** ([SEP-2352](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2352)) — no reusing a registered client across authorization servers.
+- **Dynamic Client Registration (RFC 7591) is formally deprecated** in favor of **Client ID Metadata Documents (CIMD)** as of spec 2026-07-28. DCR keeps working for backward compatibility but is scheduled for removal — don't build new onboarding flows on it; point new servers at CIMD. If you still support DCR, set `application_type` on registration ([SEP-837](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/837)) so authorization servers stop rejecting `localhost` redirects from desktop/CLI clients.
+- **Bearer tokens in `Authorization: Bearer <token>` header on every request** — there's no `Mcp-Session-Id` to conflate this with anymore; auth is the only per-request credential.
+- **Validate audience server-side** — verify the token's `aud` claim equals your canonical URI. Required since 2025-11-25; unchanged in 2026-07-28.
 
 Local stdio servers: no auth — the client spawns the process and trusts it. Don't bolt OAuth onto stdio.
 
@@ -191,10 +207,12 @@ JSON-RPC error codes worth using:
 | `-32700` Parse error | Body wasn't valid JSON |
 | `-32600` Invalid request | Malformed JSON-RPC envelope |
 | `-32601` Method not found | `tools/call` for a tool not in your registry |
-| `-32602` Invalid params | Schema violation on the JSON-RPC envelope itself (not on the tool args — those go in `isError`) |
+| `-32602` Invalid params | Schema violation on the JSON-RPC envelope itself (not on the tool args — those go in `isError`); **also "resource not found" as of spec 2026-07-28** (moved off the old custom `-32002` code — grep your codebase for `-32002` and update it if you shipped against 2025-11-25) |
 | `-32603` Internal error | Server crashed; fallback only |
 
 **Never leak stack traces, DB errors, or internal hostnames** to either layer. Log server-side with a correlation ID; return a generic message and the ID.
+
+**Tool schemas support full JSON Schema 2020-12** as of 2026-07-28 — `inputSchema` can use `oneOf`/`anyOf`/`allOf`/conditionals and `$ref` other schemas; `outputSchema` is effectively unrestricted. Useful for polymorphic tool args, but don't reach for composition the model has to reason through when a flatter schema would do — see [§3](#3-tool-design).
 
 ## 11. Security — the things that bite MCP servers
 
@@ -228,14 +246,31 @@ Per [§9](#9-authorization--oauth-21--rfc-8707): missing audience validation, ig
 
 ## 12. Versioning + deprecation
 
-- **Spec revisions are dated** (`2024-11-05`, `2025-03-26`, `2025-06-18`, `2025-11-25`, upcoming `2026-07-28`). Servers declare the version they support in `initialize` response.
-- **SDKs lag the spec.** Pin your SDK and pin the spec target in [STACK.md](STACK.md); don't claim a spec version you haven't tested against.
-- **Deprecation policy** (formalized in 2026-07-28): two-revision grace period for removed features. Until then, treat removed features as removed-on-next-major.
+- **Spec revisions are dated** (`2024-11-05`, `2025-03-26`, `2025-06-18`, `2025-11-25`, `2026-07-28`). Servers declare the version they support via the `MCP-Protocol-Version` header (per-request, since there's no `initialize` response to declare it in anymore — see [§8](#8-request-model--the-stateless-core)) and via the mandatory `server/discover` RPC.
+- **SDKs lag the spec.** Pin your SDK and pin the spec target in [STACK.md](STACK.md); don't claim a spec version you haven't tested against. All four Tier-1 SDKs (TypeScript, Python, Go, C#) speak 2026-07-28 as of the stable release.
+- **Feature Lifecycle Policy is now formal** ([SEP-2596](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2596)): three states — Active → Deprecated → Removed — with a minimum **twelve-month** window in Deprecated before a feature is eligible for removal (an expedited path exists for published security advisories, minimum ninety days). Check the deprecation registry before assuming a "removed" feature is actually gone.
+- **What's Deprecated as of 2026-07-28** (still works; twelve-month clock started at this release — [SEP-2577](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2577)):
+
+  | Deprecated | Replace with |
+  |---|---|
+  | Roots | Tool parameters, resource URIs, or server config |
+  | Sampling (server-initiated push) | Direct integration with your LLM provider's API, or MRTR (see [§8](#8-request-model--the-stateless-core)) for the in-band case |
+  | Logging (`notifications/message`) | `stderr` for stdio servers; OpenTelemetry for structured observability |
+  | Legacy HTTP+SSE transport | Streamable HTTP ([§7](#7-transport--streamable-http-first)) |
+  | Dynamic Client Registration (RFC 7591) | Client ID Metadata Documents (CIMD) — see [§9](#9-authorization--oauth-21--rfc-8707) |
+
+  New servers shouldn't adopt any row on the left. If you're maintaining an existing server, budget the migration before the window closes rather than waiting for a forced removal.
+
+- **Tasks moved out of core into an extension.** What shipped experimentally in 2025-11-25 as `tasks/*` core methods is now `io.modelcontextprotocol/tasks` — an opt-in extension negotiated via the new `extensions` field on `ClientCapabilities`/`ServerCapabilities`. The blocking `tasks/result` is gone, replaced by poll-based `tasks/get` plus a new `tasks/update` for client-to-server input; `tasks/list` is removed; task change notifications flow over `subscriptions/listen` rather than a held-open GET. If you adopted the experimental Tasks API, this is a required migration, not an optional one.
+- **Extensions are now a first-class framework**, not a one-off. `Tasks`, **MCP Apps** (interactive HTML UIs rendered in a sandboxed iframe, Final since January 2026), and **Enterprise Managed Authorization (EMA)** all ship as extensions under the same negotiation mechanism. If you're building something that doesn't fit tools/resources/prompts, check whether it belongs in an extension before proposing a core change.
 - **Don't break tool schemas in-place.** Adding optional fields is safe. Renaming, removing, or changing types is breaking — add a new tool and deprecate the old (`description` prefixed with `[DEPRECATED]`).
 
 ## 13. Testing
 
-- **MCP Inspector** (`npx @modelcontextprotocol/inspector`) is the canonical interactive tester. Visual UI for tools/resources/prompts; CLI mode via `--cli` for scripted assertions. Pin to ≥0.10 to avoid CVE-2025-49596 (RCE in older versions).
-- **Per-language testing in [RECIPES §9](RECIPES.md#9-testing).** Both SDKs ship in-process test transports (Python: `mcp.shared.memory`; Go: in-process pipe pair) — use them for unit/integration tests; spin a real HTTP server only for transport-level checks (auth, session lifecycle).
+- **MCP Inspector** (`npx @modelcontextprotocol/inspector`) is the canonical interactive tester. Visual UI for tools/resources/prompts; CLI mode via `--cli` for scripted assertions. Pin to ≥0.10 to avoid CVE-2025-49596 (RCE in older versions); use a spec-2026-07-28-aware release when testing header-based routing and MRTR.
+- **Per-language testing in [RECIPES §9](RECIPES.md#9-testing).** Both SDKs ship in-process test transports (Python: `mcp.shared.memory`; Go: in-process pipe pair) — use them for unit/integration tests; spin a real HTTP server only for transport-level checks (auth, header routing).
+- **Test the explicit-handle pattern, not session state.** Since there's no protocol session ([§8](#8-request-model--the-stateless-core)), a stateful workflow test should call your server as if each request could land on a different instance — pass the handle explicitly, don't rely on in-memory state surviving between test calls.
+- **Test MRTR round trips.** For any tool that can return `InputRequiredResult`, assert the retry-with-`inputResponses`-and-echoed-`requestState` path actually resumes correctly, including when the two calls are dispatched against separate server instances in a multi-replica test setup.
 - **Adversarial test cases mandatory** for tools that take URLs (SSRF), file paths (traversal), or user-controlled SQL/shell fragments (injection). At least one negative test per attack class.
 - **Schema fuzzing:** feed `tools/call` random payloads against each tool's input schema. The server should always return a tool error or JSON-RPC `-32602`, never crash.
+- **Grep for `-32002`** if you're migrating a server built against 2025-11-25 — "resource not found" moved to `-32602` (see [§10](#10-error-handling)).

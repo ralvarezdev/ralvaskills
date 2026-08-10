@@ -185,7 +185,7 @@ async def categories() -> dict:
 async def product(sku: str) -> dict:
     p = await load_product(sku)
     if p is None:
-        raise FileNotFoundError(sku)   # → JSON-RPC -32002 Resource not found
+        raise FileNotFoundError(sku)   # → JSON-RPC -32602 Resource not found (moved off -32002 in spec 2026-07-28)
     return p.model_dump()
 ```
 
@@ -220,19 +220,19 @@ mcp.AddResourceTemplate(s, &mcp.ResourceTemplate{
 import uvicorn
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("acme-shop", stateless_http=False)  # stateful: enables subscriptions
+mcp = FastMCP("acme-shop")  # spec 2026-07-28: always stateless — no session flag to set
 # ... register tools / resources / prompts ...
 
 # FastMCP exposes a Starlette app at .streamable_http_app()
-app = mcp.streamable_http_app()  # mounts /mcp endpoint with GET/POST/DELETE
+app = mcp.streamable_http_app()  # mounts /mcp endpoint (POST only — no session GET/DELETE)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 
-For stateless deployments (horizontally scalable behind a plain HTTP LB), pass `stateless_http=True`. You lose subscriptions and server-initiated requests; each POST is independent.
+Every request is independent and can be routed to any replica by a plain round-robin load balancer — no sticky sessions, no shared session store. `Mcp-Method` and `Mcp-Name` request headers and `MCP-Protocol-Version` are handled by the SDK; you don't set them by hand server-side.
 
-Mount behind a reverse proxy that strips client-supplied `Mcp-Session-Id` headers on `initialize` — the server is the only entity allowed to mint session IDs.
+Need state across calls? Use the explicit-handle pattern ([SKILL.md §8](SKILL.md#8-request-model--the-stateless-core)): a tool returns an ID, the model passes it back as an argument on later calls. For "push something to the client mid-call" (confirmation, missing param), return an `InputRequiredResult` instead of completing — see [SKILL.md §8](SKILL.md#8-request-model--the-stateless-core) for the MRTR shape. Resource subscriptions register via `resources/subscribe` as before, but updates now arrive over `subscriptions/listen` rather than a held-open per-connection stream.
 
 ---
 
@@ -250,24 +250,23 @@ import (
 )
 
 func main() {
+    // Spec 2026-07-28: no handshake, no session — the handler factory is
+    // invoked per request. Client identity/capabilities arrive via _meta on
+    // each call, not a stored session; read them off the request if you need them.
     handler := mcp.NewStreamableHTTPHandler(
         func(r *http.Request) *mcp.Server {
             s := mcp.NewServer(&mcp.Implementation{
                 Name:    "acme-shop",
                 Version: "1.0.0",
-            }, &mcp.ServerOptions{
-                InitializedHandler: func(ctx context.Context, req *mcp.InitializedRequest) {
-                    slog.InfoContext(ctx, "client initialized", "client", req.Params.ClientInfo)
-                },
-            })
+            }, nil)
             register(s)   // see §2
             return s
         },
-        &mcp.StreamableHTTPOptions{Stateless: false},
+        nil, // no stateful/stateless toggle to set — every deployment is stateless now
     )
 
     mux := http.NewServeMux()
-    mux.Handle("/mcp", handler)
+    mux.Handle("/mcp", handler) // POST only; Mcp-Method/Mcp-Name/MCP-Protocol-Version handled by the SDK
 
     srv := &http.Server{Addr: ":8000", Handler: mux}
     slog.Info("listening", "addr", srv.Addr)
@@ -275,7 +274,7 @@ func main() {
 }
 ```
 
-The handler factory is invoked **per request** in stateless mode and **per session** in stateful mode. Don't pre-build a single `mcp.Server` and reuse it across requests in stateless mode — it'll leak handler state.
+Don't pre-build a single `mcp.Server` and reuse it across requests — build fresh per invocation (or keep it fully stateless internally) since nothing pins a client to a particular instance anymore. Need cross-call state? Return a handle from a tool and have the model pass it back — see [SKILL.md §8](SKILL.md#8-request-model--the-stateless-core).
 
 ---
 
@@ -350,6 +349,8 @@ Client config example (Claude Desktop `~/Library/Application Support/Claude/clau
 5. Verify scope claim covers what this tool/resource requires.
 6. Reject with 401 + WWW-Authenticate (RFC 6750) on failure.
 ```
+
+**Client onboarding (2026-07-28):** prefer Client ID Metadata Documents (CIMD) over Dynamic Client Registration — DCR (RFC 7591) is deprecated but still functions during its grace window. If you still register clients via DCR, require `application_type` on registration so `localhost` redirect URIs from desktop/CLI clients aren't rejected. On the authorization-code exchange, validate the `iss` parameter (RFC 9207) against the authorization server you initiated the flow with before redeeming the code — this closes an AS-mix-up hole where a code minted by one AS gets replayed against another.
 
 **Python — minimal middleware sketch:**
 
@@ -472,7 +473,8 @@ from mcp import ClientSession
 async with streamablehttp_client("https://mcp.example.com/mcp",
                                   headers={"Authorization": f"Bearer {token}"}) as (read, write, _):
     async with ClientSession(read, write) as session:
-        await session.initialize()
+        # No session.initialize() handshake — spec 2026-07-28 is stateless.
+        # Client identity/capabilities ride in _meta on every call; the SDK sets this.
         tools = await session.list_tools()
         result = await session.call_tool("search_products", {"query": "widget"})
 ```
@@ -490,11 +492,12 @@ sess, err := client.Connect(ctx, transport, nil)
 // ... sess.ListTools, sess.CallTool, sess.ReadResource ...
 ```
 
-Client responsibilities the spec puts on you:
+Client responsibilities the spec puts on you (2026-07-28):
 
-- Include `Mcp-Session-Id` header on every request after `initialize` (SDKs handle this).
-- Include `resource=<canonical URI>` in OAuth `/authorize` and `/token` requests (RFC 8707).
-- Send `notifications/initialized` after receiving the `initialize` response — server-initiated requests may not flow before this.
+- Send `Mcp-Method` and `Mcp-Name` headers plus `MCP-Protocol-Version` on every Streamable HTTP request (SDKs handle this — don't hand-roll requests without them).
+- Include `resource=<canonical URI>` in OAuth `/authorize` and `/token` requests (RFC 8707), and validate the `iss` parameter on the authorization response before redeeming a code (RFC 9207).
+- If a call returns `InputRequiredResult`, resolve every entry in `inputRequests` and re-issue the *same* call with `inputResponses` plus the echoed `requestState` — don't start a new call.
+- There is no `initialize`/`notifications/initialized` exchange and no `Mcp-Session-Id` to carry — a client written against 2025-11-25 will not interoperate with a 2026-07-28 server without an SDK upgrade.
 
 ---
 
