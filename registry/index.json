@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-08-10T13:30:11Z",
+  "generated_at": "2026-08-10T20:56:19Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -352,13 +352,18 @@
     },
     "mcp-architect": {
       "name": "mcp-architect",
-      "description": "MCP (Model Context Protocol) 2025-11-25 server standards — tool/resource/prompt primitives, capability negotiation, Streamable HTTP transport with Mcp-Session-Id, OAuth 2.1 + RFC 8707 resource indicators, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server.",
-      "latest": "1.0.0",
+      "description": "MCP (Model Context Protocol) 2026-07-28 server standards — tool/resource/prompt primitives, stateless protocol core (no initialize handshake, no Mcp-Session-Id), Mcp-Method/Mcp-Name header routing, Multi Round-Trip Requests (MRTR) for elicitation/sampling, cacheable list results (ttlMs/cacheScope), OAuth 2.1 + RFC 8707 resource indicators + RFC 9207 issuer validation, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server.",
+      "latest": "2.0.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T19:19:40Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/mcp-architect@v1.0.0/mcp-architect-v1.0.0.tar.gz"
+        },
+        "2.0.0": {
+          "version": "2.0.0",
+          "published_at": "2026-08-10T20:56:19Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/mcp-architect@v2.0.0/mcp-architect-v2.0.0.tar.gz"
         }
       }
     },
