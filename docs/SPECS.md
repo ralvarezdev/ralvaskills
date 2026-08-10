@@ -126,7 +126,8 @@ ralvaskills/                          # current state — (📋) marks planned a
 ├── skills/                           # all reusable local skills
 │   ├── languages/
 │   │   ├── go-architect/             # ✅ exists — Go 1.26 audit complete (v1.0.0); has STACK.md
-│   │   └── python-architect/         # ✅ exists — Python 3.14 audit complete (v1.0.0); has STACK.md
+│   │   ├── python-architect/         # ✅ exists — Python 3.14 audit complete (v1.0.0); has STACK.md
+│   │   └── latex-architect/          # ✅ exists (v1.0.0 — TeX Live 2026, latexmk-only builds, package-order discipline, biblatex+biber with natbib carve-out, cleveref/siunitx/booktabs, chktex+latexindent gates); has STACK.md
 │   ├── databases/
 │   │   └── sql-architect/            # ✅ exists (v1.0.0 — PG 18 primary, MySQL/SQLite notes)
 │   ├── frameworks/
@@ -168,6 +169,8 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   └── performance-reviewer/     # ✅ exists (v1.0.0 — N+1, blocking I/O, allocation hot paths; measurement-grounded)
 │   ├── frontend/
 │   │   └── ui-ux-architect/          # ✅ exists (v1.0.0 — WCAG 2.2 AA, Radix + Tailwind 4, design tokens, four-state UI discipline)
+│   ├── academic/                     # ✅ category — research-publication formats (venue-specific, not institution-specific)
+│   │   └── ml-conference-paper-architect/  # ✅ exists (v1.0.0 — NeurIPS/ICML/ICLR/AAAI; style-file usage, anonymization, page-limit accounting, natbib, reproducibility checklists; layers on latex-architect); has STACK.md + assets/
 │   ├── workflows/
 │   │   ├── commit-author/            # ✅ exists
 │   │   ├── tdd/                      # ✅ exists
@@ -364,6 +367,7 @@ This table is a **heuristic keyed on the skill's parent folder name** — it's n
 | `infra/` | ✅ Yes | Docker, compose spec, GitHub Actions runner versions |
 | `robotics/` | ✅ Yes | ROS2 distro (Jazzy, Kilted, etc.) |
 | `frontend/` | ✅ Yes | React, Next.js versions evolve quickly |
+| `academic/` | ✅ Yes | Venue style files are reissued annually — the pinned template year is the drift signal that matters before a deadline |
 | `design/` | ❌ No | Architectural patterns are version-agnostic |
 | `quality/` | ❌ No | Security/performance principles don't change with versions — add one if the skill references framework-specific vulnerability patterns |
 | `workflows/` | ❌ No | Workflow skills are tool/language agnostic |
@@ -1119,6 +1123,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | Skill | Status | Notes |
 |---|---|---|
 | `go-architect` | ✅ | v1.0.0 — Go 1.26 audit complete; `STACK.md` pinned (viper, validator, cobra, gin, sqlx, grpc, protobuf-go, testify, fx, migrate, buf); enforces `sqlx + //go:embed` over ORM, `log/slog` over zap |
+| `latex-architect` | ✅ | v1.0.0 — TeX Live 2026, pdfLaTeX default (LuaLaTeX switch criterion), **`latexmk` as the only build entry point** with committed `.latexmkrc`, one-file-per-section layout, load-bearing package order (`mathtools` after `amsmath`, `hyperref` second-to-last, `cleveref` last), semantic markup (`\cref` over hand-written `Figure~\ref`, `siunitx`, `booktabs`, `\label` after `\caption`), **`biblatex`+`biber` default with an explicit `natbib` carve-out for venue templates**, `chktex`+`latexindent` gates, one-sentence-per-line source, banned-construct table (`$$`, `eqnarray`, `\hline`, `subfigure`, `\bf`, `\sloppy`). Beamer explicitly out of scope. `STACK.md` pinned (latexmk 4.88, biber 2.21, biblatex 3.21, tectonic 0.17.0, latexindent 4.0.2, chktex 1.7.10) |
 | `python-architect` | ✅ | v1.0.0 — Python 3.14 audit complete; `STACK.md` pinned (pydantic, fastapi, uvicorn, httpx, pytest 9, mypy 2, ruff, uv, typer, psycopg 3, alembic); enforces `psycopg + .sql files via importlib.resources` over ORM, `mypy --strict` baseline |
 
 #### Databases
@@ -1197,6 +1202,11 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | Skill | Status | Notes |
 |---|---|---|
 | `ui-ux-architect` | ✅ | v1.0.0 — WCAG 2.2 AA mandatory, Radix primitives + Tailwind 4 + shadcn/ui recipes, OKLCH-based design tokens with semantic naming + dark mode, mobile-first + container queries, **four required states** (loading/error/empty/success) on every async surface, `prefers-reduced-motion` respected, `axe-core` + Lighthouse a11y ≥ 95 in CI |
+
+#### Academic
+| Skill | Status | Notes |
+|---|---|---|
+| `ml-conference-paper-architect` | ✅ | v1.0.0 — NeurIPS / ICML / ICLR / AAAI submissions. **CFP-over-skill rule** (every page limit and checklist requirement is revised annually; never hand-copy a previous year's `.sty`), venue matrix with per-venue final-mode toggles (`[final]` / `[accepted]` / `\iclrfinalcopy` / `\pdfinfo`), AAAI called out as the constrained outlier (banned packages, Type 1 fonts, mechanical format checker), anonymization discipline (third-person self-citation, PDF metadata stripping, figure provenance), page-limit accounting with the shrink-hacks-are-violations rule, canonical paper skeleton with contributions list + mandatory ablations + honest limitations, `natbib` per venue `.bst`, reproducibility checklist honesty, appendix-must-not-be-load-bearing. Layers on `latex-architect`; `assets/VENUE_TEMPLATES.md` holds official sources + the classic NIPS 2017 look as a labeled approximation (style files deliberately not vendored). `STACK.md` tracks venue template years as a staleness marker |
 
 #### Workflows
 | Skill | Status | Notes |
