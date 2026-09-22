@@ -54,6 +54,21 @@ Read-only views:
 Use 'rsk <command> --help' for command-specific help.`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		if !ui.IsTTY() {
+			return printHome(cmd)
+		}
+		return ui.RunPicker(cmd.Commands(), cmd.OutOrStdout())
+	},
+}
+
+// printHome prints the plain banner + cobra help shown for a bare `rsk`
+// invocation outside a TTY (pipes, CI, scripts).
+func printHome(cmd *cobra.Command) error {
+	if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.Banner()); err != nil {
+		return fmt.Errorf("write banner: %w", err)
+	}
+	return cmd.Help()
 }
 
 //nolint:gochecknoinits // init() used for root command setup
