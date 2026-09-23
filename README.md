@@ -100,7 +100,7 @@ Three rungs from expression-level polish to system-level architecture, plus a sk
 Skills about authoring/operating the toolkit itself, plus communication modes that aren't really workflows.
 
 - **`skill-builder`** — Meta-skill that scaffolds new ralvaskills skills per SPECS.md (SKILL.md skeleton, optional STACK/RECIPES, folder placement, SPECS updates). Interview-first.
-- **`rsk-guide`** — Quick reference for the `rsk` CLI (in progress): discover, install, update, check ralvaskills bundles and skills.
+- **`rsk-guide`** — Quick reference for the `rsk` CLI: discover, install, update, check ralvaskills bundles and skills.
 - **`caveman`** — Ultra-compressed communication mode that reduces token usage by ~75% while preserving technical accuracy.
 
 ### `personal/` — author-specific, not bundle-installable
@@ -119,12 +119,13 @@ These are personal to me and excluded from bundle installs. Listed here for tran
 
 ---
 
-## `rsk` CLI (in progress)
+## `rsk` CLI
 
-A Go CLI is in development to manage skill installation across projects without copy-pasting folders. Tracked in [`docs/SPECS.md`](docs/SPECS.md).
+A Go CLI that manages skill installation across projects without copy-pasting folders. Tracked in [`docs/SPECS.md`](docs/SPECS.md). Latest release: [`v2.0.0`](https://github.com/ralvarezdev/ralvaskills/releases/tag/v2.0.0).
 
 ```
 go install github.com/ralvarezdev/ralvaskills/cmd/rsk@latest
+# or grab a prebuilt binary from the Releases page
 
 # Machine setup (once)
 rsk init                                  # configure source, tools, global dirs
@@ -150,9 +151,16 @@ rsk update [name]                         # pull latest and re-link
 rsk uninstall <name>                      # remove (cleans manifest in project scope)
 rsk pin <name> / rsk unpin <name>         # toggle auto-load in CLAUDE.md / opencode.json
 rsk destroy                               # remove .rsk/ and tool config entries
+
+# Claude Code tool permissions
+rsk claude tools list                     # current permissions for this project
+rsk claude tools allow <rule>             # allow a tool
+rsk claude tools deny <rule>              # deny a tool
 ```
 
-Until shipped, use the manual installation steps below.
+### Interactive mode
+
+Running `rsk` with no arguments and a real terminal opens an interactive picker instead of printing help: a nested menu (`enter` descends into a group like `claude tools`, `esc`/`q` backs out), and any command that takes flags or positional arguments shows a short parameter form — fill it in, confirm, and it runs inline, returning to the picker afterward. Non-interactive contexts (pipes, CI) fall back to the plain `--help` output.
 
 ---
 
