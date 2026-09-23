@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -26,19 +27,27 @@ func (i PickerItem) Description() string { return i.Cmd.Short }
 // FilterValue implements list.Item.
 func (i PickerItem) FilterValue() string { return i.Cmd.Name() }
 
-// pickerModel drives the top-level command list. Enter selects and quits;
-// ctrl+c/q/esc cancel and quit.
+// commandFinishedMsg reports the outcome of the most recently run command, so
+// the menu can surface it without interrupting the dashboard loop.
+type commandFinishedMsg struct {
+	name string
+	err  error
+}
+
+// pickerModel drives the top-level command list. Enter runs the selected
+// command inline (releasing the terminal so it can print/prompt normally)
+// and returns to the menu afterward; ctrl+c/q/esc leave the picker.
 type pickerModel struct {
 	list          list.Model
-	selected      *cobra.Command
 	cancelled     bool
+	lastRun       string
+	lastErr       error
 	cap           Capability
 	width, height int
 }
 
-// NewPicker builds a Bubble Tea program that lets the user pick one of
-// cmds' visible, runnable subcommands. Run it and inspect the returned
-// PickedCommand and PickerCancelled.
+// NewPicker builds a Bubble Tea program that lets the user pick and run one
+// of cmds' visible subcommands, returning to the same menu after each run.
 func NewPicker(cmds []*cobra.Command, in io.Reader, out io.Writer) *tea.Program {
 	model := newPickerModel(cmds)
 	return tea.NewProgram(model, tea.WithAltScreen(), tea.WithInput(in), tea.WithOutput(out))
@@ -108,25 +117,28 @@ func (m *pickerModel) Init() tea.Cmd { return nil }
 // the list, but only while the user is not filtering — while filtering, enter
 // applies the filter rather than choosing a row.
 func (m *pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if size, isResize := msg.(tea.WindowSizeMsg); isResize {
-		m.width, m.height = size.Width, size.Height
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width, m.height = msg.Width, msg.Height
 		m.fit()
 		return m, nil
-	}
 
-	key, isKey := msg.(tea.KeyMsg)
-	if isKey && m.list.FilterState() != list.Filtering {
-		switch key.String() {
-		case "ctrl+c", "q":
-			m.cancelled = true
-			return m, tea.Quit
-		case "esc":
-			m.cancelled = true
-			return m, tea.Quit
-		case "enter":
-			if item, ok := m.list.SelectedItem().(PickerItem); ok {
-				m.selected = item.Cmd
+	case commandFinishedMsg:
+		m.lastRun, m.lastErr = msg.name, msg.err
+		return m, nil
+
+	case tea.KeyMsg:
+		if m.list.FilterState() != list.Filtering {
+			switch msg.String() {
+			case "ctrl+c":
+				m.cancelled = true
 				return m, tea.Quit
+			case "q", "esc":
+				return m, tea.Quit
+			case "enter":
+				if item, ok := m.list.SelectedItem().(PickerItem); ok {
+					return m, m.runSelected(item.Cmd)
+				}
 			}
 		}
 	}
@@ -138,7 +150,15 @@ func (m *pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View implements tea.Model.
 func (m *pickerModel) View() string {
-	return m.cap.Header(m.width, m.height) + "\n" + m.list.View()
+	view := m.cap.Header(m.width, m.height) + "\n" + m.list.View()
+	if m.lastRun == "" {
+		return view
+	}
+	if m.lastErr != nil {
+		return view + "\n" + m.cap.paint(fmt.Sprintf("last run: %s — %s", m.lastRun, m.lastErr),
+			lipgloss.NewStyle().Foreground(ColorDanger))
+	}
+	return view + "\n" + m.cap.muted(fmt.Sprintf("last run: %s — ok", m.lastRun))
 }
 
 // fit sizes the list to the terminal minus the header.
@@ -147,37 +167,75 @@ func (m *pickerModel) fit() {
 	m.list.SetSize(m.width, max(m.height-used, minPickerListHeight))
 }
 
-// RunPicker launches the interactive command picker over cmds and, on a
-// selection, either runs it (when it takes no positional args) or prints its
-// help (when it does, since huh-based prompting inside each command already
-// covers the args it needs — the picker does not try to collect them itself).
-// Returns ui.ErrAborted if the user cancels.
-func RunPicker(cmds []*cobra.Command, out io.Writer) error {
-	program := NewPicker(cmds, os.Stdin, out)
+// runSelected releases the terminal to run cmd inline — with real stdin/
+// stdout, so its own prompts and output work exactly as they would outside
+// the picker — then restores the picker once the user acknowledges the
+// result, instead of exiting the program.
+func (m *pickerModel) runSelected(cmd *cobra.Command) tea.Cmd {
+	return tea.Exec(&commandExec{cmd: cmd}, func(err error) tea.Msg {
+		return commandFinishedMsg{name: cmd.Name(), err: err}
+	})
+}
 
-	final, err := program.Run()
+// commandExec adapts a cobra.Command to tea.ExecCommand so tea.Exec can run
+// it with the terminal released, then pauses for a keypress before handing
+// the terminal back to the picker so the user has time to read the output.
+type commandExec struct {
+	cmd         *cobra.Command
+	in          io.Reader
+	out, errOut io.Writer
+}
+
+func (c *commandExec) SetStdin(r io.Reader) {
+	if c.in == nil {
+		c.in = r
+	}
+}
+
+func (c *commandExec) SetStdout(w io.Writer) {
+	if c.out == nil {
+		c.out = w
+	}
+}
+
+func (c *commandExec) SetStderr(w io.Writer) {
+	if c.errOut == nil {
+		c.errOut = w
+	}
+}
+
+func (c *commandExec) Run() error {
+	c.cmd.SetIn(c.in)
+	c.cmd.SetOut(c.out)
+	c.cmd.SetErr(c.errOut)
+
+	fmt.Fprintf(c.out, "\n$ rsk %s\n\n", c.cmd.Name())
+	err := c.runCommand()
 	if err != nil {
-		return fmt.Errorf("run picker: %w", err)
+		fmt.Fprintf(c.out, "\nrsk: %s\n", err)
 	}
 
-	result, ok := final.(*pickerModel)
-	if !ok || result.cancelled || result.selected == nil {
-		return ErrAborted
-	}
+	fmt.Fprint(c.out, "\n(press enter to return to the menu)")
+	bufio.NewReader(c.in).ReadString('\n')
+	return err
+}
 
-	selected := result.selected
-	if len(selected.Commands()) > 0 || takesArgs(selected) {
-		return selected.Help()
+// runCommand runs c.cmd if it takes no positional arguments, or prints its
+// help otherwise — the picker doesn't collect arguments itself, since
+// commands like install/uninstall already prompt for what they need via
+// their own huh-based flows when run directly.
+func (c *commandExec) runCommand() error {
+	if len(c.cmd.Commands()) > 0 || takesArgs(c.cmd) {
+		return c.cmd.Help()
 	}
-
-	if selected.RunE != nil {
-		return selected.RunE(selected, nil)
+	if c.cmd.RunE != nil {
+		return c.cmd.RunE(c.cmd, nil)
 	}
-	if selected.Run != nil {
-		selected.Run(selected, nil)
+	if c.cmd.Run != nil {
+		c.cmd.Run(c.cmd, nil)
 		return nil
 	}
-	return selected.Help()
+	return c.cmd.Help()
 }
 
 // takesArgs reports whether cmd expects positional arguments, based on its
@@ -195,4 +253,22 @@ func takesArgs(cmd *cobra.Command) bool {
 		}
 	}
 	return false
+}
+
+// RunPicker launches the interactive command picker over cmds. The user can
+// run any number of commands inline before leaving; q/esc exit cleanly
+// (exit 0), while ctrl+c is treated as an abort (exit 130, SIGINT
+// convention) via ui.ErrAborted.
+func RunPicker(cmds []*cobra.Command, out io.Writer) error {
+	program := NewPicker(cmds, os.Stdin, out)
+
+	final, err := program.Run()
+	if err != nil {
+		return fmt.Errorf("run picker: %w", err)
+	}
+
+	if result, ok := final.(*pickerModel); ok && result.cancelled {
+		return ErrAborted
+	}
+	return nil
 }
