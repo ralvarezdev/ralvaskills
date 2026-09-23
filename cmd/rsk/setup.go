@@ -10,6 +10,9 @@ func setupCommands() {
 	f.Bool(cmdx.FlagStack, false, "Fetch and display dependency metadata alongside skills")
 	f.Bool(cmdx.FlagBundles, false, "Show bundles instead of individual skills")
 	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in output")
+	f.String(cmdx.FlagBundle, "", "List the skills inside a single bundle")
+	f.String(cmdx.FlagSource, "", "Filter by source: local|official")
+	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
 
 	// claude command and subcommands
 	rootCmd.AddCommand(claudeCmd)
@@ -43,9 +46,12 @@ func setupCommands() {
 	f.Bool(cmdx.FlagGlobal, false, "List global skills")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
 	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in output")
+	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
 
 	// new command
 	rootCmd.AddCommand(newCmd)
+	f = newCmd.Flags()
+	f.String(cmdx.FlagFor, "", "Tools to configure: claude-code|opencode|all")
 
 	// pin and unpin commands
 	rootCmd.AddCommand(pinCmd)
@@ -66,6 +72,7 @@ func setupCommands() {
 	f = uninstallCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "Uninstall from the configured global skills dir(s)")
 	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
+	f.Bool(cmdx.FlagPersonal, false, "Allow uninstalling personal/ skills")
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be uninstalled without doing it")
 
 	// update command
@@ -73,6 +80,7 @@ func setupCommands() {
 	f = updateCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "Update global skills")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
+	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in the update")
 	f.Bool(cmdx.FlagOfficial, false, "Sync the official skill cache")
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be updated without doing it")
 }

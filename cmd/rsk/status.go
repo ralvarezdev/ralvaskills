@@ -90,9 +90,15 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
 	}
 
-	rskDir, err := manifest.ProjectFolderPath()
-	if err != nil {
-		return err
+	// --global means "report on the global install only" — no project
+	// (rsk.mod) needs to exist in the current directory, so skip resolving
+	// it entirely, matching how resolveTargetDirs branches for list/install.
+	var rskDir string
+	if !opts.global {
+		rskDir, err = manifest.ProjectFolderPath()
+		if err != nil {
+			return err
+		}
 	}
 
 	catalog, catalogWarn := config.LoadCatalog("")

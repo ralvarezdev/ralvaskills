@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"runtime/debug"
 
 	"github.com/spf13/cobra"
 
@@ -73,12 +74,44 @@ func printHome(cmd *cobra.Command) error {
 
 //nolint:gochecknoinits // init() used for root command setup
 func init() {
+	// go install and plain `go build` skip -ldflags, so version/commit/buildDate
+	// stay at their zero-value defaults; fall back to the module/VCS info Go
+	// embeds in the binary so `--version` isn't stuck reporting "dev/none/unknown".
+	if version == "dev" {
+		version, commit, buildDate = buildInfoFallback(version, commit, buildDate)
+	}
+
 	rootCmd.Version = fmt.Sprintf(
 		"%s (rev %s, built %s, %s)",
 		version, commit, buildDate, runtime.Version(),
 	)
 	rootCmd.SetVersionTemplate("rsk {{.Version}}\n")
 	setupCommands()
+}
+
+// buildInfoFallback fills in version/commit/buildDate from runtime/debug's
+// build info when the ldflags-injected defaults were never overridden, i.e.
+// the binary wasn't produced by the release pipeline (e.g. `go install ...@latest`).
+func buildInfoFallback(version, commit, buildDate string) (string, string, string) {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return version, commit, buildDate
+	}
+
+	if info.Main.Version != "" && info.Main.Version != "(devel)" {
+		version = info.Main.Version
+	}
+
+	for _, setting := range info.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			commit = setting.Value
+		case "vcs.time":
+			buildDate = setting.Value
+		}
+	}
+
+	return version, commit, buildDate
 }
 
 // Execute runs the root command and exits on error.

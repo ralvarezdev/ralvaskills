@@ -3,11 +3,17 @@ package source
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
+	rskgit "github.com/ralvarezdev/ralvaskills/internal/git"
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 )
+
+// OfficialSkillsURL is the GitHub URL for the anthropics/skills repo used as
+// the source for official skills, in both local-clone and registry mode.
+const OfficialSkillsURL = "https://github.com/anthropics/skills"
 
 // Official resolves skills from the cached anthropic/skills clone.
 type Official struct {
@@ -43,15 +49,28 @@ func (o *Official) All(ctx context.Context) ([]skill.Skill, error) {
 	return o.fs.all(ctx)
 }
 
-// Find returns the official skill with the given name. Returns a descriptive
-// error if the cache directory does not exist, prompting the user to run
-// "rsk update --official".
+// Find returns the official skill with the given name. If the local
+// anthropics/skills cache has never been fetched, it is cloned on demand
+// (the same clone "rsk update --official" performs) so a fresh machine can
+// install official skills on first try, regardless of local-clone vs
+// registry mode.
 func (o *Official) Find(ctx context.Context, name string) (skill.Skill, error) {
-	if _, err := os.Stat(o.fs.root); os.IsNotExist(err) {
-		return skill.Skill{}, fmt.Errorf(
-			"%w: official skill %q — cache not found; run 'rsk update --official' to fetch it",
-			ErrNotFound, name,
-		)
+	if err := o.ensureCache(ctx); err != nil {
+		return skill.Skill{}, fmt.Errorf("fetch official skills cache: %w", err)
 	}
 	return o.fs.find(ctx, name)
+}
+
+// ensureCache clones the anthropics/skills repo into the cache directory if
+// it has not been fetched yet. No-op if the cache is already present.
+func (o *Official) ensureCache(ctx context.Context) error {
+	_, err := os.Stat(o.fs.root)
+	switch {
+	case err == nil:
+		return nil
+	case os.IsNotExist(err):
+		return rskgit.Clone(ctx, OfficialSkillsURL, o.fs.root, io.Discard)
+	default:
+		return err
+	}
 }

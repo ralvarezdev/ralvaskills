@@ -53,6 +53,7 @@ type (
 		Name      string `json:"name"`
 		Version   string `json:"version,omitempty"`
 		Source    string `json:"source,omitempty"`
+		Tool      string `json:"tool,omitempty"`
 		Installed bool   `json:"installed"`
 		Pinned    bool   `json:"pinned,omitempty"`
 		Path      string `json:"path,omitempty"`
@@ -163,6 +164,15 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 		return err
 	}
 
+	// resolveTargetDirs returns bare directories, so map each one back to
+	// its owning tool ID (via cfg.GlobalTargets) to label rows below —
+	// otherwise a skill installed for multiple tools prints as indistinguishable
+	// duplicate rows.
+	dirToTool := make(map[string]string, len(cfg.GlobalTargets))
+	for toolID, dir := range cfg.GlobalTargets {
+		dirToTool[dir] = toolID
+	}
+
 	var rows []listedSkill
 	for _, target := range targets {
 		entries, scanErr := scanLinked(target, cfg.RepoPath, cfg.OfficialCache, cfg.RegistryCache(), nil, false)
@@ -175,6 +185,7 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 				Name:      e.name,
 				Version:   e.version,
 				Source:    e.source.String(),
+				Tool:      dirToTool[target],
 				Installed: true,
 			})
 		}
@@ -185,7 +196,12 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 		return nil
 	}
 
-	sort.Slice(rows, func(i, j int) bool { return rows[i].Name < rows[j].Name })
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].Tool != rows[j].Tool {
+			return rows[i].Tool < rows[j].Tool
+		}
+		return rows[i].Name < rows[j].Name
+	})
 
 	if opts.output == outputJSON {
 		return writeJSON(out, rows)
@@ -200,14 +216,18 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 
 func printGlobalListTable(out io.Writer, rows []listedSkill) {
 	names := make([]string, len(rows))
+	tools := make([]string, len(rows))
 	for i, r := range rows {
 		names[i] = r.Name
+		tools[i] = r.Tool
 	}
 	nameWidth := ui.MaxWidth(names)
+	toolWidth := ui.MaxWidth(tools)
 
 	for _, r := range rows {
-		fmt.Fprintf(out, "  %s  %s  %s\n",
+		fmt.Fprintf(out, "  %s  %s  %s  %s\n",
 			ui.SourceLabel(skill.Source(r.Source)),
+			ui.PadRight(r.Tool, toolWidth),
 			ui.PadRight(ui.SkillName(r.Name), nameWidth),
 			ui.SkillVersion(r.Version),
 		)

@@ -23,10 +23,13 @@ builds:
       - goos: windows
         goarch: arm64
     ldflags:
+      # -X targets vars in package main by "main.<name>", not the module's
+      # full import path — the full path silently no-ops for package main,
+      # which meant these were never actually injected into release builds.
       - -s -w
-      - -X github.com/ralvarezdev/ralvaskills/cmd/rsk.version={{ .Version }}
-      - -X github.com/ralvarezdev/ralvaskills/cmd/rsk.commit={{ .ShortCommit }}
-      - -X github.com/ralvarezdev/ralvaskills/cmd/rsk.buildDate={{ .Date }}
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .ShortCommit }}
+      - -X main.buildDate={{ .Date }}
 
 archives:
   - id: rsk

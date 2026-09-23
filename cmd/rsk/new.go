@@ -15,8 +15,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 )
 
-var newProjectFor string
-
 var newCmd = &cobra.Command{
 	Use:   "new",
 	Short: "Initialize an rsk project in the current directory.",
@@ -53,7 +51,7 @@ func toolsFromFlag(flag string) ([]tool.ID, error) {
 func runNew(cmd *cobra.Command, _ []string) error {
 	out := cmd.OutOrStdout()
 
-	forFlag := newProjectFor
+	forFlag := cmdx.String(cmd, cmdx.FlagFor)
 	if !cmd.Flags().Changed(cmdx.FlagFor) {
 		choices := []string{string(tool.ClaudeID), string(tool.OpenCodeID), cmdx.ForAll}
 		idx, err := ui.Select(out, "Tools to configure", choices, 0)
@@ -97,7 +95,7 @@ func runNew(cmd *cobra.Command, _ []string) error {
 		}
 
 		if len(added) == 0 {
-			ui.Info(out, "rsk project already configured for "+newProjectFor)
+			ui.Info(out, "rsk project already configured for "+forFlag)
 			return nil
 		}
 
@@ -132,9 +130,9 @@ func runNew(cmd *cobra.Command, _ []string) error {
 
 	fmt.Fprintln(out)
 	if isNew {
-		ui.Success(out, "initialized .rsk/ for "+newProjectFor)
+		ui.Success(out, "initialized .rsk/ for "+forFlag)
 	} else {
-		ui.Success(out, "updated .rsk/ for "+newProjectFor)
+		ui.Success(out, "updated .rsk/ for "+forFlag)
 	}
 	ui.Indent(out, "Run 'rsk install <name>' to add skills to this project.")
 	fmt.Fprintln(out)
