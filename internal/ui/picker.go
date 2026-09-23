@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -306,6 +307,18 @@ func (c *commandExec) Run() error {
 	c.cmd.SetIn(c.in)
 	c.cmd.SetOut(c.out)
 	c.cmd.SetErr(c.errOut)
+	// RunE is invoked directly below, bypassing cobra's own Find/execute
+	// path that normally propagates the root's context onto whichever
+	// command it dispatches to — so c.cmd.Context() would otherwise stay
+	// nil and any RunE that calls cmd.Context() (e.g. to build an HTTP
+	// request) would panic.
+	if c.cmd.Context() == nil {
+		ctx := c.cmd.Root().Context()
+		if ctx == nil {
+			ctx = context.Background()
+		}
+		c.cmd.SetContext(ctx)
+	}
 
 	fmt.Fprintf(c.out, "\n$ rsk %s\n\n", c.cmd.Name())
 	err := c.runCommand()
