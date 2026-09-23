@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -17,6 +18,14 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
 	updatecheck "github.com/ralvarezdev/ralvaskills/internal/update"
 )
+
+// updatePair is a skill with a newer version available in the registry.
+type updatePair struct {
+	name      string
+	installed string
+	latest    string
+	newSkill  skill.Skill
+}
 
 var updateCmd = &cobra.Command{
 	Use:   "update [name...] [flags]",
@@ -332,12 +341,6 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 	}
 
 	// Find skills with a newer version available.
-	type updatePair struct {
-		name      string
-		installed string
-		latest    string
-		newSkill  skill.Skill
-	}
 	var toUpdate []updatePair
 
 	for _, name := range namesToCheck {
@@ -363,18 +366,8 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 		})
 	}
 
-	// Refresh the passive update-availability cache with what we just
-	// computed, so the next bare `rsk` invocation reflects the truth
-	// immediately rather than waiting on the background worker.
-	outdatedNames := make([]string, len(toUpdate))
-	for i, u := range toUpdate {
-		outdatedNames[i] = u.name
-	}
-	if cacheErr := updatecheck.Save(cfg, updatecheck.Result{Mode: updatecheck.ModeRegistry, Outdated: outdatedNames}); cacheErr != nil {
-		ui.Warn(out, fmt.Sprintf("update-check cache: %v", cacheErr))
-	}
-
 	if len(toUpdate) == 0 {
+		saveUpdateCache(out, cfg, nil)
 		ui.Info(out, "All installed skills are up to date.")
 		return nil
 	}
@@ -402,17 +395,21 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 	fmt.Fprintln(out)
 
 	if opts.dryRun {
+		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
 		return nil
 	}
 
 	if !ui.ConfirmYN(out, "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
+		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
 		return nil
 	}
 	fmt.Fprintln(out)
 
 	var failed int
+	var failedNames []string
 	for _, u := range toUpdate {
+		skillFailed := false
 		for _, target := range targets {
 			if !skill.IsLinked(u.name, target) {
 				continue
@@ -420,6 +417,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 			if linkErr := skill.Link(u.newSkill, target); linkErr != nil {
 				ui.Failf(errOut, "re-link %s: %v", u.name, linkErr)
 				failed++
+				skillFailed = true
 			} else {
 				ui.Success(out, fmt.Sprintf("%s  %s  %s  %s",
 					ui.SkillName(u.name),
@@ -429,7 +427,16 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 				))
 			}
 		}
+		if skillFailed {
+			failedNames = append(failedNames, u.name)
+		}
 	}
+
+	// Refresh the passive update-availability cache with the actual outcome —
+	// after this point only skills that failed to re-link are still
+	// outdated — so the next bare `rsk` invocation reflects the truth
+	// immediately rather than waiting on the background worker.
+	saveUpdateCache(out, cfg, failedNames)
 
 	if failed > 0 {
 		return fmt.Errorf("%d skill(s) failed to update", failed)
@@ -445,4 +452,24 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 	fmt.Fprintln(out)
 	ui.Success(out, "Update complete.")
 	return nil
+}
+
+// updatePairNames extracts the skill names from toUpdate, for caching the
+// update-availability state when nothing was actually applied (dry-run or
+// an aborted confirm).
+func updatePairNames(toUpdate []updatePair) []string {
+	names := make([]string, len(toUpdate))
+	for i, u := range toUpdate {
+		names[i] = u.name
+	}
+	return names
+}
+
+// saveUpdateCache refreshes the passive update-availability cache with
+// outdated, warning (not failing) on error since this is best-effort.
+func saveUpdateCache(out io.Writer, cfg config.Config, outdated []string) {
+	result := updatecheck.Result{Mode: updatecheck.ModeRegistry, Outdated: outdated}
+	if cacheErr := updatecheck.Save(cfg, result); cacheErr != nil {
+		ui.Warn(out, fmt.Sprintf("update-check cache: %v", cacheErr))
+	}
 }
