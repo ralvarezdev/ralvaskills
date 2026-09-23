@@ -44,22 +44,26 @@ type pickerModel struct {
 	lastErr       error
 	cap           Capability
 	width, height int
+	notice        string
 }
 
 // NewPicker builds a Bubble Tea program that lets the user pick and run one
 // of cmds' visible subcommands, returning to the same menu after each run.
-func NewPicker(cmds []*cobra.Command, in io.Reader, out io.Writer) *tea.Program {
-	model := newPickerModel(cmds)
+// notice, when non-empty, is shown above the list — e.g. an
+// updates-available flag — and may be "".
+func NewPicker(cmds []*cobra.Command, in io.Reader, out io.Writer, notice string) *tea.Program {
+	model := newPickerModel(cmds, notice)
 	return tea.NewProgram(model, tea.WithAltScreen(), tea.WithInput(in), tea.WithOutput(out))
 }
 
-func newPickerModel(cmds []*cobra.Command) *pickerModel {
+func newPickerModel(cmds []*cobra.Command, notice string) *pickerModel {
 	capa := NewCapability()
 	m := &pickerModel{
 		list:   newPickerList(cmds, capa),
 		cap:    capa,
 		width:  defaultPickerWidth,
 		height: defaultPickerHeight,
+		notice: notice,
 	}
 	m.fit()
 	return m
@@ -150,7 +154,11 @@ func (m *pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View implements tea.Model.
 func (m *pickerModel) View() string {
-	view := m.cap.Header(m.width, m.height) + "\n" + m.list.View()
+	view := m.cap.Header(m.width, m.height)
+	if m.notice != "" {
+		view += "\n" + m.cap.paint(m.notice, lipgloss.NewStyle().Foreground(ColorWarning).Bold(true))
+	}
+	view += "\n" + m.list.View()
 	if m.lastRun == "" {
 		return view
 	}
@@ -161,9 +169,12 @@ func (m *pickerModel) View() string {
 	return view + "\n" + m.cap.muted(fmt.Sprintf("last run: %s — ok", m.lastRun))
 }
 
-// fit sizes the list to the terminal minus the header.
+// fit sizes the list to the terminal minus the header (and notice, if any).
 func (m *pickerModel) fit() {
 	used := lipgloss.Height(m.cap.Header(m.width, m.height))
+	if m.notice != "" {
+		used++
+	}
 	m.list.SetSize(m.width, max(m.height-used, minPickerListHeight))
 }
 
@@ -258,9 +269,10 @@ func takesArgs(cmd *cobra.Command) bool {
 // RunPicker launches the interactive command picker over cmds. The user can
 // run any number of commands inline before leaving; q/esc exit cleanly
 // (exit 0), while ctrl+c is treated as an abort (exit 130, SIGINT
-// convention) via ui.ErrAborted.
-func RunPicker(cmds []*cobra.Command, out io.Writer) error {
-	program := NewPicker(cmds, os.Stdin, out)
+// convention) via ui.ErrAborted. notice, when non-empty, is shown above the
+// list (e.g. an updates-available flag).
+func RunPicker(cmds []*cobra.Command, out io.Writer, notice string) error {
+	program := NewPicker(cmds, os.Stdin, out, notice)
 
 	final, err := program.Run()
 	if err != nil {

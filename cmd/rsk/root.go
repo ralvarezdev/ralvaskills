@@ -56,16 +56,23 @@ Use 'rsk <command> --help' for command-specific help.`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	RunE: func(cmd *cobra.Command, _ []string) error {
+		notice := updateNotice()
+		maybeSpawnUpdateCheck()
+
 		if !ui.IsTTY() {
-			return printHome(cmd)
+			return printHome(cmd, notice)
 		}
-		return ui.RunPicker(cmd.Commands(), cmd.OutOrStdout())
+		return ui.RunPicker(cmd.Commands(), cmd.OutOrStdout(), notice)
 	},
 }
 
 // printHome prints the plain banner + cobra help shown for a bare `rsk`
-// invocation outside a TTY (pipes, CI, scripts).
-func printHome(cmd *cobra.Command) error {
+// invocation outside a TTY (pipes, CI, scripts). notice, when non-empty, is
+// an updates-available flag printed above the banner.
+func printHome(cmd *cobra.Command, notice string) error {
+	if notice != "" {
+		ui.Warn(cmd.OutOrStdout(), notice)
+	}
 	if _, err := fmt.Fprintln(cmd.OutOrStdout(), ui.Banner()); err != nil {
 		return fmt.Errorf("write banner: %w", err)
 	}

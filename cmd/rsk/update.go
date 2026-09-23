@@ -15,6 +15,7 @@ import (
 	"github.com/ralvarezdev/ralvaskills/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/internal/source"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
+	updatecheck "github.com/ralvarezdev/ralvaskills/internal/update"
 )
 
 var updateCmd = &cobra.Command{
@@ -121,6 +122,13 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 	ui.Info(out, fmt.Sprintf("Pulling %s …", cfg.RepoPath))
 	if err := rskgit.Pull(ctx, cfg.RepoPath, out); err != nil {
 		return fmt.Errorf("git pull (local repo): %w", err)
+	}
+
+	// The clone is now current with its remote — refresh the passive
+	// update-availability cache so the next bare `rsk` invocation reflects
+	// that immediately rather than waiting on the background worker.
+	if cacheErr := updatecheck.Save(cfg, updatecheck.Result{Mode: updatecheck.ModeLocal}); cacheErr != nil {
+		ui.Warn(out, fmt.Sprintf("update-check cache: %v", cacheErr))
 	}
 
 	if needsOfficial {
@@ -338,7 +346,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 			continue
 		}
 		// Determine installed version from symlink target path.
-		installedVer := installedVersionFromTargets(name, targets, cfg.RegistryCache())
+		installedVer := updatecheck.InstalledVersionFromTargets(name, targets, cfg.RegistryCache())
 		if installedVer == entry.Latest {
 			continue
 		}
@@ -353,6 +361,17 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 			latest:    entry.Latest,
 			newSkill:  s,
 		})
+	}
+
+	// Refresh the passive update-availability cache with what we just
+	// computed, so the next bare `rsk` invocation reflects the truth
+	// immediately rather than waiting on the background worker.
+	outdatedNames := make([]string, len(toUpdate))
+	for i, u := range toUpdate {
+		outdatedNames[i] = u.name
+	}
+	if cacheErr := updatecheck.Save(cfg, updatecheck.Result{Mode: updatecheck.ModeRegistry, Outdated: outdatedNames}); cacheErr != nil {
+		ui.Warn(out, fmt.Sprintf("update-check cache: %v", cacheErr))
 	}
 
 	if len(toUpdate) == 0 {
@@ -426,29 +445,4 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 	fmt.Fprintln(out)
 	ui.Success(out, "Update complete.")
 	return nil
-}
-
-// installedVersionFromTargets reads the symlink target for name in each target dir
-// and extracts the version segment from a registry cache path.
-func installedVersionFromTargets(name string, targets []string, registryCacheDir string) string {
-	for _, target := range targets {
-		linkPath := filepath.Join(target, name)
-		dest, err := os.Readlink(linkPath)
-		if err != nil {
-			continue
-		}
-		// Registry cache layout: <registryCacheDir>/<name>/<version>/
-		prefix := filepath.Join(registryCacheDir, name) + string(filepath.Separator)
-		if len(dest) > len(prefix) && dest[:len(prefix)] == prefix {
-			rest := dest[len(prefix):]
-			// rest is "<version>" or "<version>/<something>"
-			for i, c := range rest {
-				if c == filepath.Separator {
-					return rest[:i]
-				}
-			}
-			return rest
-		}
-	}
-	return ""
 }

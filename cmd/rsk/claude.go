@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/internal/ui"
@@ -80,7 +81,12 @@ Examples:
 	claudeToolsListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List current tool permissions for this project.",
-		RunE:  runClaudeToolsList,
+		Long: `List current tool permissions for this project.
+
+Examples:
+  rsk claude tools list
+  rsk claude tools list -o json`,
+		RunE: runClaudeToolsList,
 	}
 
 	claudeToolsAllowCmd = &cobra.Command{
@@ -125,8 +131,20 @@ func claudeToolGet() (*tool.ClaudeTool, error) {
 	return ct, nil
 }
 
+// claudeToolsPermissions is the JSON shape for `rsk claude tools list -o json`
+// — the raw allow/deny rule lists as configured in .claude/settings.json.
+type claudeToolsPermissions struct {
+	Allow []string `json:"allow"`
+	Deny  []string `json:"deny"`
+}
+
 func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
+
+	output := outputFormat(cmdx.String(cmd, cmdx.FlagOutput))
+	if !output.valid() {
+		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
+	}
 
 	cwd, err := manifest.ProjectFolderPath()
 	if err != nil {
@@ -141,6 +159,10 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 	allow, deny, err := claudeTool.ReadPermissions(projectDir)
 	if err != nil {
 		return err
+	}
+
+	if output == outputJSON {
+		return writeJSON(out, claudeToolsPermissions{Allow: allow, Deny: deny})
 	}
 
 	fmt.Fprintln(out)

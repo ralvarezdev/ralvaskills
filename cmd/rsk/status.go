@@ -32,7 +32,8 @@ Examples:
   rsk status --global
   rsk status --project
   rsk status --stack
-  rsk status --stack --refresh`,
+  rsk status --stack --refresh
+  rsk status -o json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runStatus(cmd, statusOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
@@ -41,6 +42,7 @@ Examples:
 			refresh:  cmdx.Bool(cmd, cmdx.FlagRefresh),
 			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
 			forTool:  cmdx.String(cmd, cmdx.FlagFor),
+			output:   outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
 		})
 	},
 }
@@ -50,6 +52,7 @@ type (
 	statusOpts struct {
 		global, project, stack, refresh, personal bool
 		forTool                                   string
+		output                                    outputFormat
 	}
 
 	// statusSection groups linked skills under a single target directory.
@@ -67,11 +70,33 @@ type (
 		source  skill.Source
 		bundles []string
 	}
+
+	// statusSkillEntry is one skill row inside a statusSectionEntry, serialized
+	// as JSON when -o json is set.
+	statusSkillEntry struct {
+		Name    string   `json:"name"`
+		Version string   `json:"version,omitempty"`
+		Source  string   `json:"source,omitempty"`
+		Pinned  bool     `json:"pinned,omitempty"`
+		Bundles []string `json:"bundles,omitempty"`
+	}
+
+	// statusSectionEntry is one section (a scanned target directory) in the
+	// JSON status output, mirroring statusSection's text rendering.
+	statusSectionEntry struct {
+		Title    string             `json:"title"`
+		Subtitle string             `json:"subtitle,omitempty"`
+		Dir      string             `json:"dir"`
+		Skills   []statusSkillEntry `json:"skills"`
+	}
 )
 
 func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	out := cmd.OutOrStdout()
 
+	if !opts.output.valid() {
+		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
+	}
 	if opts.stack {
 		return errors.New("--stack is not yet implemented")
 	}
@@ -132,6 +157,10 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 		sections[i].skills = entries
 	}
 
+	if opts.output == outputJSON {
+		return writeJSON(out, statusSectionsToEntries(sections, pinnedSet))
+	}
+
 	hasAny := false
 	for _, sec := range sections {
 		if len(sec.skills) == 0 {
@@ -177,6 +206,32 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	}
 
 	return nil
+}
+
+// statusSectionsToEntries converts the scanned statusSections into their
+// JSON-serializable shape, carrying over the pinned marker (which is tracked
+// separately from statusSection/linkedEntry) onto each skill row.
+func statusSectionsToEntries(sections []statusSection, pinnedSet map[string]bool) []statusSectionEntry {
+	entries := make([]statusSectionEntry, len(sections))
+	for i, sec := range sections {
+		skills := make([]statusSkillEntry, len(sec.skills))
+		for j, e := range sec.skills {
+			skills[j] = statusSkillEntry{
+				Name:    e.name,
+				Version: e.version,
+				Source:  e.source.String(),
+				Pinned:  pinnedSet[e.name],
+				Bundles: e.bundles,
+			}
+		}
+		entries[i] = statusSectionEntry{
+			Title:    sec.title,
+			Subtitle: sec.subtitle,
+			Dir:      sec.dir,
+			Skills:   skills,
+		}
+	}
+	return entries
 }
 
 func buildStatusSections(

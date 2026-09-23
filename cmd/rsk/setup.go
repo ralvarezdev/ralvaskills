@@ -18,6 +18,8 @@ func setupCommands() {
 	rootCmd.AddCommand(claudeCmd)
 	claudeCmd.AddCommand(claudeToolsCmd)
 	claudeToolsCmd.AddCommand(claudeToolsListCmd)
+	f = claudeToolsListCmd.Flags()
+	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
 	claudeToolsCmd.AddCommand(claudeToolsAllowCmd)
 	claudeToolsCmd.AddCommand(claudeToolsDenyCmd)
 	claudeToolsCmd.AddCommand(claudeToolsRemoveCmd)
@@ -66,6 +68,7 @@ func setupCommands() {
 	f.Bool(cmdx.FlagStack, false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
 	f.Bool(cmdx.FlagRefresh, false, "With --stack: bypass the 24h cache and force a re-fetch")
 	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in output")
+	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
 
 	// uninstall command
 	rootCmd.AddCommand(uninstallCmd)
