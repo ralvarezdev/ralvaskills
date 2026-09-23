@@ -1,0 +1,4 @@
+# Normalize line endings: store LF in the repository and check out LF, so a
+# Windows/OneDrive checkout cannot turn every text file into a phantom
+# modification. Binary detection stays automatic.
+* text=auto eol=lf
