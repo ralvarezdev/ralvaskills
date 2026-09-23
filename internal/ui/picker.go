@@ -13,19 +13,49 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// PickerItem is one selectable row in the top-level command picker.
-type PickerItem struct {
-	Cmd *cobra.Command
+// backRowTitle labels the row that returns to the parent level.
+const backRowTitle = ".. back"
+
+// pickItem is one selectable row in the picker: either a domain to descend
+// into (cmd has children) or a leaf to run (cmd is runnable, no children),
+// plus the back row.
+type pickItem struct {
+	title  string
+	desc   string
+	cmd    *cobra.Command
+	isBack bool
 }
 
 // Title implements list.Item.
-func (i PickerItem) Title() string { return i.Cmd.Name() }
+func (i pickItem) Title() string { return i.title }
 
 // Description implements list.Item.
-func (i PickerItem) Description() string { return i.Cmd.Short }
+func (i pickItem) Description() string { return i.desc }
 
 // FilterValue implements list.Item.
-func (i PickerItem) FilterValue() string { return i.Cmd.Name() }
+func (i pickItem) FilterValue() string { return i.title }
+
+// backRow is the row that returns to the parent level.
+func backRow() pickItem {
+	return pickItem{title: backRowTitle, desc: "back to the previous level", isBack: true}
+}
+
+// childLevel builds the rows shown for cmds: a back row (unless this is the
+// root level), then one row per visible, runnable-or-nested child — the same
+// filter the flat picker used to apply.
+func childLevel(cmds []*cobra.Command, isRoot bool) []pickItem {
+	items := make([]pickItem, 0, len(cmds)+1)
+	if !isRoot {
+		items = append(items, backRow())
+	}
+	for _, c := range cmds {
+		if c.Hidden || (!c.Runnable() && len(c.Commands()) == 0) {
+			continue
+		}
+		items = append(items, pickItem{title: c.Name(), desc: c.Short, cmd: c})
+	}
+	return items
+}
 
 // commandFinishedMsg reports the outcome of the most recently run command, so
 // the menu can surface it without interrupting the dashboard loop.
@@ -34,12 +64,17 @@ type commandFinishedMsg struct {
 	err  error
 }
 
-// pickerModel drives the top-level command list. Enter runs the selected
-// command inline (releasing the terminal so it can print/prompt normally)
-// and returns to the menu afterward; ctrl+c/q/esc leave the picker.
+// pickerModel drives the command list as a stack of levels: the root lists
+// top-level commands, descending into a domain shows its children. Enter on
+// a leaf sets m.selected and quits so the session can decide what to do next
+// (run directly, or collect its parameters first); ctrl+c/q/esc leave the
+// picker.
 type pickerModel struct {
+	levels        [][]pickItem
+	trail         []string
 	list          list.Model
 	cancelled     bool
+	selected      *cobra.Command
 	lastRun       string
 	lastErr       error
 	cap           Capability
@@ -52,34 +87,33 @@ type pickerModel struct {
 // notice, when non-empty, is shown above the list — e.g. an
 // updates-available flag — and may be "".
 func NewPicker(cmds []*cobra.Command, in io.Reader, out io.Writer, notice string) *tea.Program {
-	model := newPickerModel(cmds, notice)
+	model := newSessionModel(cmds, notice)
 	return tea.NewProgram(model, tea.WithAltScreen(), tea.WithInput(in), tea.WithOutput(out))
 }
 
 func newPickerModel(cmds []*cobra.Command, notice string) *pickerModel {
 	capa := NewCapability()
+	root := childLevel(cmds, true)
 	m := &pickerModel{
-		list:   newPickerList(cmds, capa),
+		levels: [][]pickItem{root},
 		cap:    capa,
 		width:  defaultPickerWidth,
 		height: defaultPickerHeight,
 		notice: notice,
 	}
+	m.list = newPickerList(root, capa)
 	m.fit()
+	m.updateTitle()
 	return m
 }
 
-func newPickerList(cmds []*cobra.Command, capa Capability) list.Model {
-	items := make([]list.Item, 0, len(cmds))
-	for _, c := range cmds {
-		if c.Hidden || !c.Runnable() && len(c.Commands()) == 0 {
-			continue
-		}
-		items = append(items, PickerItem{Cmd: c})
+func newPickerList(items []pickItem, capa Capability) list.Model {
+	entries := make([]list.Item, 0, len(items))
+	for _, item := range items {
+		entries = append(entries, item)
 	}
 
-	model := list.New(items, pickerDelegate(capa), defaultPickerWidth, defaultPickerHeight)
-	model.Title = "rsk — pick a command"
+	model := list.New(entries, pickerDelegate(capa), defaultPickerWidth, defaultPickerHeight)
 	styleList(&model, capa)
 	model.SetFilteringEnabled(true)
 	model.SetShowHelp(true)
@@ -137,11 +171,17 @@ func (m *pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "ctrl+c":
 				m.cancelled = true
 				return m, tea.Quit
-			case "q", "esc":
+			case "q":
+				return m, tea.Quit
+			case "esc":
+				if m.canPop() {
+					m.pop()
+					return m, nil
+				}
 				return m, tea.Quit
 			case "enter":
-				if item, ok := m.list.SelectedItem().(PickerItem); ok {
-					return m, m.runSelected(item.Cmd)
+				if item, ok := m.list.SelectedItem().(pickItem); ok {
+					return m.choose(item)
 				}
 			}
 		}
@@ -178,21 +218,68 @@ func (m *pickerModel) fit() {
 	m.list.SetSize(m.width, max(m.height-used, minPickerListHeight))
 }
 
-// runSelected releases the terminal to run cmd inline — with real stdin/
-// stdout, so its own prompts and output work exactly as they would outside
-// the picker — then restores the picker once the user acknowledges the
-// result, instead of exiting the program.
-func (m *pickerModel) runSelected(cmd *cobra.Command) tea.Cmd {
-	return tea.Exec(&commandExec{cmd: cmd}, func(err error) tea.Msg {
-		return commandFinishedMsg{name: cmd.Name(), err: err}
-	})
+// choose descends into a domain, pops on the back row, or selects a leaf and
+// quits so the session can act on it.
+func (m *pickerModel) choose(item pickItem) (tea.Model, tea.Cmd) {
+	switch {
+	case item.isBack:
+		m.pop()
+		return m, nil
+	case len(item.cmd.Commands()) > 0:
+		m.descend(item)
+		return m, nil
+	default:
+		m.selected = item.cmd
+		return m, tea.Quit
+	}
+}
+
+// descend pushes item's children onto the level stack.
+func (m *pickerModel) descend(item pickItem) {
+	m.push(item.title, childLevel(item.cmd.Commands(), false))
+}
+
+// push shows level as the child of the current one, named name.
+func (m *pickerModel) push(name string, level []pickItem) {
+	m.trail = append(m.trail, name)
+	m.levels = append(m.levels, level)
+	m.list = newPickerList(level, m.cap)
+	m.fit()
+	m.updateTitle()
+}
+
+// pop returns to the previous level.
+func (m *pickerModel) pop() {
+	if !m.canPop() {
+		return
+	}
+	m.levels = m.levels[:len(m.levels)-1]
+	m.trail = m.trail[:len(m.trail)-1]
+	m.list = newPickerList(m.levels[len(m.levels)-1], m.cap)
+	m.fit()
+	m.updateTitle()
+}
+
+// canPop reports whether popping is possible (not at the root).
+func (m *pickerModel) canPop() bool { return len(m.levels) > 1 }
+
+// updateTitle refreshes the list title with the breadcrumb.
+func (m *pickerModel) updateTitle() {
+	if len(m.trail) == 0 {
+		m.list.Title = "rsk — pick a command"
+		return
+	}
+	m.list.Title = "rsk — " + strings.Join(m.trail, " › ")
 }
 
 // commandExec adapts a cobra.Command to tea.ExecCommand so tea.Exec can run
 // it with the terminal released, then pauses for a keypress before handing
 // the terminal back to the picker so the user has time to read the output.
+// args carries the positional arguments resolved by the session's parameter
+// form, if any.
 type commandExec struct {
 	cmd         *cobra.Command
+	args        []string
 	in          io.Reader
 	out, errOut io.Writer
 }
@@ -231,19 +318,14 @@ func (c *commandExec) Run() error {
 	return err
 }
 
-// runCommand runs c.cmd if it takes no positional arguments, or prints its
-// help otherwise — the picker doesn't collect arguments itself, since
-// commands like install/uninstall already prompt for what they need via
-// their own huh-based flows when run directly.
+// runCommand runs c.cmd with c.args — the session only ever hands it a leaf
+// command, resolved through the parameter form when it needed one.
 func (c *commandExec) runCommand() error {
-	if len(c.cmd.Commands()) > 0 || takesArgs(c.cmd) {
-		return c.cmd.Help()
-	}
 	if c.cmd.RunE != nil {
-		return c.cmd.RunE(c.cmd, nil)
+		return c.cmd.RunE(c.cmd, c.args)
 	}
 	if c.cmd.Run != nil {
-		c.cmd.Run(c.cmd, nil)
+		c.cmd.Run(c.cmd, c.args)
 		return nil
 	}
 	return c.cmd.Help()
@@ -256,7 +338,7 @@ func takesArgs(cmd *cobra.Command) bool {
 	fields := strings.Fields(cmd.Use)
 	for _, field := range fields[1:] {
 		trimmed := strings.Trim(field, "[]<>.")
-		if trimmed == "flags" {
+		if trimmed == flagsPlaceholder {
 			continue
 		}
 		if strings.ContainsAny(field, "[]<>") {
@@ -279,7 +361,7 @@ func RunPicker(cmds []*cobra.Command, out io.Writer, notice string) error {
 		return fmt.Errorf("run picker: %w", err)
 	}
 
-	if result, ok := final.(*pickerModel); ok && result.cancelled {
+	if result, ok := final.(*sessionModel); ok && result.picker.cancelled {
 		return ErrAborted
 	}
 	return nil
