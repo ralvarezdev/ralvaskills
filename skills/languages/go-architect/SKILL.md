@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.6.2
+version: 1.7.0
 description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -90,9 +90,49 @@ Prefer stdlib over hand-rolled or third-party when stdlib now covers it.
 - **Config:** `spf13/viper` for layered env + file + flag configuration.
 - **Logging:** `log/slog` (stdlib). Structured, context-aware. `zap`/`zerolog` only when slog is provably the bottleneck — start with slog.
 
-## 12. Database access — SQL files + `//go:embed`
+## 12. Database access — sqlc (default), sqlx + `//go:embed` (alternative)
 
-Strong preference: **raw SQL in `.sql` files**, embedded at compile time, executed via `jmoiron/sqlx`. Avoids ORM magic, keeps queries auditable in git, gives editors full SQL syntax highlighting and linting.
+**Default: `sqlc`.** Schema-first, code-generated queries — write named queries in `.sql` files against your real migrated schema, run `sqlc generate`, get back typed Go row structs and query methods, checked at generate-time against the actual database. No ORM magic, no hand-written scanning code, queries stay plain auditable SQL in git.
+
+```sql
+-- query.sql
+-- name: GetUserByID :one
+SELECT * FROM users WHERE id = $1;
+```
+
+```yaml
+# sqlc.yaml
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "query.sql"
+    schema: "migrations"
+    gen:
+      go:
+        package: "db"
+        out: "db"
+```
+
+```go
+func (r *UserRepo) GetByID(ctx context.Context, id int64) (db.User, error) {
+    return r.queries.GetUserByID(ctx, id)
+}
+```
+
+Layout:
+
+```
+internal/userrepo/
+├── repo.go
+├── sqlc.yaml
+├── query.sql
+└── db/              # generated: models.go, query.sql.go, db.go — never hand-edit
+```
+
+- **Migrations:** `goose` or `golang-migrate` — versioned up/down pairs in `migrations/`. `sqlc`'s `schema:` reads the same migration files, so schema drift between the two is impossible by construction.
+- **Regeneration:** run `sqlc generate` in CI (or a pre-commit hook) and fail the build if the generated tree differs from what's committed — generated code is committed, not built on the fly.
+
+**Alternative: `jmoiron/sqlx` + `//go:embed`.** Reach for this when a query needs genuine runtime composition sqlc's static named-query model can't express (e.g. an arbitrary number of optional filter clauses), or when a package deliberately avoids a codegen step. Write raw SQL in `.sql` files, embed at compile time, execute via `sqlx`'s struct-tag scanning:
 
 ```go
 //go:embed queries/get_user_by_id.sql
@@ -116,8 +156,8 @@ internal/userrepo/
     └── list_users.sql
 ```
 
-- **Migrations:** `golang-migrate` — versioned up/down pairs in `migrations/`.
-- **Dynamic queries:** If a query needs runtime composition (optional filters), still write the static fragments in `.sql` files and join them in Go. Avoid building SQL by string concatenation against user input — use parameter binding.
+- **Dynamic queries:** even here, write the static fragments in `.sql` files and join them in Go rather than building SQL by string concatenation against user input — always use parameter binding.
+- Don't mix the two within one repository package — pick per-package, not per-query, so a reader knows which scanning convention to expect from the file layout alone.
 
 ## 13. Generics
 

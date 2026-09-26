@@ -151,15 +151,41 @@ func (s *PlaceOrderService) PlaceOrder(ctx context.Context, cmd PlaceOrderComman
 
 ## `internal/order/adapters/secondary/postgres/order_repo.go` — driven adapter
 
+Default: `sqlc`-generated queries (`db.Queries`, built from `query.sql` + the migrated schema — see §12). The repo adapter is a thin translation layer between `db.Order` (generated row struct) and `domain.Order` (the aggregate).
+
 ```go
 package postgres
 
 var _ domain.Repository = (*OrderRepo)(nil) // makes the contract checkable at compile time
 
+type OrderRepo struct{ queries *db.Queries }
+
+func (r *OrderRepo) Save(ctx context.Context, o domain.Order) error {
+    _, err := r.queries.SaveOrder(ctx, db.SaveOrderParams{
+        ID: o.ID, Customer: o.Customer, Total: o.Total.Amount, Status: o.Status,
+    })
+    return err
+}
+
+func (r *OrderRepo) FindByID(ctx context.Context, id domain.ID) (domain.Order, error) {
+    row, err := r.queries.GetOrderByID(ctx, id)
+    if err != nil {
+        return domain.Order{}, err
+    }
+    return domain.Order{ID: row.ID, Customer: row.Customer, Total: domain.NewMoney(row.Total), Status: row.Status}, nil
+}
+```
+
+Alternative (`sqlx` + `//go:embed`, for query shapes sqlc can't express as a static named query):
+
+```go
 type OrderRepo struct{ db *sqlx.DB }
 
 //go:embed queries/save_order.sql
 var saveOrderSQL string
+
+//go:embed queries/find_order_by_id.sql
+var findOrderByIDSQL string
 
 func (r *OrderRepo) Save(ctx context.Context, o domain.Order) error {
     _, err := r.db.ExecContext(ctx, saveOrderSQL, o.ID, o.Customer, o.Total.Amount, o.Status)

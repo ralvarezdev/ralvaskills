@@ -4,7 +4,7 @@
 >
 > Estimate: ~4 bytes/token for bodies, ~3 bytes/token for descriptions (Claude tokenizer). Actual range ±15%.
 
-_Last updated: 2026-07-30 · 51 skills · 15 bundles_
+_Last updated: 2026-09-26 · 51 skills · 15 bundles_
 
 ## Load model
 
@@ -12,9 +12,9 @@ Description tokens hit **every turn** for installed skills. Body tokens are paid
 
 | What | When loaded | Estimated tokens |
 |---|---|---:|
-| All `SKILL.md` bodies | Only when invoked | ~119763 |
-| All side files (`STACK` + `RECIPES` + topic files) | On-demand only | ~93040 |
-| All `description:` fields (every skill) | Every turn, if all installed | ~5236 |
+| All `SKILL.md` bodies | Only when invoked | ~122479 |
+| All side files (`STACK` + `RECIPES` + topic files) | On-demand only | ~94341 |
+| All `description:` fields (every skill) | Every turn, if all installed | ~5292 |
 
 ## Session profiles
 
@@ -47,7 +47,7 @@ These skills are not part of any bundle. They are installed individually with `r
 
 | Skill | Category | ~Body tkns | ~Desc tkns | ~Side tkns |
 |---|---|---:|---:|---:|
-| `mcp-architect` | protocols | ~4940 | ~156 | ~5484 |
+| `mcp-architect` | protocols | ~7224 | ~212 | ~6473 |
 | `go-library-builder` | personal | ~3172 | ~152 | ~2667 |
 | `uru-scientific-paper-architect` | personal | ~2233 | ~141 | ~2021 |
 | `uru-thesis-defense-architect` | personal | ~1798 | ~132 | ~1525 |
@@ -70,8 +70,8 @@ These skills are not part of any bundle. They are installed individually with `r
 |---|---:|---:|---:|---:|
 | personal | 9 | ~21874 | ~1077 | ~29152 |
 | frameworks | 7 | ~16853 | ~758 | ~11680 |
-| languages | 3 | ~11653 | ~278 | ~5469 |
-| protocols | 3 | ~10026 | ~364 | ~11318 |
+| protocols | 3 | ~12310 | ~420 | ~12307 |
+| languages | 3 | ~12085 | ~278 | ~5781 |
 | infra | 4 | ~8453 | ~354 | ~8490 |
 | quality | 3 | ~6718 | ~269 | ~1151 |
 | refactoring | 4 | ~6557 | ~408 | ~6101 |
@@ -95,10 +95,10 @@ Catalog from `internal/config/catalog.toml`. `External` are `source = "official"
 | `global` | 15 | 0 | 0 | ~25829 | ~1412 |
 | `docs` | 0 | 5 | 0 | ~0 | ~0 |
 | `design` | 3 | 1 | 0 | ~8023 | ~313 |
-| `go-grpc` | 5 | 0 | 0 | ~13560 | ~452 |
-| `gin` | 5 | 0 | 0 | ~13504 | ~472 |
-| `nethttp` | 5 | 0 | 0 | ~13667 | ~484 |
-| `go-cli` | 3 | 0 | 0 | ~9802 | ~265 |
+| `go-grpc` | 5 | 0 | 0 | ~13992 | ~452 |
+| `gin` | 5 | 0 | 0 | ~13936 | ~472 |
+| `nethttp` | 5 | 0 | 0 | ~14099 | ~484 |
+| `go-cli` | 3 | 0 | 0 | ~10234 | ~265 |
 | `fastapi` | 5 | 0 | 0 | ~11726 | ~480 |
 | `llm-app` | 4 | 0 | 2 | ~9370 | ~389 |
 | `ros2` | 3 | 0 | 0 | ~7863 | ~273 |
@@ -112,8 +112,8 @@ Catalog from `internal/config/catalog.toml`. `External` are `source = "official"
 
 | # | Skill | Category | Body bytes | ~Body tkns | ~Desc tkns | ~Stack tkns | ~Recipes tkns | ~Topic tkns |
 |---|---|---|---:|---:|---:|---:|---:|---:|
-| 1 | `go-architect` | languages | 20615 | ~5186 | ~83 | ~414 | ~2432 | ~0 |
-| 2 | `mcp-architect` | protocols | 19757 | ~4940 | ~156 | ~750 | ~4734 | ~0 |
+| 1 | `mcp-architect` | protocols | 28793 | ~7224 | ~212 | ~1235 | ~5238 | ~0 |
+| 2 | `go-architect` | languages | 22167 | ~5618 | ~83 | ~473 | ~2685 | ~0 |
 | 3 | `work-report-generator` | personal | 19243 | ~4856 | ~114 | ~0 | ~2811 | ~0 |
 | 4 | `python-architect` | languages | 13242 | ~3368 | ~79 | ~443 | ~0 | ~0 |
 | 5 | `uru-thesis-reviewer` | personal | 13430 | ~3358 | ~119 | ~0 | ~0 | ~7587 |
@@ -164,7 +164,7 @@ Catalog from `internal/config/catalog.toml`. `External` are `source = "official"
 | 50 | `logic-cleaner` | refactoring | 2432 | ~608 | ~93 | ~0 | ~0 | ~0 |
 | 51 | `caveman` | meta | 1687 | ~422 | ~71 | ~0 | ~0 | ~0 |
 
-**Totals:** 474207 body bytes · ~119763 body tokens · ~5236 desc tokens · ~93040 side tokens
+**Totals:** 484795 body bytes · ~122479 body tokens · ~5292 desc tokens · ~94341 side tokens
 
 ## Topic files
 
@@ -212,8 +212,8 @@ Side files in a skill directory other than `STACK.md` and `RECIPES.md` — typic
 
 Body > 2500 tokens — consider moving examples to `RECIPES.md` or topic files:
 
-- `go-architect` (~5186 body tokens)
-- `mcp-architect` (~4940 body tokens)
+- `mcp-architect` (~7224 body tokens)
+- `go-architect` (~5618 body tokens)
 - `work-report-generator` (~4856 body tokens)
 - `python-architect` (~3368 body tokens)
 - `uru-thesis-reviewer` (~3358 body tokens)
@@ -236,13 +236,13 @@ Body > 2500 tokens — consider moving examples to `RECIPES.md` or topic files:
 
 Heaviest 10 descriptions — each desc token is paid every turn for any session that installs the skill:
 
-- `mcp-architect` (~156 desc tokens)
+- `mcp-architect` (~212 desc tokens)
 - `go-library-builder` (~152 desc tokens)
 - `rsk-guide` (~146 desc tokens)
 - `uru-scientific-paper-architect` (~141 desc tokens)
 - `uru-thesis-defense-architect` (~132 desc tokens)
-- `design-patterns` (~122 desc tokens)
 - `website-concept-architect` (~122 desc tokens)
+- `design-patterns` (~122 desc tokens)
 - `ml-conference-paper-architect` (~121 desc tokens)
 - `nethttp-architect` (~120 desc tokens)
 - `fastapi-architect` (~120 desc tokens)
