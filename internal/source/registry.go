@@ -255,17 +255,12 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 			return fmt.Errorf("unsupported tar entry type %d for %q", hdr.Typeflag, hdr.Name)
 		}
 
-		rel := hdr.Name
-		if len(rel) > len(prefix) && rel[:len(prefix)] == prefix {
-			rel = rel[len(prefix):]
+		target, skip, targetErr := tarEntryTarget(hdr.Name, prefix, destDir, safeRoot)
+		if targetErr != nil {
+			return targetErr
 		}
-		if rel == "" || rel == "." {
+		if skip {
 			continue
-		}
-
-		target := filepath.Join(destDir, filepath.FromSlash(rel))
-		if target != destDir && !strings.HasPrefix(target, safeRoot) {
-			return fmt.Errorf("archive entry %q escapes destination directory", hdr.Name)
 		}
 
 		switch hdr.Typeflag {
@@ -274,24 +269,51 @@ func extractTarball(r io.Reader, destDir, skillName string) error {
 				return mkdirErr
 			}
 		case tar.TypeReg:
-			if mkdirErr := os.MkdirAll(filepath.Dir(target), fsperm.Dir); mkdirErr != nil {
-				return mkdirErr
-			}
-
-			f, openErr := os.OpenFile(target, TarballOpenFlags, os.FileMode(hdr.Mode)&fsperm.Mask)
-			if openErr != nil {
-				return openErr
-			}
-
-			_, copyErr := io.Copy(f, tr)
-			closeErr := f.Close()
-			if copyErr != nil {
-				return copyErr
-			}
-			if closeErr != nil {
-				return closeErr
+			if fileErr := extractTarFile(tr, target, os.FileMode(hdr.Mode)); fileErr != nil {
+				return fileErr
 			}
 		}
 	}
 	return nil
+}
+
+// tarEntryTarget resolves a tar entry's name to a path under destDir,
+// stripping the archive's skillName/ prefix. skip is true for an entry that
+// resolves to destDir itself (the root dir entry, nothing to create). An
+// entry that would resolve outside destDir is rejected (zip-slip
+// protection).
+func tarEntryTarget(name, prefix, destDir, safeRoot string) (target string, skip bool, err error) {
+	rel := name
+	if len(rel) > len(prefix) && rel[:len(prefix)] == prefix {
+		rel = rel[len(prefix):]
+	}
+	if rel == "" || rel == "." {
+		return "", true, nil
+	}
+
+	target = filepath.Join(destDir, filepath.FromSlash(rel))
+	if target != destDir && !strings.HasPrefix(target, safeRoot) {
+		return "", false, fmt.Errorf("archive entry %q escapes destination directory", name)
+	}
+	return target, false, nil
+}
+
+// extractTarFile writes one regular-file tar entry's contents to target,
+// creating its parent directory first.
+func extractTarFile(tr *tar.Reader, target string, mode os.FileMode) error {
+	if err := os.MkdirAll(filepath.Dir(target), fsperm.Dir); err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(target, TarballOpenFlags, mode&fsperm.Mask)
+	if err != nil {
+		return err
+	}
+
+	_, copyErr := io.Copy(f, tr)
+	closeErr := f.Close()
+	if copyErr != nil {
+		return copyErr
+	}
+	return closeErr
 }
