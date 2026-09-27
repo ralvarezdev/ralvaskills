@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -82,43 +83,15 @@ func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {
 // runUpdateLocal handles update for local-repo mode: git pull + optional official cache refresh.
 func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts updateOpts) error {
 	out := cmd.OutOrStdout()
-	ctx := cmd.Context()
 
-	needsOfficial := opts.official
-	if !needsOfficial && len(args) > 0 {
-		catalog, catalogWarn := config.LoadCatalog("")
-		if catalogWarn != nil {
-			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
-		}
-		names, namesErr := skillNamesFromArgs(args, catalog)
-		if namesErr != nil {
-			return namesErr
-		}
-		for _, name := range names {
-			for _, b := range catalog {
-				for _, ref := range b.Skills {
-					if ref.Name == name && ref.Source == skill.SourceOfficial {
-						needsOfficial = true
-					}
-				}
-			}
-		}
+	needsOfficial, err := needsOfficialCache(out, args, opts.official)
+	if err != nil {
+		return err
 	}
-
 	officialCacheDir := filepath.Join(cfg.OfficialCache, skill.SkillsFolderName)
 
 	if opts.dryRun {
-		fmt.Fprintln(out)
-		ui.Header(out, "Dry run — would run:")
-		fmt.Fprintf(out, "  git pull  in  %s\n", cfg.RepoPath)
-		if needsOfficial {
-			if _, statErr := os.Stat(officialCacheDir); os.IsNotExist(statErr) {
-				fmt.Fprintf(out, "  git clone %s  →  %s\n", source.OfficialSkillsURL, officialCacheDir)
-			} else {
-				fmt.Fprintf(out, "  git pull  in  %s\n", officialCacheDir)
-			}
-		}
-		fmt.Fprintln(out)
+		printLocalUpdateDryRun(out, cfg, needsOfficial, officialCacheDir)
 		return nil
 	}
 
@@ -128,6 +101,61 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 	}
 	fmt.Fprintln(out)
 
+	return applyLocalUpdate(cmd, args, cfg, opts, needsOfficial, officialCacheDir)
+}
+
+// needsOfficialCache reports whether the anthropics/skills cache also needs
+// refreshing: explicitly via --official, or implicitly because any named arg
+// resolves to an official-source skill.
+func needsOfficialCache(out io.Writer, args []string, official bool) (bool, error) {
+	if official || len(args) == 0 {
+		return official, nil
+	}
+
+	catalog, catalogWarn := config.LoadCatalog("")
+	if catalogWarn != nil {
+		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+	}
+	names, err := skillNamesFromArgs(args, catalog)
+	if err != nil {
+		return false, err
+	}
+	for _, name := range names {
+		for _, b := range catalog {
+			for _, ref := range b.Skills {
+				if ref.Name == name && ref.Source == skill.SourceOfficial {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
+}
+
+// printLocalUpdateDryRun previews the git operations a real run would perform.
+func printLocalUpdateDryRun(out io.Writer, cfg config.Config, needsOfficial bool, officialCacheDir string) {
+	fmt.Fprintln(out)
+	ui.Header(out, "Dry run — would run:")
+	fmt.Fprintf(out, "  git pull  in  %s\n", cfg.RepoPath)
+	if needsOfficial {
+		if _, err := os.Stat(officialCacheDir); os.IsNotExist(err) {
+			fmt.Fprintf(out, "  git clone %s  →  %s\n", source.OfficialSkillsURL, officialCacheDir)
+		} else {
+			fmt.Fprintf(out, "  git pull  in  %s\n", officialCacheDir)
+		}
+	}
+	fmt.Fprintln(out)
+}
+
+// applyLocalUpdate pulls the local repo clone, refreshes the official cache
+// if needed, and bumps the project lock — the non-dry-run body of
+// runUpdateLocal, run only after the user has confirmed.
+func applyLocalUpdate(
+	cmd *cobra.Command, args []string, cfg config.Config, opts updateOpts, needsOfficial bool, officialCacheDir string,
+) error {
+	out := cmd.OutOrStdout()
+	ctx := cmd.Context()
+
 	ui.Info(out, fmt.Sprintf("Pulling %s …", cfg.RepoPath))
 	if err := rskgit.Pull(ctx, cfg.RepoPath, out); err != nil {
 		return fmt.Errorf("git pull (local repo): %w", err)
@@ -136,8 +164,8 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 	// The clone is now current with its remote — refresh the passive
 	// update-availability cache so the next bare `rsk` invocation reflects
 	// that immediately rather than waiting on the background worker.
-	if cacheErr := updatecheck.Save(cfg, updatecheck.Result{Mode: updatecheck.ModeLocal}); cacheErr != nil {
-		ui.Warn(out, fmt.Sprintf("update-check cache: %v", cacheErr))
+	if err := updatecheck.Save(cfg, updatecheck.Result{Mode: updatecheck.ModeLocal}); err != nil {
+		ui.Warn(out, fmt.Sprintf("update-check cache: %v", err))
 	}
 
 	if needsOfficial {
@@ -148,8 +176,8 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 
 	// If we're in a project, bump rsk.lock entries for any changed skills.
 	if !opts.global {
-		if lockErr := bumpLockForProject(cmd, args, cfg); lockErr != nil {
-			ui.Warn(out, fmt.Sprintf("update rsk.lock: %v", lockErr))
+		if err := bumpLockForProject(cmd, args, cfg); err != nil {
+			ui.Warn(out, fmt.Sprintf("update rsk.lock: %v", err))
 		}
 	}
 
@@ -312,93 +340,24 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 		return fmt.Errorf("fetch registry index: %w", err)
 	}
 
-	// Determine which skill names to check (all installed, or just the args).
-	var namesToCheck []string
-	if len(args) > 0 {
-		catalog, catalogWarn := config.LoadCatalog("")
-		if catalogWarn != nil {
-			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
-		}
-		namesToCheck, err = skillNamesFromArgs(args, catalog)
-		if err != nil {
-			return err
-		}
-	} else {
-		// Check all skills installed in any target dir.
-		seen := make(map[string]bool)
-		for _, target := range targets {
-			entries, readErr := os.ReadDir(target)
-			if readErr != nil {
-				continue
-			}
-			for _, e := range entries {
-				if !seen[e.Name()] {
-					seen[e.Name()] = true
-					namesToCheck = append(namesToCheck, e.Name())
-				}
-			}
-		}
+	namesToCheck, err := registryNamesToCheck(out, args, targets)
+	if err != nil {
+		return err
 	}
 
-	// Find skills with a newer version available.
-	var toUpdate []updatePair
-
-	for _, name := range namesToCheck {
-		entry, ok := index[name]
-		if !ok {
-			continue
-		}
-		// Determine installed version from symlink target path.
-		installedVer := updatecheck.InstalledVersionFromTargets(name, targets, cfg.RegistryCache())
-		if installedVer == entry.Latest {
-			continue
-		}
-		s, findErr := reg.FindVersion(ctx, name, entry.Latest)
-		if findErr != nil {
-			ui.Warn(out, fmt.Sprintf("skip %s: %v", name, findErr))
-			continue
-		}
-		toUpdate = append(toUpdate, updatePair{
-			name:      name,
-			installed: installedVer,
-			latest:    entry.Latest,
-			newSkill:  s,
-		})
-	}
-
+	toUpdate := findOutdatedSkills(ctx, out, reg, index, namesToCheck, targets, cfg.RegistryCache())
 	if len(toUpdate) == 0 {
 		saveUpdateCache(out, cfg, nil)
 		ui.Info(out, "All installed skills are up to date.")
 		return nil
 	}
 
-	fmt.Fprintln(out)
-	ui.Header(out, "Skills to update:")
-	nameWidth := 0
-	for _, u := range toUpdate {
-		if len(u.name) > nameWidth {
-			nameWidth = len(u.name)
-		}
-	}
-	for _, u := range toUpdate {
-		from := u.installed
-		if from == "" {
-			from = "?"
-		}
-		fmt.Fprintf(out, "  %s  %s  %s  %s\n",
-			ui.PadRight(ui.SkillName(u.name), nameWidth),
-			ui.SkillVersion(from),
-			ui.Arrow,
-			ui.SkillVersion(u.latest),
-		)
-	}
-	fmt.Fprintln(out)
+	printRegistryUpdatePlan(out, toUpdate)
 
 	if opts.dryRun {
 		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
 		return nil
 	}
-
 	if !ui.ConfirmYN(out, "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
@@ -406,31 +365,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 	}
 	fmt.Fprintln(out)
 
-	var failed int
-	var failedNames []string
-	for _, u := range toUpdate {
-		skillFailed := false
-		for _, target := range targets {
-			if !skill.IsLinked(u.name, target) {
-				continue
-			}
-			if linkErr := skill.Link(u.newSkill, target); linkErr != nil {
-				ui.Failf(errOut, "re-link %s: %v", u.name, linkErr)
-				failed++
-				skillFailed = true
-			} else {
-				ui.Success(out, fmt.Sprintf("%s  %s  %s  %s",
-					ui.SkillName(u.name),
-					ui.SkillVersion(u.installed),
-					ui.Arrow,
-					ui.SkillVersion(u.latest),
-				))
-			}
-		}
-		if skillFailed {
-			failedNames = append(failedNames, u.name)
-		}
-	}
+	failed, failedNames := relinkOutdated(out, errOut, toUpdate, targets)
 
 	// Refresh the passive update-availability cache with the actual outcome —
 	// after this point only skills that failed to re-link are still
@@ -452,6 +387,123 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 	fmt.Fprintln(out)
 	ui.Success(out, "Update complete.")
 	return nil
+}
+
+// registryNamesToCheck resolves args to skill names when given, or otherwise
+// collects every skill name currently linked in any target dir.
+func registryNamesToCheck(out io.Writer, args, targets []string) ([]string, error) {
+	if len(args) > 0 {
+		catalog, catalogWarn := config.LoadCatalog("")
+		if catalogWarn != nil {
+			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+		}
+		return skillNamesFromArgs(args, catalog)
+	}
+
+	seen := make(map[string]bool)
+	var names []string
+	for _, target := range targets {
+		entries, err := os.ReadDir(target)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if !seen[e.Name()] {
+				seen[e.Name()] = true
+				names = append(names, e.Name())
+			}
+		}
+	}
+	return names, nil
+}
+
+// findOutdatedSkills checks each name in namesToCheck against index, skipping
+// any that aren't in the registry, aren't actually behind, or fail to
+// resolve at their latest version (warned, not fatal).
+func findOutdatedSkills(
+	ctx context.Context, out io.Writer, reg *source.Registry, index map[string]*source.IndexEntry,
+	namesToCheck, targets []string, registryCache string,
+) []updatePair {
+	var toUpdate []updatePair
+	for _, name := range namesToCheck {
+		entry, ok := index[name]
+		if !ok {
+			continue
+		}
+		// Determine installed version from symlink target path.
+		installedVer := updatecheck.InstalledVersionFromTargets(name, targets, registryCache)
+		if installedVer == entry.Latest {
+			continue
+		}
+		s, err := reg.FindVersion(ctx, name, entry.Latest)
+		if err != nil {
+			ui.Warn(out, fmt.Sprintf("skip %s: %v", name, err))
+			continue
+		}
+		toUpdate = append(toUpdate, updatePair{
+			name:      name,
+			installed: installedVer,
+			latest:    entry.Latest,
+			newSkill:  s,
+		})
+	}
+	return toUpdate
+}
+
+// printRegistryUpdatePlan renders the name/installed/latest table of skills
+// about to be updated.
+func printRegistryUpdatePlan(out io.Writer, toUpdate []updatePair) {
+	fmt.Fprintln(out)
+	ui.Header(out, "Skills to update:")
+	nameWidth := 0
+	for _, u := range toUpdate {
+		if len(u.name) > nameWidth {
+			nameWidth = len(u.name)
+		}
+	}
+	for _, u := range toUpdate {
+		from := u.installed
+		if from == "" {
+			from = "?"
+		}
+		fmt.Fprintf(out, "  %s  %s  %s  %s\n",
+			ui.PadRight(ui.SkillName(u.name), nameWidth),
+			ui.SkillVersion(from),
+			ui.Arrow,
+			ui.SkillVersion(u.latest),
+		)
+	}
+	fmt.Fprintln(out)
+}
+
+// relinkOutdated re-links each outdated skill wherever it's currently
+// linked, reporting (rather than aborting on) a failure so the rest of the
+// batch still updates. It returns how many failed and their names.
+func relinkOutdated(out, errOut io.Writer, toUpdate []updatePair, targets []string) (failed int, failedNames []string) {
+	for _, u := range toUpdate {
+		skillFailed := false
+		for _, target := range targets {
+			if !skill.IsLinked(u.name, target) {
+				continue
+			}
+			if err := skill.Link(u.newSkill, target); err != nil {
+				ui.Failf(errOut, "re-link %s: %v", u.name, err)
+				failed++
+				skillFailed = true
+			} else {
+				ui.Success(out, fmt.Sprintf("%s  %s  %s  %s",
+					ui.SkillName(u.name),
+					ui.SkillVersion(u.installed),
+					ui.Arrow,
+					ui.SkillVersion(u.latest),
+				))
+			}
+		}
+		if skillFailed {
+			failedNames = append(failedNames, u.name)
+		}
+	}
+	return failed, failedNames
 }
 
 // updatePairNames extracts the skill names from toUpdate, for caching the

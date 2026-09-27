@@ -31,22 +31,23 @@ const (
 )
 
 type (
-	// indexSkillEntry mirrors the SkillEntry shape in the published index.json.
-	indexSkillEntry struct {
+	// IndexEntry mirrors the SkillEntry shape in the published index.json.
+	IndexEntry struct {
 		Name        string                   `json:"name"`
 		Description string                   `json:"description"`
 		Personal    bool                     `json:"personal"`
 		Latest      string                   `json:"latest"`
-		Versions    map[string]*indexVersion `json:"versions"`
+		Versions    map[string]*IndexVersion `json:"versions"`
 	}
 
-	indexVersion struct {
+	// IndexVersion is one published version of a skill within IndexEntry.
+	IndexVersion struct {
 		Version    string `json:"version"`
 		ArchiveURL string `json:"archive_url"`
 	}
 
 	registryIndex struct {
-		Skills map[string]*indexSkillEntry `json:"skills"`
+		Skills map[string]*IndexEntry `json:"skills"`
 	}
 
 	// Registry resolves skills from the hosted registry at baseURL.
@@ -69,7 +70,7 @@ func NewRegistry(baseURL, cacheDir string) *Registry {
 }
 
 // Index fetches and returns the registry skill index.
-func (r *Registry) Index(ctx context.Context) (map[string]*indexSkillEntry, error) {
+func (r *Registry) Index(ctx context.Context) (map[string]*IndexEntry, error) {
 	url := r.baseURL + "/" + IndexFileName
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
