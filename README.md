@@ -114,7 +114,6 @@ These are personal to me and excluded from bundle installs. Listed here for tran
 - **`uru-thesis-reviewer`** — Continuous-feedback reviewer for URU (Universidad Rafael Urdaneta) Trabajos Especiales de Grado. Produces ordered `.md` diff files; never edits the source `.docx`.
 - **`uru-thesis-defense-architect`** — URU-style thesis defense deck specs: fixed institutional slide structure, Spanish-only content, logo placement rules. Outputs `.md` only.
 - **`uru-scientific-paper-architect`** — Manuscript formatting for Revista Tecnocientífica URU: typography rules, IMRyD-derived structure by article type, citation/reference formats. Outputs one `.md` manuscript spec.
-- **`work-report-generator`** — Generates formal daily work reports from unstructured input; persistent project catalog, per-day `LOG.md` + `REPORT.md`.
 - **`go-library-builder`** — Scaffolds reusable Go 1.26 library modules in the ralvarezdev DDD + hexagonal house style: domain-pure root package, narrow composed ports, technology-named adapter subpackages (prod/dev/test), config structs over options, testcontainers over mocks. Module namespace is a parameter.
 
 ---

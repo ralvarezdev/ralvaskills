@@ -1,13 +1,97 @@
 {
-  "generated_at": "2026-05-22",
+  "generated_at": "2026-09-27",
   "totals": {
-    "body_bytes": 331686,
-    "body_tokens": 84077,
-    "desc_tokens": 3935,
-    "side_tokens": 62141,
-    "skill_count": 41
+    "body_bytes": 465552,
+    "body_tokens": 117623,
+    "desc_tokens": 5178,
+    "side_tokens": 91530,
+    "skill_count": 50
   },
   "skills": [
+    {
+      "name": "mcp-architect",
+      "category": "protocols",
+      "body_bytes": 28793,
+      "body_tokens": 7224,
+      "desc_tokens": 212,
+      "stack_tokens": 1235,
+      "recipes_tokens": 5238,
+      "other_tokens": 0
+    },
+    {
+      "name": "go-architect",
+      "category": "languages",
+      "body_bytes": 22167,
+      "body_tokens": 5618,
+      "desc_tokens": 83,
+      "stack_tokens": 473,
+      "recipes_tokens": 2685,
+      "other_tokens": 0
+    },
+    {
+      "name": "python-architect",
+      "category": "languages",
+      "body_bytes": 13242,
+      "body_tokens": 3368,
+      "desc_tokens": 79,
+      "stack_tokens": 443,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "uru-thesis-reviewer",
+      "category": "personal",
+      "body_bytes": 13430,
+      "body_tokens": 3358,
+      "desc_tokens": 119,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 7587,
+      "other_files": [
+        {
+          "name": "CHECKS.md",
+          "tokens": 807
+        },
+        {
+          "name": "NORMAS_URU_2020.md",
+          "tokens": 4950
+        },
+        {
+          "name": "TEMPLATES.md",
+          "tokens": 1830
+        }
+      ]
+    },
+    {
+      "name": "go-library-builder",
+      "category": "personal",
+      "body_bytes": 12688,
+      "body_tokens": 3172,
+      "desc_tokens": 152,
+      "stack_tokens": 526,
+      "recipes_tokens": 2141,
+      "other_tokens": 0
+    },
+    {
+      "name": "latex-architect",
+      "category": "languages",
+      "body_bytes": 12396,
+      "body_tokens": 3099,
+      "desc_tokens": 116,
+      "stack_tokens": 339,
+      "recipes_tokens": 1841,
+      "other_tokens": 0
+    },
+    {
+      "name": "repo-tooling-architect",
+      "category": "tooling",
+      "body_bytes": 11428,
+      "body_tokens": 3084,
+      "desc_tokens": 91,
+      "stack_tokens": 479,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
     {
       "name": "website-concept-architect",
       "category": "frontend",
@@ -59,6 +143,26 @@
       "other_tokens": 0
     },
     {
+      "name": "hugo-architect",
+      "category": "frameworks",
+      "body_bytes": 11266,
+      "body_tokens": 2817,
+      "desc_tokens": 107,
+      "stack_tokens": 434,
+      "recipes_tokens": 973,
+      "other_tokens": 0
+    },
+    {
+      "name": "reveal-js-architect",
+      "category": "frameworks",
+      "body_bytes": 10980,
+      "body_tokens": 2745,
+      "desc_tokens": 93,
+      "stack_tokens": 147,
+      "recipes_tokens": 1056,
+      "other_tokens": 0
+    },
+    {
       "name": "ros2-architect",
       "category": "robotics",
       "body_bytes": 10867,
@@ -69,66 +173,22 @@
       "other_tokens": 0
     },
     {
-      "name": "repo-tooling-architect",
-      "category": "tooling",
-      "body_bytes": 9968,
-      "body_tokens": 2681,
-      "desc_tokens": 91,
-      "stack_tokens": 479,
-      "recipes_tokens": 0,
-      "other_tokens": 0
-    },
-    {
-      "name": "uru-thesis-reviewer",
-      "category": "personal",
-      "body_bytes": 10542,
-      "body_tokens": 2636,
-      "desc_tokens": 97,
-      "stack_tokens": 0,
-      "recipes_tokens": 0,
-      "other_tokens": 7058,
-      "other_files": [
-        {
-          "name": "CHECKS.md",
-          "tokens": 807
-        },
-        {
-          "name": "NORMAS_URU_2020.md",
-          "tokens": 4950
-        },
-        {
-          "name": "TEMPLATES.md",
-          "tokens": 1301
-        }
-      ]
-    },
-    {
-      "name": "observability-architect",
-      "category": "infra",
-      "body_bytes": 10238,
-      "body_tokens": 2577,
-      "desc_tokens": 74,
-      "stack_tokens": 546,
-      "recipes_tokens": 874,
-      "other_tokens": 0
-    },
-    {
-      "name": "api-contract-reviewer",
-      "category": "quality",
-      "body_bytes": 9798,
-      "body_tokens": 2511,
-      "desc_tokens": 108,
-      "stack_tokens": 0,
-      "recipes_tokens": 0,
+      "name": "ml-conference-paper-architect",
+      "category": "academic",
+      "body_bytes": 10468,
+      "body_tokens": 2617,
+      "desc_tokens": 121,
+      "stack_tokens": 457,
+      "recipes_tokens": 1305,
       "other_tokens": 0
     },
     {
       "name": "rest-api-architect",
       "category": "protocols",
-      "body_bytes": 10005,
-      "body_tokens": 2502,
+      "body_bytes": 10412,
+      "body_tokens": 2603,
       "desc_tokens": 102,
-      "stack_tokens": 427,
+      "stack_tokens": 490,
       "recipes_tokens": 0,
       "other_tokens": 3990,
       "other_files": [
@@ -155,6 +215,36 @@
       ]
     },
     {
+      "name": "observability-architect",
+      "category": "infra",
+      "body_bytes": 10238,
+      "body_tokens": 2577,
+      "desc_tokens": 74,
+      "stack_tokens": 546,
+      "recipes_tokens": 874,
+      "other_tokens": 0
+    },
+    {
+      "name": "rsk-guide",
+      "category": "meta",
+      "body_bytes": 9451,
+      "body_tokens": 2542,
+      "desc_tokens": 146,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "api-contract-reviewer",
+      "category": "quality",
+      "body_bytes": 9798,
+      "body_tokens": 2511,
+      "desc_tokens": 108,
+      "stack_tokens": 0,
+      "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
       "name": "grpc-architect",
       "category": "protocols",
       "body_bytes": 9932,
@@ -165,16 +255,6 @@
       "other_tokens": 0
     },
     {
-      "name": "rsk-guide",
-      "category": "meta",
-      "body_bytes": 9195,
-      "body_tokens": 2478,
-      "desc_tokens": 148,
-      "stack_tokens": 0,
-      "recipes_tokens": 0,
-      "other_tokens": 0
-    },
-    {
       "name": "ci-cd-architect",
       "category": "infra",
       "body_bytes": 9758,
@@ -182,6 +262,16 @@
       "desc_tokens": 114,
       "stack_tokens": 624,
       "recipes_tokens": 2915,
+      "other_tokens": 0
+    },
+    {
+      "name": "hexagonal-arch",
+      "category": "design",
+      "body_bytes": 9537,
+      "body_tokens": 2419,
+      "desc_tokens": 101,
+      "stack_tokens": 0,
+      "recipes_tokens": 768,
       "other_tokens": 0
     },
     {
@@ -211,16 +301,6 @@
       ]
     },
     {
-      "name": "hexagonal-arch",
-      "category": "design",
-      "body_bytes": 8972,
-      "body_tokens": 2277,
-      "desc_tokens": 101,
-      "stack_tokens": 0,
-      "recipes_tokens": 768,
-      "other_tokens": 0
-    },
-    {
       "name": "code-design-refactor",
       "category": "refactoring",
       "body_bytes": 8927,
@@ -228,6 +308,16 @@
       "desc_tokens": 96,
       "stack_tokens": 0,
       "recipes_tokens": 0,
+      "other_tokens": 0
+    },
+    {
+      "name": "uru-scientific-paper-architect",
+      "category": "personal",
+      "body_bytes": 8930,
+      "body_tokens": 2233,
+      "desc_tokens": 141,
+      "stack_tokens": 0,
+      "recipes_tokens": 2021,
       "other_tokens": 0
     },
     {
@@ -243,16 +333,16 @@
     {
       "name": "sql-architect",
       "category": "databases",
-      "body_bytes": 8564,
-      "body_tokens": 2141,
+      "body_bytes": 8686,
+      "body_tokens": 2172,
       "desc_tokens": 90,
       "stack_tokens": 295,
       "recipes_tokens": 0,
-      "other_tokens": 979,
+      "other_tokens": 1064,
       "other_files": [
         {
           "name": "ENGINES.md",
-          "tokens": 478
+          "tokens": 563
         },
         {
           "name": "POSTGRES.md",
@@ -271,16 +361,6 @@
       "other_tokens": 0
     },
     {
-      "name": "work-report-generator",
-      "category": "personal",
-      "body_bytes": 8295,
-      "body_tokens": 2104,
-      "desc_tokens": 82,
-      "stack_tokens": 0,
-      "recipes_tokens": 1240,
-      "other_tokens": 0
-    },
-    {
       "name": "performance-reviewer",
       "category": "quality",
       "body_bytes": 8350,
@@ -289,6 +369,22 @@
       "stack_tokens": 0,
       "recipes_tokens": 612,
       "other_tokens": 0
+    },
+    {
+      "name": "uru-thesis-architect",
+      "category": "personal",
+      "body_bytes": 7789,
+      "body_tokens": 1948,
+      "desc_tokens": 114,
+      "stack_tokens": 0,
+      "recipes_tokens": 1679,
+      "other_tokens": 4950,
+      "other_files": [
+        {
+          "name": "NORMAS_URU_2020.md",
+          "tokens": 4950
+        }
+      ]
     },
     {
       "name": "protobuf-architect",
@@ -381,14 +477,30 @@
       "other_tokens": 0
     },
     {
-      "name": "go-architect",
-      "category": "languages",
-      "body_bytes": 7055,
-      "body_tokens": 1796,
-      "desc_tokens": 74,
-      "stack_tokens": 385,
-      "recipes_tokens": 0,
+      "name": "uru-thesis-defense-architect",
+      "category": "personal",
+      "body_bytes": 7191,
+      "body_tokens": 1798,
+      "desc_tokens": 132,
+      "stack_tokens": 0,
+      "recipes_tokens": 1525,
       "other_tokens": 0
+    },
+    {
+      "name": "docker-architect",
+      "category": "infra",
+      "body_bytes": 7084,
+      "body_tokens": 1778,
+      "desc_tokens": 89,
+      "stack_tokens": 333,
+      "recipes_tokens": 718,
+      "other_tokens": 924,
+      "other_files": [
+        {
+          "name": "CHECKLIST.md",
+          "tokens": 924
+        }
+      ]
     },
     {
       "name": "gin-architect",
@@ -411,16 +523,6 @@
       "other_tokens": 0
     },
     {
-      "name": "docker-architect",
-      "category": "infra",
-      "body_bytes": 6762,
-      "body_tokens": 1698,
-      "desc_tokens": 89,
-      "stack_tokens": 333,
-      "recipes_tokens": 718,
-      "other_tokens": 0
-    },
-    {
       "name": "grafana-architect",
       "category": "infra",
       "body_bytes": 6632,
@@ -428,16 +530,6 @@
       "desc_tokens": 77,
       "stack_tokens": 407,
       "recipes_tokens": 1149,
-      "other_tokens": 0
-    },
-    {
-      "name": "python-architect",
-      "category": "languages",
-      "body_bytes": 6376,
-      "body_tokens": 1652,
-      "desc_tokens": 79,
-      "stack_tokens": 419,
-      "recipes_tokens": 0,
       "other_tokens": 0
     },
     {
@@ -481,6 +573,16 @@
           "tokens": 410
         }
       ]
+    },
+    {
+      "name": "pi-iteration-workflow",
+      "category": "personal",
+      "body_bytes": 3662,
+      "body_tokens": 916,
+      "desc_tokens": 108,
+      "stack_tokens": 0,
+      "recipes_tokens": 364,
+      "other_tokens": 0
     },
     {
       "name": "grill-with-docs",
