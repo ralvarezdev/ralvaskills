@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -41,37 +40,6 @@ func TestCommandDisplayName(t *testing.T) {
 
 	if got, want := commandDisplayName(list), "tools list"; got != want {
 		t.Errorf("commandDisplayName() = %q, want %q", got, want)
-	}
-}
-
-func TestResetFlags(t *testing.T) {
-	t.Parallel()
-
-	cmd := &cobra.Command{Use: "widgets"}
-	cmd.Flags().String("name", "default", "")
-	cmd.Flags().StringSlice("tags", nil, "")
-	if err := cmd.Flags().Set("name", "changed"); err != nil {
-		t.Fatal(err)
-	}
-	if err := cmd.Flags().Set("tags", "a,b"); err != nil {
-		t.Fatal(err)
-	}
-	type leftoverKey struct{}
-	cmd.SetContext(context.WithValue(context.Background(), leftoverKey{}, "leftover"))
-
-	resetFlags(cmd)
-
-	if v, _ := cmd.Flags().GetString("name"); v != "default" {
-		t.Errorf("name flag = %q, want default", v)
-	}
-	if v, _ := cmd.Flags().GetStringSlice("tags"); len(v) != 0 {
-		t.Errorf("tags flag = %v, want empty", v)
-	}
-	if cmd.Flags().Lookup("name").Changed {
-		t.Error("name flag still marked Changed after reset")
-	}
-	if cmd.Context() != context.Background() {
-		t.Error("resetFlags did not reset the command's context to context.Background()")
 	}
 }
 

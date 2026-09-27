@@ -9,7 +9,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/ralvarezdev/termkit"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 // sessionScreen is the screen the session is currently showing.
@@ -232,7 +231,7 @@ func (s *sessionModel) startCaptured(cmd *cobra.Command, args []string) tea.Cmd 
 	s.resultCrumb = cmd.CommandPath()
 	return func() tea.Msg {
 		capture := &termkit.Capture{}
-		resetFlags(cmd)
+		termkit.ResetFlags(cmd)
 		cmd.SetContext(WithCapture(context.Background(), capture))
 		cmd.SetOut(io.Discard)
 		cmd.SetErr(io.Discard)
@@ -259,14 +258,10 @@ func (s *sessionModel) captured(msg capturedMsg) {
 	}
 
 	s.resultLine = msg.line
-	var table *termkit.Data
-	if len(msg.tables) > 0 {
-		table = &msg.tables[0]
-	}
 	s.result = termkit.NewResultView(termkit.Result{
 		Breadcrumb: s.resultCrumb,
 		Messages:   msg.messages,
-		Table:      table,
+		Tables:     msg.tables,
 	}, s.width, s.height)
 	s.screen = screenResult
 }
@@ -308,24 +303,4 @@ func runLeaf(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	return cmd.Help()
-}
-
-// resetFlags puts cmd's own flags back to their defaults. cobra keeps flag
-// values between Execute/RunE calls in one process, so without this a
-// second in-process run of the same command would silently reuse the first
-// run's values (or stay stuck printing help after a --help run).
-func resetFlags(cmd *cobra.Command) {
-	// Reset a context left by a previous run so the current context (with or
-	// without a capture) applies to this command again.
-	cmd.SetContext(context.Background())
-	cmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
-		if slice, ok := flag.Value.(pflag.SliceValue); ok {
-			//nolint:errcheck // replacing with an empty slice cannot fail
-			slice.Replace(nil)
-		} else {
-			//nolint:errcheck // re-parsing the flag's own default cannot fail
-			flag.Value.Set(flag.DefValue)
-		}
-		flag.Changed = false
-	})
 }

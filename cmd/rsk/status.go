@@ -211,7 +211,7 @@ func printStatusText(
 			fmt.Fprintln(out)
 			ui.SectionHeader(out, sec.title, sec.subtitle)
 		}
-		printStatusSectionRows(out, capture, sec.skills, pinnedSet)
+		printStatusSectionRows(out, capture, sec.title, sec.skills, pinnedSet)
 	}
 
 	if capture != nil {
@@ -230,12 +230,16 @@ func printStatusText(
 }
 
 // printStatusSectionRows renders one row per linked skill, tagged with
-// [pinned] and/or its bundle memberships.
-func printStatusSectionRows(out io.Writer, capture *termkit.Capture, skills []linkedEntry, pinnedSet map[string]bool) {
+// [pinned] and/or its bundle memberships. title becomes the captured table's
+// Title, so the result view's tab line identifies which section is active
+// when a captured status run has more than one.
+func printStatusSectionRows(
+	out io.Writer, capture *termkit.Capture, title string, skills []linkedEntry, pinnedSet map[string]bool,
+) {
 	header := []string{headerSource, headerName, headerVersion, "", ""}
 	rows := termkit.Rows(skills, statusRowTable(pinnedSet))
 	if capture != nil {
-		capture.AddTable(termkit.Data{Headers: header, Rows: rows})
+		capture.AddTable(termkit.Data{Title: title, Headers: header, Rows: rows})
 		return
 	}
 	termkit.WriteTableStyled(out, header, rows, false, nil, true, false)
