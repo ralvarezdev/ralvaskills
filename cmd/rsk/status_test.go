@@ -2,12 +2,16 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 // TestRunStatusGlobalDoesNotRequireProject guards against the regression where
@@ -91,5 +95,74 @@ func TestRunStatusJSONOutput(t *testing.T) {
 	buf.Reset()
 	if err := runStatus(statusCmd, statusOpts{global: true, output: outputFormat("bogus")}); err == nil {
 		t.Fatal("expected error for invalid --output value, got nil")
+	}
+}
+
+// TestRunStatusCapture guards the picker's captured/scrollable path for
+// `rsk status --global`: under a ui.WithCapture-wrapped context, the section
+// table must land in the capture and nothing must be written to the
+// command's own writer.
+func TestRunStatusCapture(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv(config.EnvConfigHome, home)
+
+	skillSrc := filepath.Join(home, "skill-src", "demo-skill")
+	if err := os.MkdirAll(skillSrc, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	skillMD := "---\nname: demo-skill\nversion: 1.0.0\n---\nbody\n"
+	if err := os.WriteFile(filepath.Join(skillSrc, "SKILL.md"), []byte(skillMD), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	globalDir := filepath.Join(home, "global-claude")
+	if err := os.MkdirAll(globalDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(skillSrc, filepath.Join(globalDir, "demo-skill")); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := config.Config{
+		RegistryURL:        "https://example.invalid",
+		GlobalTargets:      map[string]string{"claude-code": globalDir},
+		DefaultTargetScope: "all",
+		OfficialCache:      filepath.Join(home, "official"),
+		VersionsCache:      filepath.Join(home, "versions"),
+	}
+	if err := config.Save(cfg); err != nil {
+		t.Fatalf("save config: %v", err)
+	}
+
+	projDir := t.TempDir()
+	t.Chdir(projDir)
+
+	var buf bytes.Buffer
+	statusCmd.SetOut(&buf)
+	statusCmd.SetContext(ui.WithCapture(t.Context(), &termkit.Capture{}))
+	t.Cleanup(func() {
+		statusCmd.SetOut(nil)
+		statusCmd.SetContext(context.Background())
+	})
+
+	capture := ui.CaptureFromContext(statusCmd.Context())
+	if capture == nil {
+		t.Fatal("expected a capture on the command's context")
+	}
+
+	if err := runStatus(statusCmd, statusOpts{global: true, output: outputText}); err != nil {
+		t.Fatalf("runStatus: unexpected error: %v", err)
+	}
+
+	if buf.Len() != 0 {
+		t.Fatalf("expected no output written to the command's writer under capture, got:\n%s", buf.String())
+	}
+
+	tables := capture.Tables()
+	if len(tables) != 1 {
+		t.Fatalf("expected exactly one captured table, got %d", len(tables))
+	}
+	if len(tables[0].Rows) != 1 {
+		t.Fatalf("expected exactly one captured row, got %d: %+v", len(tables[0].Rows), tables[0].Rows)
 	}
 }

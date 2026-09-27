@@ -94,6 +94,7 @@ type (
 
 func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	out := cmd.OutOrStdout()
+	capture := ui.CaptureFromContext(cmd.Context())
 
 	if err := validateStatusOpts(opts); err != nil {
 		return err
@@ -117,7 +118,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 
 	catalog, catalogWarn := config.LoadCatalog("")
 	if catalogWarn != nil {
-		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+		warnOrCapture(out, capture, fmt.Sprintf("user catalog: %v", catalogWarn))
 	}
 	membership := bundleMembershipIndex(catalog)
 
@@ -135,12 +136,23 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 		}
 	}
 
-	scanStatusSections(out, sections, cfg, membership, opts.personal)
+	scanStatusSections(out, capture, sections, cfg, membership, opts.personal)
 
-	if opts.output == outputJSON {
+	if opts.output == outputJSON && capture == nil {
 		return writeJSON(out, statusSectionsToEntries(sections, pinnedSet))
 	}
-	return printStatusText(out, sections, pinnedSet)
+	return printStatusText(out, capture, sections, pinnedSet)
+}
+
+// warnOrCapture reports msg on the capture (when a captured in-process run is
+// in progress) instead of writing it to out, since nothing written to out is
+// seen while the TUI owns the terminal.
+func warnOrCapture(out io.Writer, capture *termkit.Capture, msg string) {
+	if capture != nil {
+		capture.AddMessage(msg)
+		return
+	}
+	ui.Warn(out, msg)
 }
 
 // validateStatusOpts checks runStatus's flag combinations before doing any
@@ -168,7 +180,8 @@ func validateStatusOpts(opts statusOpts) error {
 // target directory, warning (rather than failing) on a directory that can't
 // be scanned.
 func scanStatusSections(
-	out io.Writer, sections []statusSection, cfg config.Config, membership map[string][]string, includePersonal bool,
+	out io.Writer, capture *termkit.Capture,
+	sections []statusSection, cfg config.Config, membership map[string][]string, includePersonal bool,
 ) {
 	for i := range sections {
 		entries, err := scanLinked(
@@ -177,7 +190,7 @@ func scanStatusSections(
 			membership, includePersonal,
 		)
 		if err != nil {
-			ui.Warn(out, fmt.Sprintf("scan %s: %v", sections[i].dir, err))
+			warnOrCapture(out, capture, fmt.Sprintf("scan %s: %v", sections[i].dir, err))
 		}
 		sections[i].skills = entries
 	}
@@ -185,16 +198,27 @@ func scanStatusSections(
 
 // printStatusText renders every non-empty section as a table, or a "no
 // skills installed" notice when all sections are empty.
-func printStatusText(out io.Writer, sections []statusSection, pinnedSet map[string]bool) error {
+func printStatusText(
+	out io.Writer, capture *termkit.Capture, sections []statusSection, pinnedSet map[string]bool,
+) error {
 	hasAny := false
 	for _, sec := range sections {
 		if len(sec.skills) == 0 {
 			continue
 		}
 		hasAny = true
-		fmt.Fprintln(out)
-		ui.SectionHeader(out, sec.title, sec.subtitle)
-		printStatusSectionRows(out, sec.skills, pinnedSet)
+		if capture == nil {
+			fmt.Fprintln(out)
+			ui.SectionHeader(out, sec.title, sec.subtitle)
+		}
+		printStatusSectionRows(out, capture, sec.skills, pinnedSet)
+	}
+
+	if capture != nil {
+		if !hasAny {
+			capture.AddMessage("No skills installed. Run 'rsk install <bundle>' to get started.")
+		}
+		return nil
 	}
 
 	fmt.Fprintln(out)
@@ -207,9 +231,14 @@ func printStatusText(out io.Writer, sections []statusSection, pinnedSet map[stri
 
 // printStatusSectionRows renders one row per linked skill, tagged with
 // [pinned] and/or its bundle memberships.
-func printStatusSectionRows(out io.Writer, skills []linkedEntry, pinnedSet map[string]bool) {
-	termkit.WriteTableStyled(out, []string{headerSource, headerName, headerVersion, "", ""},
-		termkit.Rows(skills, statusRowTable(pinnedSet)), false, nil, true, false)
+func printStatusSectionRows(out io.Writer, capture *termkit.Capture, skills []linkedEntry, pinnedSet map[string]bool) {
+	header := []string{headerSource, headerName, headerVersion, "", ""}
+	rows := termkit.Rows(skills, statusRowTable(pinnedSet))
+	if capture != nil {
+		capture.AddTable(termkit.Data{Headers: header, Rows: rows})
+		return
+	}
+	termkit.WriteTableStyled(out, header, rows, false, nil, true, false)
 }
 
 // statusRowTable projects one linked skill into its status row. The pinned set

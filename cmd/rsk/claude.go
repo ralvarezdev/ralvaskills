@@ -142,6 +142,7 @@ type claudeToolsPermissions struct {
 
 func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
+	capture := ui.CaptureFromContext(cmd.Context())
 
 	output := outputFormat(cmdx.String(cmd, cmdx.FlagOutput))
 	if !output.valid() {
@@ -163,7 +164,7 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if output == outputJSON {
+	if output == outputJSON && capture == nil {
 		return writeJSON(out, claudeToolsPermissions{Allow: allow, Deny: deny})
 	}
 
@@ -179,17 +180,16 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	header := []string{headerName, "Status"}
+	tableRows := termkit.Rows(rows, claudeToolsTable)
+	if capture != nil {
+		capture.AddTable(termkit.Data{Headers: header, Rows: tableRows})
+		return nil
+	}
+
 	fmt.Fprintln(out)
 	ui.Header(out, "Claude Code tools available:")
-	termkit.WriteTableStyled(
-		out,
-		[]string{headerName, "Status"},
-		termkit.Rows(rows, claudeToolsTable),
-		false,
-		nil,
-		true,
-		false,
-	)
+	termkit.WriteTableStyled(out, header, tableRows, false, nil, true, false)
 	fmt.Fprintln(out)
 
 	return nil

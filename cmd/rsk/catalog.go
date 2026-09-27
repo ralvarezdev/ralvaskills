@@ -100,6 +100,7 @@ func runCatalog(cmd *cobra.Command, opts catalogOpts) error {
 func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 	out := cmd.OutOrStdout()
 	ctx := cmd.Context()
+	capture := ui.CaptureFromContext(ctx)
 
 	if opts.source != "" && opts.source != skill.SourceLocal.String() && opts.source != skill.SourceOfficial.String() {
 		return fmt.Errorf("--source must be '%s' or '%s'", skill.SourceLocal, skill.SourceOfficial)
@@ -110,10 +111,10 @@ func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
 	}
 
-	all := loadSkillsBySource(ctx, out, cfg, opts.source)
+	all := loadSkillsBySource(ctx, out, capture, cfg, opts.source)
 
 	if opts.bundle != "" {
-		all, err = filterByBundle(out, all, opts.bundle)
+		all, err = filterByBundle(out, capture, all, opts.bundle)
 		if err != nil {
 			return err
 		}
@@ -131,26 +132,32 @@ func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 	})
 
 	if len(all) == 0 {
+		if capture != nil {
+			capture.AddMessage("No skills found.")
+			return nil
+		}
 		ui.Info(out, "No skills found.")
 		return nil
 	}
 
-	if opts.output == outputJSON {
+	if opts.output == outputJSON && capture == nil {
 		return writeJSON(out, skillsToEntries(all))
 	}
-	return printCatalogSkillTable(out, all)
+	return printCatalogSkillTable(out, capture, all)
 }
 
 // loadSkillsBySource walks the local and/or official sources per sourceFilter
 // ("" means both), warning on (rather than failing for) a source that can't
 // be walked.
-func loadSkillsBySource(ctx context.Context, out io.Writer, cfg config.Config, sourceFilter string) []skill.Skill {
+func loadSkillsBySource(
+	ctx context.Context, out io.Writer, capture *termkit.Capture, cfg config.Config, sourceFilter string,
+) []skill.Skill {
 	var all []skill.Skill
 
 	if sourceFilter == "" || sourceFilter == skill.SourceLocal.String() {
 		local, walkErr := newLocalSource(cfg).All(ctx)
 		if walkErr != nil {
-			ui.Warn(out, fmt.Sprintf("walk local skills: %v", walkErr))
+			warnOrCapture(out, capture, fmt.Sprintf("walk local skills: %v", walkErr))
 		} else {
 			all = append(all, local...)
 		}
@@ -159,7 +166,7 @@ func loadSkillsBySource(ctx context.Context, out io.Writer, cfg config.Config, s
 	if sourceFilter == "" || sourceFilter == skill.SourceOfficial.String() {
 		official, walkErr := source.NewOfficial(cfg.OfficialCache).All(ctx)
 		if walkErr != nil {
-			ui.Warn(out, walkErr.Error())
+			warnOrCapture(out, capture, walkErr.Error())
 		} else {
 			all = append(all, official...)
 		}
@@ -169,10 +176,12 @@ func loadSkillsBySource(ctx context.Context, out io.Writer, cfg config.Config, s
 }
 
 // filterByBundle keeps only the skills named in bundleName's catalog entry.
-func filterByBundle(out io.Writer, all []skill.Skill, bundleName string) ([]skill.Skill, error) {
+func filterByBundle(
+	out io.Writer, capture *termkit.Capture, all []skill.Skill, bundleName string,
+) ([]skill.Skill, error) {
 	catalog, catalogWarn := config.LoadCatalog("")
 	if catalogWarn != nil {
-		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+		warnOrCapture(out, capture, fmt.Sprintf("user catalog: %v", catalogWarn))
 	}
 	bundle, ok := config.FindBundle(catalog, bundleName)
 	if !ok {
@@ -185,10 +194,15 @@ func filterByBundle(out io.Writer, all []skill.Skill, bundleName string) ([]skil
 	return filterSkills(all, func(s skill.Skill) bool { return want[s.Name] }), nil
 }
 
-func printCatalogSkillTable(out io.Writer, skills []skill.Skill) error {
+func printCatalogSkillTable(out io.Writer, capture *termkit.Capture, skills []skill.Skill) error {
+	header := []string{headerSource, headerName, headerVersion}
+	rows := termkit.Rows(skills, catalogSkillTable)
+	if capture != nil {
+		capture.AddTable(termkit.Data{Headers: header, Rows: rows})
+		return nil
+	}
 	fmt.Fprintln(out)
-	termkit.WriteTableStyled(out, []string{headerSource, headerName, headerVersion},
-		termkit.Rows(skills, catalogSkillTable), false, nil, true, false)
+	termkit.WriteTableStyled(out, header, rows, false, nil, true, false)
 	fmt.Fprintln(out)
 	return nil
 }
@@ -222,6 +236,7 @@ func writeJSON(w io.Writer, v any) error {
 
 func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 	out := cmd.OutOrStdout()
+	capture := ui.CaptureFromContext(cmd.Context())
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -230,7 +245,7 @@ func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 
 	catalog, catalogWarn := config.LoadCatalog("")
 	if catalogWarn != nil {
-		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+		warnOrCapture(out, capture, fmt.Sprintf("user catalog: %v", catalogWarn))
 	}
 
 	targets := allTargetDirs(cfg)
@@ -248,20 +263,29 @@ func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 	sort.Slice(rows, func(i, j int) bool { return rows[i].Name < rows[j].Name })
 
 	if len(rows) == 0 {
+		if capture != nil {
+			capture.AddMessage("No bundles found.")
+			return nil
+		}
 		ui.Info(out, "No bundles found.")
 		return nil
 	}
 
-	if opts.output == outputJSON {
+	if opts.output == outputJSON && capture == nil {
 		return writeJSON(out, bundleRowsToEntries(rows))
 	}
-	return printCatalogBundleTable(out, rows)
+	return printCatalogBundleTable(out, capture, rows)
 }
 
-func printCatalogBundleTable(out io.Writer, rows []bundleRow) error {
+func printCatalogBundleTable(out io.Writer, capture *termkit.Capture, rows []bundleRow) error {
+	header := []string{"", "Bundle", "Linked", "Description"}
+	tableRows := termkit.Rows(rows, catalogBundleTable)
+	if capture != nil {
+		capture.AddTable(termkit.Data{Headers: header, Rows: tableRows})
+		return nil
+	}
 	fmt.Fprintln(out)
-	termkit.WriteTableStyled(out, []string{"", "Bundle", "Linked", "Description"},
-		termkit.Rows(rows, catalogBundleTable), false, nil, true, false)
+	termkit.WriteTableStyled(out, header, tableRows, false, nil, true, false)
 	fmt.Fprintln(out)
 	return nil
 }

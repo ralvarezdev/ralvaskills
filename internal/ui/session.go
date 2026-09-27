@@ -1,10 +1,15 @@
 package ui
 
 import (
+	"context"
+	"fmt"
+	"io"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/ralvarezdev/termkit"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // sessionScreen is the screen the session is currently showing.
@@ -13,19 +18,38 @@ type sessionScreen int
 const (
 	screenPicker sessionScreen = iota
 	screenForm
+	screenResult
 )
 
-// sessionModel ties the nested picker and the parameter form together into
-// one long-lived program: picking a leaf either runs it directly (no
-// parameters to collect) or opens the form for it, and both paths return to
-// the picker screen once the run finishes.
+// sessionModel ties the nested picker, the parameter form, and the captured
+// result view together into one long-lived program: picking a leaf either
+// runs it directly (no parameters to collect) or opens the form for it, a
+// read-only table-view command runs in-process and opens the scrollable
+// result screen, and every other command releases the terminal via
+// tea.Exec — all three paths return to the picker screen once they finish.
 type sessionModel struct {
 	picker        *pickerModel
 	form          *formModel
+	result        *termkit.ResultView
 	screen        sessionScreen
 	pending       *cobra.Command
 	cap           Capability
 	width, height int
+	// running is true while a captured command executes in-process; keys are
+	// ignored then so the cobra tree isn't mutated mid-run.
+	running     bool
+	runningLine string
+	resultLine  string
+	resultCrumb string
+}
+
+// capturedMsg reports a read-only command that ran in-process under a
+// termkit.Capture, carrying the tables and messages the TUI renders.
+type capturedMsg struct {
+	line     string
+	tables   []termkit.Data
+	messages []string
+	err      error
 }
 
 // newSessionModel builds the session rooted at cmds' top-level commands.
@@ -43,8 +67,9 @@ func newSessionModel(cmds []*cobra.Command, notice string) *sessionModel {
 // Init implements tea.Model.
 func (s *sessionModel) Init() tea.Cmd { return s.picker.Init() }
 
-// Update implements tea.Model: window sizes go to every screen, everything
-// else to the one showing.
+// Update implements tea.Model: window sizes go to every screen, a finished
+// captured run is handled here directly, and everything else goes to the
+// one screen currently showing.
 //
 //nolint:ireturn // signature dictated by the tea.Model interface
 func (s *sessionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -54,13 +79,34 @@ func (s *sessionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if s.form != nil {
 			s.form.Update(msg)
 		}
+		if s.result != nil {
+			s.result.Update(msg)
+		}
+		return s, nil
+	}
+
+	if captured, ok := msg.(capturedMsg); ok {
+		s.captured(captured)
+		return s, nil
+	}
+
+	// While a captured command runs in-process it mutates the cobra tree, so
+	// keys must not reach the picker. ctrl+c still aborts the session.
+	if s.running {
+		if key, ok := msg.(tea.KeyMsg); ok && key.String() == keyCtrlC {
+			s.picker.cancelled = true
+			return s, tea.Quit
+		}
 		return s, nil
 	}
 
 	var cmd tea.Cmd
-	if s.screen == screenForm {
+	switch s.screen {
+	case screenForm:
 		cmd = s.updateForm(msg)
-	} else {
+	case screenResult:
+		cmd = s.updateResult(msg)
+	case screenPicker:
 		cmd = s.updatePicker(msg)
 	}
 	return s, cmd
@@ -68,8 +114,18 @@ func (s *sessionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View implements tea.Model.
 func (s *sessionModel) View() string {
-	if s.screen == screenForm {
+	if s.running {
+		return MutedStyle.Render("running " + s.runningLine + "…")
+	}
+	switch s.screen {
+	case screenForm:
 		return s.form.View()
+	case screenResult:
+		if s.result != nil {
+			return s.result.View()
+		}
+	case screenPicker:
+		return s.picker.View()
 	}
 	return s.picker.View()
 }
@@ -92,10 +148,14 @@ func (s *sessionModel) updatePicker(msg tea.Msg) tea.Cmd {
 }
 
 // open shows the parameter form for cmd, or runs it directly when it has
-// nothing to ask.
+// nothing to ask — in-process and captured when cmd is a marked table view,
+// via tea.Exec otherwise.
 func (s *sessionModel) open(cmd *cobra.Command) tea.Cmd {
 	fields := commandFields(cmd)
 	if fields == nil {
+		if IsTableView(cmd) {
+			return s.startCaptured(cmd, nil)
+		}
 		return s.run(cmd, nil)
 	}
 
@@ -145,6 +205,9 @@ func (s *sessionModel) apply() tea.Cmd {
 
 	cmd := s.pending
 	s.pending, s.form, s.screen = nil, nil, screenPicker
+	if IsTableView(cmd) {
+		return s.startCaptured(cmd, args)
+	}
 	return s.run(cmd, args)
 }
 
@@ -152,6 +215,117 @@ func (s *sessionModel) apply() tea.Cmd {
 // picker screen once the user acknowledges the result.
 func (s *sessionModel) run(cmd *cobra.Command, args []string) tea.Cmd {
 	return tea.Exec(&commandExec{cmd: cmd, args: args}, func(err error) tea.Msg {
-		return commandFinishedMsg{name: strings.TrimPrefix(cmd.CommandPath(), cmd.Root().Name()+" "), err: err}
+		return commandFinishedMsg{name: commandDisplayName(cmd), err: err}
+	})
+}
+
+// startCaptured runs a read-only command in-process under a termkit.Capture,
+// so its table and messages come back as data for the result screen instead
+// of being printed behind the TUI's back.
+func (s *sessionModel) startCaptured(cmd *cobra.Command, args []string) tea.Cmd {
+	line := commandDisplayName(cmd)
+	if len(args) > 0 {
+		line += " " + strings.Join(args, " ")
+	}
+	s.running = true
+	s.runningLine = line
+	s.resultCrumb = cmd.CommandPath()
+	return func() tea.Msg {
+		capture := &termkit.Capture{}
+		resetFlags(cmd)
+		cmd.SetContext(WithCapture(context.Background(), capture))
+		cmd.SetOut(io.Discard)
+		cmd.SetErr(io.Discard)
+		err := runLeaf(cmd, args)
+		// Clear the context so a later tea.Exec run of the same command isn't
+		// captured too.
+		cmd.SetContext(context.Background())
+		if err != nil {
+			err = fmt.Errorf("run %s: %w", cmd.Name(), err)
+		}
+		return capturedMsg{line: line, tables: capture.Tables(), messages: capture.Messages(), err: err}
+	}
+}
+
+// captured handles a finished in-process run: an error is reported through
+// the picker's own status line (the same commandFinishedMsg it already
+// handles for tea.Exec runs), while a success opens the scrollable result
+// screen.
+func (s *sessionModel) captured(msg capturedMsg) {
+	s.running = false
+	if msg.err != nil {
+		s.picker.Update(commandFinishedMsg{name: msg.line, err: msg.err})
+		return
+	}
+
+	s.resultLine = msg.line
+	var table *termkit.Data
+	if len(msg.tables) > 0 {
+		table = &msg.tables[0]
+	}
+	s.result = termkit.NewResultView(termkit.Result{
+		Breadcrumb: s.resultCrumb,
+		Messages:   msg.messages,
+		Table:      table,
+	}, s.width, s.height)
+	s.screen = screenResult
+}
+
+// updateResult forwards keys to the result screen and, when it closes,
+// returns to the picker and records the successful run on its status line.
+func (s *sessionModel) updateResult(msg tea.Msg) tea.Cmd {
+	if key, ok := msg.(tea.KeyMsg); ok && key.String() == keyCtrlC {
+		s.picker.cancelled = true
+		return tea.Quit
+	}
+	if s.result == nil {
+		s.screen = screenPicker
+		return nil
+	}
+	_, cmd := s.result.Update(msg)
+	if s.result.Closed() {
+		s.picker.Update(commandFinishedMsg{name: s.resultLine, err: nil})
+		s.result, s.screen = nil, screenPicker
+	}
+	return cmd
+}
+
+// commandDisplayName is cmd's path with the root's own name trimmed off, the
+// same shape commandExec's tea.Exec path already reports on the picker's
+// status line.
+func commandDisplayName(cmd *cobra.Command) string {
+	return strings.TrimPrefix(cmd.CommandPath(), cmd.Root().Name()+" ")
+}
+
+// runLeaf runs cmd with args exactly as commandExec.runCommand does for the
+// tea.Exec path, so both call sites resolve RunE/Run/Help the same way.
+func runLeaf(cmd *cobra.Command, args []string) error {
+	if cmd.RunE != nil {
+		return cmd.RunE(cmd, args)
+	}
+	if cmd.Run != nil {
+		cmd.Run(cmd, args)
+		return nil
+	}
+	return cmd.Help()
+}
+
+// resetFlags puts cmd's own flags back to their defaults. cobra keeps flag
+// values between Execute/RunE calls in one process, so without this a
+// second in-process run of the same command would silently reuse the first
+// run's values (or stay stuck printing help after a --help run).
+func resetFlags(cmd *cobra.Command) {
+	// Reset a context left by a previous run so the current context (with or
+	// without a capture) applies to this command again.
+	cmd.SetContext(context.Background())
+	cmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
+		if slice, ok := flag.Value.(pflag.SliceValue); ok {
+			//nolint:errcheck // replacing with an empty slice cannot fail
+			slice.Replace(nil)
+		} else {
+			//nolint:errcheck // re-parsing the flag's own default cannot fail
+			flag.Value.Set(flag.DefValue)
+		}
+		flag.Changed = false
 	})
 }

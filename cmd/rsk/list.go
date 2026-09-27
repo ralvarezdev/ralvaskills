@@ -77,6 +77,7 @@ func runList(cmd *cobra.Command, opts listOpts) error {
 
 func runListProject(cmd *cobra.Command, opts listOpts) error {
 	out := cmd.OutOrStdout()
+	capture := ui.CaptureFromContext(cmd.Context())
 
 	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
@@ -111,26 +112,43 @@ func runListProject(cmd *cobra.Command, opts listOpts) error {
 	}
 
 	if len(rows) == 0 {
+		if capture != nil {
+			capture.AddMessage("No skills in manifest. Run 'rsk install <name>' to add one.")
+			return nil
+		}
 		fmt.Fprintln(out)
 		ui.Warn(out, "No skills in manifest. Run 'rsk install <name>' to add one.")
 		fmt.Fprintln(out)
 		return nil
 	}
 
-	if opts.output == outputJSON {
+	// Under capture, the table is what the TUI's result screen renders, so
+	// -o json (were it reachable through the picker's form) is moot — always
+	// take the table branch, the only one the captured path understands.
+	if opts.output == outputJSON && capture == nil {
 		return writeJSON(out, rows)
+	}
+
+	if capture != nil {
+		printProjectListTable(out, capture, rows)
+		return nil
 	}
 
 	fmt.Fprintln(out)
 	ui.Header(out, "Project skills:")
-	printProjectListTable(out, rows)
+	printProjectListTable(out, capture, rows)
 	fmt.Fprintln(out)
 	return nil
 }
 
-func printProjectListTable(out io.Writer, rows []listedSkill) {
-	termkit.WriteTableStyled(out, []string{"", headerName, headerVersion, ""},
-		termkit.Rows(rows, listProjectTable), false, nil, true, false)
+func printProjectListTable(out io.Writer, capture *termkit.Capture, rows []listedSkill) {
+	header := []string{"", headerName, headerVersion, ""}
+	tableRows := termkit.Rows(rows, listProjectTable)
+	if capture != nil {
+		capture.AddTable(termkit.Data{Headers: header, Rows: tableRows})
+		return
+	}
+	termkit.WriteTableStyled(out, header, tableRows, false, nil, true, false)
 }
 
 // listProjectTable projects one project-manifest row.
@@ -150,6 +168,7 @@ var listProjectTable = termkit.Table[listedSkill]{
 
 func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 	out := cmd.OutOrStdout()
+	capture := ui.CaptureFromContext(cmd.Context())
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -189,6 +208,10 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 	}
 
 	if len(rows) == 0 {
+		if capture != nil {
+			capture.AddMessage("No global skills installed.")
+			return nil
+		}
 		ui.Info(out, "No global skills installed.")
 		return nil
 	}
@@ -200,20 +223,30 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 		return rows[i].Name < rows[j].Name
 	})
 
-	if opts.output == outputJSON {
+	if opts.output == outputJSON && capture == nil {
 		return writeJSON(out, rows)
+	}
+
+	if capture != nil {
+		printGlobalListTable(out, capture, rows)
+		return nil
 	}
 
 	fmt.Fprintln(out)
 	ui.Header(out, "Global skills:")
-	printGlobalListTable(out, rows)
+	printGlobalListTable(out, capture, rows)
 	fmt.Fprintln(out)
 	return nil
 }
 
-func printGlobalListTable(out io.Writer, rows []listedSkill) {
-	termkit.WriteTableStyled(out, []string{headerSource, "Tool", headerName, headerVersion},
-		termkit.Rows(rows, listGlobalTable), false, nil, true, false)
+func printGlobalListTable(out io.Writer, capture *termkit.Capture, rows []listedSkill) {
+	header := []string{headerSource, "Tool", headerName, headerVersion}
+	tableRows := termkit.Rows(rows, listGlobalTable)
+	if capture != nil {
+		capture.AddTable(termkit.Data{Headers: header, Rows: tableRows})
+		return
+	}
+	termkit.WriteTableStyled(out, header, tableRows, false, nil, true, false)
 }
 
 // listGlobalTable projects one global-install row.

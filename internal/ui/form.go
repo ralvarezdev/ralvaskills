@@ -247,7 +247,7 @@ func (m *formModel) resizeInputs() {
 // consumed by the form rather than the focused input.
 func (m *formModel) handleKey(key tea.KeyMsg) (bool, tea.Cmd) {
 	switch key.String() {
-	case "ctrl+c", "esc":
+	case keyCtrlC, "esc":
 		m.cancelled = true
 		return true, tea.Quit
 	case "tab", "down":

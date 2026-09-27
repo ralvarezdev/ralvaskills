@@ -17,6 +17,10 @@ import (
 // backRowTitle labels the row that returns to the parent level.
 const backRowTitle = ".. back"
 
+// keyCtrlC is the abort key, checked in enough places (the picker, the form,
+// the session's running/result screens) to warrant a shared constant.
+const keyCtrlC = "ctrl+c"
+
 // pickItem is one selectable row in the picker: either a domain to descend
 // into (cmd has children) or a leaf to run (cmd is runnable, no children),
 // plus the back row.
@@ -171,7 +175,7 @@ func (m *pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if m.list.FilterState() != list.Filtering {
 			switch msg.String() {
-			case "ctrl+c":
+			case keyCtrlC:
 				m.cancelled = true
 				return m, tea.Quit
 			case "q":

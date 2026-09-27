@@ -1,11 +1,15 @@
 package main
 
-import "github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+import (
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
+)
 
 // setupCommands registers all subcommands and their flags with the root command.
 func setupCommands() {
 	// catalog command
 	rootCmd.AddCommand(catalogCmd)
+	ui.MarkTableView(catalogCmd)
 	f := catalogCmd.Flags()
 	f.Bool(cmdx.FlagStack, false, "Fetch and display dependency metadata alongside skills")
 	f.Bool(cmdx.FlagBundles, false, "Show bundles instead of individual skills")
@@ -18,6 +22,7 @@ func setupCommands() {
 	rootCmd.AddCommand(claudeCmd)
 	claudeCmd.AddCommand(claudeToolsCmd)
 	claudeToolsCmd.AddCommand(claudeToolsListCmd)
+	ui.MarkTableView(claudeToolsListCmd)
 	f = claudeToolsListCmd.Flags()
 	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
 	claudeToolsCmd.AddCommand(claudeToolsAllowCmd)
@@ -44,6 +49,7 @@ func setupCommands() {
 
 	// list command
 	rootCmd.AddCommand(listCmd)
+	ui.MarkTableView(listCmd)
 	f = listCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "List global skills")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
@@ -61,6 +67,7 @@ func setupCommands() {
 
 	// status command
 	rootCmd.AddCommand(statusCmd)
+	ui.MarkTableView(statusCmd)
 	f = statusCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "Show global skills only")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
