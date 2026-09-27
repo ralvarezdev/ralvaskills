@@ -121,6 +121,25 @@ tasks:
       - platforms: [linux, darwin]
         cmd: rm -rf dist
 
+  registry:remove:
+    desc: >-
+      Remove a skill, a version, or a version range from registry/index.json
+      and delete the matching GitHub tags/releases (e.g.
+      task registry:remove -- --skill NAME [--version X.Y.Z | --min X.Y.Z --max X.Y.Z] [--dry-run]).
+      Always run with --dry-run first.
+    cmds:
+      - go run ./cmd/registry-remove {{.CLI_ARGS}}
+
+  registry:remove:lint:
+    desc: Lint the registry-remove tool
+    cmds:
+      - golangci-lint run --config .golangci.yml ./cmd/registry-remove/...
+
+  registry:remove:fmt:
+    desc: Format the registry-remove tool
+    cmds:
+      - golangci-lint fmt --config .golangci.yml ./cmd/registry-remove/...
+
   # aggregate
 
   lint:
@@ -131,7 +150,7 @@ tasks:
   lint:doccheck:
     desc: "Check exported doc-comment coverage (revive exported & package-comments rules)"
     cmds:
-      - golangci-lint run --config .golangci.doccheck.yml ./cmd/rsk/... ./internal/... ./cmd/count-tokens/... ./cmd/generate-registry/...
+      - golangci-lint run --config .golangci.doccheck.yml ./cmd/rsk/... ./internal/... ./cmd/count-tokens/... ./cmd/generate-registry/... ./cmd/registry-remove/...
 
   lint:oneliners:
     desc: Check for one-line function bodies (not part of the standard gate — opt-in)
