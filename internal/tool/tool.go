@@ -10,8 +10,6 @@ import (
 )
 
 // ID identifies a supported AI tool by its string name in rsk.mod.
-//
-//nolint:recvcheck // mixed receivers are idiomatic for encoding.TextMarshaler/Unmarshaler
 type ID string
 
 // Tool describes an AI tool that rsk can manage skills for.

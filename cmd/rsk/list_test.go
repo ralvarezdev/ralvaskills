@@ -65,7 +65,7 @@ func TestRunListGlobalLabelsRowsByTool(t *testing.T) {
 	}
 
 	lines := make([]string, 0)
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		if strings.Contains(line, "demo-skill") {
 			lines = append(lines, line)
 		}

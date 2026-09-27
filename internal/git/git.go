@@ -44,12 +44,12 @@ func Clone(ctx context.Context, url, dest string, out io.Writer) error {
 // preferable to surfacing a spurious error.
 func Behind(ctx context.Context, dir string) (int, error) {
 	if err := exec.CommandContext(ctx, "git", "-C", dir, "fetch", "--quiet").Run(); err != nil {
-		return 0, nil
+		return 0, nil //nolint:nilerr // no remote/network — unmeasurable, not an error; see doc comment above
 	}
 
 	out, err := exec.CommandContext(ctx, "git", "-C", dir, "rev-list", "--count", "HEAD..@{u}").Output()
 	if err != nil {
-		return 0, nil
+		return 0, nil //nolint:nilerr // no upstream tracking branch — unmeasurable, not an error; see doc comment above
 	}
 
 	n, err := strconv.Atoi(strings.TrimSpace(string(out)))

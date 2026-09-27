@@ -15,20 +15,15 @@ import (
 // list` emits well-formed JSON with the allow/deny rule lists, and that an
 // invalid --output value is rejected the same way list/catalog/status reject
 // theirs.
+//
+//nolint:paralleltest // t.Chdir changes the process-wide working directory
 func TestRunClaudeToolsListJSONOutput(t *testing.T) {
 	projDir := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(projDir, ".claude"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	origWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(origWD) })
-	if err = os.Chdir(projDir); err != nil {
-		t.Fatal(err)
-	}
-	if err = manifest.WriteMod(filepath.Join(projDir, ".rsk"), manifest.Mod{}); err != nil {
+	t.Chdir(projDir)
+	if err := manifest.WriteMod(filepath.Join(projDir, ".rsk"), manifest.Mod{}); err != nil {
 		t.Fatalf("write rsk.mod: %v", err)
 	}
 

@@ -155,6 +155,8 @@ func (m *pickerModel) Init() tea.Cmd { return nil }
 // Update implements tea.Model. Keys are intercepted before being delegated to
 // the list, but only while the user is not filtering — while filtering, enter
 // applies the filter rather than choosing a row.
+//
+//nolint:ireturn // signature dictated by the tea.Model interface
 func (m *pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -221,6 +223,8 @@ func (m *pickerModel) fit() {
 
 // choose descends into a domain, pops on the back row, or selects a leaf and
 // quits so the session can act on it.
+//
+//nolint:ireturn // return type mirrors Update's, which tea.Model dictates
 func (m *pickerModel) choose(item pickItem) (tea.Model, tea.Cmd) {
 	switch {
 	case item.isBack:
@@ -327,6 +331,7 @@ func (c *commandExec) Run() error {
 	}
 
 	fmt.Fprint(c.out, "\n(press enter to return to the menu)")
+	//nolint:errcheck // just waiting for Enter; a closed/EOF stdin here doesn't change whether the command itself succeeded
 	bufio.NewReader(c.in).ReadString('\n')
 	return err
 }

@@ -65,7 +65,7 @@ func Load(cfg config.Config) (result Result, checkedAt time.Time, ok bool) {
 	}
 
 	var c cacheFile
-	if err := json.Unmarshal(data, &c); err != nil {
+	if err = json.Unmarshal(data, &c); err != nil {
 		return Result{}, time.Time{}, false
 	}
 	return Result{Mode: c.Mode, Outdated: c.Outdated}, c.CheckedAt, true

@@ -45,6 +45,8 @@ func (s *sessionModel) Init() tea.Cmd { return s.picker.Init() }
 
 // Update implements tea.Model: window sizes go to every screen, everything
 // else to the one showing.
+//
+//nolint:ireturn // signature dictated by the tea.Model interface
 func (s *sessionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if size, isResize := msg.(tea.WindowSizeMsg); isResize {
 		s.width, s.height = size.Width, size.Height

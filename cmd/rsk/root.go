@@ -99,7 +99,9 @@ func init() {
 // buildInfoFallback fills in version/commit/buildDate from runtime/debug's
 // build info when the ldflags-injected defaults were never overridden, i.e.
 // the binary wasn't produced by the release pipeline (e.g. `go install ...@latest`).
-func buildInfoFallback(version, commit, buildDate string) (string, string, string) {
+func buildInfoFallback(curVersion, curCommit, curBuildDate string) (version, commit, buildDate string) {
+	version, commit, buildDate = curVersion, curCommit, curBuildDate
+
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return version, commit, buildDate

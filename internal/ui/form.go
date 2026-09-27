@@ -143,6 +143,8 @@ func newFormModel(capa Capability, title string, fields []*formField) *formModel
 func (m *formModel) Init() tea.Cmd { return textinput.Blink }
 
 // Update implements tea.Model.
+//
+//nolint:ireturn // signature dictated by the tea.Model interface
 func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if size, isResize := msg.(tea.WindowSizeMsg); isResize {
 		m.width = size.Width

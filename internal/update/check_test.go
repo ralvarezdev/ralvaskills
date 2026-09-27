@@ -14,6 +14,8 @@ func testConfig(t *testing.T) config.Config {
 }
 
 func TestSaveLoadRoundTrip(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(t)
 	want := Result{Mode: ModeRegistry, Outdated: []string{"foo", "bar"}}
 
@@ -28,7 +30,10 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 	if got.Mode != want.Mode {
 		t.Errorf("Mode = %q, want %q", got.Mode, want.Mode)
 	}
-	if len(got.Outdated) != len(want.Outdated) || got.Outdated[0] != want.Outdated[0] || got.Outdated[1] != want.Outdated[1] {
+	outdatedMatch := len(got.Outdated) == len(want.Outdated) &&
+		got.Outdated[0] == want.Outdated[0] &&
+		got.Outdated[1] == want.Outdated[1]
+	if !outdatedMatch {
 		t.Errorf("Outdated = %v, want %v", got.Outdated, want.Outdated)
 	}
 	if checkedAt.IsZero() {
@@ -40,6 +45,8 @@ func TestSaveLoadRoundTrip(t *testing.T) {
 }
 
 func TestSaveLoadEmptyResult(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(t)
 	if err := Save(cfg, Result{Mode: ModeLocal}); err != nil {
 		t.Fatalf("Save: %v", err)
@@ -55,6 +62,8 @@ func TestSaveLoadEmptyResult(t *testing.T) {
 }
 
 func TestLoadMissingCache(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(t)
 	if _, _, ok := Load(cfg); ok {
 		t.Error("Load on missing cache: ok = true, want false")
@@ -62,6 +71,8 @@ func TestLoadMissingCache(t *testing.T) {
 }
 
 func TestLoadMalformedCache(t *testing.T) {
+	t.Parallel()
+
 	cfg := testConfig(t)
 	if err := Save(cfg, Result{Mode: ModeRegistry}); err != nil {
 		t.Fatalf("Save: %v", err)
@@ -76,6 +87,8 @@ func TestLoadMalformedCache(t *testing.T) {
 }
 
 func TestStale(t *testing.T) {
+	t.Parallel()
+
 	if Stale(time.Now()) {
 		t.Error("Stale(now) = true, want false")
 	}

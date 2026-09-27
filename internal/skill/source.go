@@ -3,8 +3,6 @@ package skill
 import "fmt"
 
 // Source identifies where an installed skill originates.
-//
-//nolint:recvcheck // mixed receivers are idiomatic for encoding.TextMarshaler/Unmarshaler
 type Source string
 
 const (

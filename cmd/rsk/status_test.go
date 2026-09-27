@@ -35,20 +35,13 @@ func TestRunStatusGlobalDoesNotRequireProject(t *testing.T) {
 
 	// cwd has no .rsk/rsk.mod — --global must still work.
 	projDir := t.TempDir()
-	origWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(origWD) })
-	if err = os.Chdir(projDir); err != nil {
-		t.Fatal(err)
-	}
+	t.Chdir(projDir)
 
 	var buf bytes.Buffer
 	statusCmd.SetOut(&buf)
 	t.Cleanup(func() { statusCmd.SetOut(nil) })
 
-	if err = runStatus(statusCmd, statusOpts{global: true, output: outputText}); err != nil {
+	if err := runStatus(statusCmd, statusOpts{global: true, output: outputText}); err != nil {
 		t.Fatalf("runStatus with --global outside a project: unexpected error: %v", err)
 	}
 }
@@ -77,25 +70,18 @@ func TestRunStatusJSONOutput(t *testing.T) {
 	}
 
 	projDir := t.TempDir()
-	origWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chdir(origWD) })
-	if err = os.Chdir(projDir); err != nil {
-		t.Fatal(err)
-	}
+	t.Chdir(projDir)
 
 	var buf bytes.Buffer
 	statusCmd.SetOut(&buf)
 	t.Cleanup(func() { statusCmd.SetOut(nil) })
 
-	if err = runStatus(statusCmd, statusOpts{global: true, output: outputJSON}); err != nil {
+	if err := runStatus(statusCmd, statusOpts{global: true, output: outputJSON}); err != nil {
 		t.Fatalf("runStatus with -o json: unexpected error: %v", err)
 	}
 
 	var sections []statusSectionEntry
-	if err = json.Unmarshal(buf.Bytes(), &sections); err != nil {
+	if err := json.Unmarshal(buf.Bytes(), &sections); err != nil {
 		t.Fatalf("output is not valid JSON: %v\noutput: %s", err, buf.String())
 	}
 	if len(sections) != 1 || sections[0].Dir != globalDir {
@@ -103,7 +89,7 @@ func TestRunStatusJSONOutput(t *testing.T) {
 	}
 
 	buf.Reset()
-	if err = runStatus(statusCmd, statusOpts{global: true, output: outputFormat("bogus")}); err == nil {
+	if err := runStatus(statusCmd, statusOpts{global: true, output: outputFormat("bogus")}); err == nil {
 		t.Fatal("expected error for invalid --output value, got nil")
 	}
 }

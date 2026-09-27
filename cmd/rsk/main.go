@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/ralvarezdev/ralvaskills/internal/config"
@@ -32,6 +33,8 @@ func runUpdateCheckWorker() {
 		os.Exit(0)
 	}
 
-	_ = updatecheck.Save(cfg, result)
+	if err = updatecheck.Save(cfg, result); err != nil {
+		fmt.Fprintln(os.Stderr, "update check: save failed:", err)
+	}
 	os.Exit(0)
 }

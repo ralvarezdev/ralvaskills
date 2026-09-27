@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -59,10 +60,12 @@ func maybeSpawnUpdateCheck() {
 		return
 	}
 
-	c := exec.Command(exe)
+	c := exec.CommandContext(context.Background(), exe)
 	c.Env = append(os.Environ(), rskUpdateCheckWorkerEnv+"=1")
 	c.Stdin = nil
 	c.Stdout = nil
 	c.Stderr = nil
-	_ = c.Start()
+	if err = c.Start(); err != nil {
+		return
+	}
 }
