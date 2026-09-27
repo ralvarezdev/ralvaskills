@@ -169,12 +169,12 @@ func (m *formModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View implements tea.Model.
 func (m *formModel) View() string {
-	lines := []string{m.cap.accent(m.title, true), ""}
+	lines := []string{m.cap.Accent(m.title, true), ""}
 
 	for i, field := range m.fields {
 		cursor := "  "
 		if i == m.index {
-			cursor = m.cap.accent("> ", true)
+			cursor = m.cap.Accent("> ", true)
 		}
 
 		if field.isBool {
@@ -182,7 +182,7 @@ func (m *formModel) View() string {
 			if field.boolVal {
 				mark = "x"
 			}
-			lines = append(lines, cursor+field.label+"  ["+mark+"]  "+m.cap.muted(field.help))
+			lines = append(lines, cursor+field.label+"  ["+mark+"]  "+m.cap.Muted(field.help))
 			continue
 		}
 
@@ -190,16 +190,16 @@ func (m *formModel) View() string {
 	}
 
 	if m.err != "" {
-		lines = append(lines, "", m.cap.paint(m.err, lipgloss.NewStyle().Foreground(ColorDanger)))
+		lines = append(lines, "", m.cap.Paint(m.err, lipgloss.NewStyle().Foreground(ColorDanger)))
 	}
 
 	if m.confirm {
-		lines = append(lines, "", "Will run:  "+m.cap.accent(m.preview(), true), "",
-			m.cap.muted("(enter: run · esc: back to the menu)"))
+		lines = append(lines, "", "Will run:  "+m.cap.Accent(m.preview(), true), "",
+			m.cap.Muted("(enter: run · esc: back to the menu)"))
 		return strings.Join(lines, "\n")
 	}
 
-	lines = append(lines, "", m.cap.muted("(tab: next · space: toggle · enter: next · esc: back to the menu)"))
+	lines = append(lines, "", m.cap.Muted("(tab: next · space: toggle · enter: next · esc: back to the menu)"))
 	return strings.Join(lines, "\n")
 }
 

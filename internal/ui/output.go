@@ -5,8 +5,13 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 )
+
+// Padding is the standard left/right padding for UI output.
+const Padding = "  "
 
 // Brand prints the rsk name and version header.
 func Brand(w io.Writer, version string) {
@@ -16,20 +21,19 @@ func Brand(w io.Writer, version string) {
 	)
 }
 
-// Header prints a bold section title followed by a divider line.
+// Header prints a bold section title followed by a divider line. rsk's
+// TitleStyle is termkit's own TitleStyle re-exported (see style.go), so this
+// delegates straight to termkit.WriteHeader rather than duplicating its body.
 func Header(w io.Writer, msg string) {
-	_, _ = fmt.Fprintln(w, TitleStyle.Render(msg))
-	_, _ = fmt.Fprintln(w, divider())
+	termkit.WriteHeader(w, msg)
 }
 
-// SectionHeader prints a bold title, an optional muted subtitle, and a divider.
+// SectionHeader prints a bold title, an optional muted subtitle, and a
+// divider. rsk's BoldStyle (Bold(true), no color) and its "  " padding match
+// termkit.WriteSectionHeader's rendering exactly, so this delegates straight
+// to it rather than duplicating its body.
 func SectionHeader(w io.Writer, title, subtitle string) {
-	line := BoldStyle.Render(title)
-	if subtitle != "" {
-		line += Padding + MutedStyle.Render(subtitle)
-	}
-	fmt.Fprintln(w, line)
-	fmt.Fprintln(w, divider())
+	termkit.WriteSectionHeader(w, title, subtitle)
 }
 
 // SourceLabel returns a styled source badge for table rows. All labels are

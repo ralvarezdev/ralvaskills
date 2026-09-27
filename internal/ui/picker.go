@@ -127,7 +127,7 @@ func newPickerList(items []pickItem, capa Capability) list.Model {
 // default magenta.
 func pickerDelegate(capa Capability) list.DefaultDelegate {
 	delegate := list.NewDefaultDelegate()
-	if !capa.color {
+	if !capa.Color {
 		return delegate
 	}
 
@@ -141,7 +141,7 @@ func pickerDelegate(capa Capability) list.DefaultDelegate {
 
 // styleList puts the list chrome (title, filter prompt) in the theme palette.
 func styleList(model *list.Model, capa Capability) {
-	if !capa.color {
+	if !capa.Color {
 		return
 	}
 	model.Styles.Title = model.Styles.Title.UnsetBackground().Bold(true).Foreground(ColorAccent)
@@ -197,24 +197,20 @@ func (m *pickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View implements tea.Model.
 func (m *pickerModel) View() string {
-	view := m.cap.Header(m.width, m.height)
+	view := m.cap.Header(rskBannerSpec, m.width, m.height)
 	if m.notice != "" {
-		view += "\n" + m.cap.paint(m.notice, lipgloss.NewStyle().Foreground(ColorWarning).Bold(true))
+		view += "\n" + m.cap.Paint(m.notice, lipgloss.NewStyle().Foreground(ColorWarning).Bold(true))
 	}
 	view += "\n" + m.list.View()
 	if m.lastRun == "" {
 		return view
 	}
-	if m.lastErr != nil {
-		return view + "\n" + m.cap.paint(fmt.Sprintf("last run: %s — %s", m.lastRun, m.lastErr),
-			lipgloss.NewStyle().Foreground(ColorDanger))
-	}
-	return view + "\n" + m.cap.muted(fmt.Sprintf("last run: %s — ok", m.lastRun))
+	return view + "\n" + m.cap.LastRunLine(m.lastRun, m.lastErr)
 }
 
 // fit sizes the list to the terminal minus the header (and notice, if any).
 func (m *pickerModel) fit() {
-	used := lipgloss.Height(m.cap.Header(m.width, m.height))
+	used := lipgloss.Height(m.cap.Header(rskBannerSpec, m.width, m.height))
 	if m.notice != "" {
 		used++
 	}
