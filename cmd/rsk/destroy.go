@@ -100,7 +100,7 @@ func printDestroyPlan(out io.Writer, rskDir, cwd string, tools []tool.ID, hasSki
 
 	fmt.Fprintln(out)
 	ui.Header(out, "This will remove:")
-	termkit.WriteTableStyled(out, []string{"", ""}, termkit.Rows(rows, destroyPlanTable), false, nil, true)
+	termkit.WriteTableStyled(out, []string{"", ""}, termkit.Rows(rows, destroyPlanTable), false, nil, true, false)
 	fmt.Fprintln(out)
 }
 

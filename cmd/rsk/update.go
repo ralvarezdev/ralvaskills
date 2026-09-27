@@ -458,7 +458,7 @@ func printRegistryUpdatePlan(out io.Writer, toUpdate []updatePair) {
 	fmt.Fprintln(out)
 	ui.Header(out, "Skills to update:")
 	termkit.WriteTableStyled(out, []string{headerName, "From", "", "To"},
-		termkit.Rows(toUpdate, updatePlanTable), false, nil, true)
+		termkit.Rows(toUpdate, updatePlanTable), false, nil, true, false)
 	fmt.Fprintln(out)
 }
 

@@ -188,7 +188,7 @@ func filterByBundle(out io.Writer, all []skill.Skill, bundleName string) ([]skil
 func printCatalogSkillTable(out io.Writer, skills []skill.Skill) error {
 	fmt.Fprintln(out)
 	termkit.WriteTableStyled(out, []string{headerSource, headerName, headerVersion},
-		termkit.Rows(skills, catalogSkillTable), false, nil, true)
+		termkit.Rows(skills, catalogSkillTable), false, nil, true, false)
 	fmt.Fprintln(out)
 	return nil
 }
@@ -261,7 +261,7 @@ func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 func printCatalogBundleTable(out io.Writer, rows []bundleRow) error {
 	fmt.Fprintln(out)
 	termkit.WriteTableStyled(out, []string{"", "Bundle", "Linked", "Description"},
-		termkit.Rows(rows, catalogBundleTable), false, nil, true)
+		termkit.Rows(rows, catalogBundleTable), false, nil, true, false)
 	fmt.Fprintln(out)
 	return nil
 }

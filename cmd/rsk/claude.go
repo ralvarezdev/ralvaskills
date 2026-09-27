@@ -188,6 +188,7 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 		false,
 		nil,
 		true,
+		false,
 	)
 	fmt.Fprintln(out)
 

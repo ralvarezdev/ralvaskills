@@ -209,7 +209,7 @@ func printStatusText(out io.Writer, sections []statusSection, pinnedSet map[stri
 // [pinned] and/or its bundle memberships.
 func printStatusSectionRows(out io.Writer, skills []linkedEntry, pinnedSet map[string]bool) {
 	termkit.WriteTableStyled(out, []string{headerSource, headerName, headerVersion, "", ""},
-		termkit.Rows(skills, statusRowTable(pinnedSet)), false, nil, true)
+		termkit.Rows(skills, statusRowTable(pinnedSet)), false, nil, true, false)
 }
 
 // statusRowTable projects one linked skill into its status row. The pinned set

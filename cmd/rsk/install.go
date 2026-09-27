@@ -391,7 +391,7 @@ func printInstallPreview(out io.Writer, skills []skill.Skill, targets, warnings 
 		}
 	}
 	termkit.WriteTableStyled(out, []string{headerSource, headerName, headerVersion, "", headerPath, ""},
-		termkit.Rows(rows, installPlanTable), false, nil, true)
+		termkit.Rows(rows, installPlanTable), false, nil, true, false)
 
 	for _, w := range warnings {
 		fmt.Fprintln(out)

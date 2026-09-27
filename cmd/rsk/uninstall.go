@@ -191,7 +191,7 @@ func printUninstallPreview(out io.Writer, toRemove []removeEntry, dryRun bool) {
 	}
 
 	termkit.WriteTableStyled(out, []string{headerName, "", headerPath},
-		termkit.Rows(toRemove, uninstallPreviewTable), false, nil, true)
+		termkit.Rows(toRemove, uninstallPreviewTable), false, nil, true, false)
 	fmt.Fprintln(out)
 }
 

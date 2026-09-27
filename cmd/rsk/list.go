@@ -130,7 +130,7 @@ func runListProject(cmd *cobra.Command, opts listOpts) error {
 
 func printProjectListTable(out io.Writer, rows []listedSkill) {
 	termkit.WriteTableStyled(out, []string{"", headerName, headerVersion, ""},
-		termkit.Rows(rows, listProjectTable), false, nil, true)
+		termkit.Rows(rows, listProjectTable), false, nil, true, false)
 }
 
 // listProjectTable projects one project-manifest row.
@@ -213,7 +213,7 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 
 func printGlobalListTable(out io.Writer, rows []listedSkill) {
 	termkit.WriteTableStyled(out, []string{headerSource, "Tool", headerName, headerVersion},
-		termkit.Rows(rows, listGlobalTable), false, nil, true)
+		termkit.Rows(rows, listGlobalTable), false, nil, true, false)
 }
 
 // listGlobalTable projects one global-install row.
