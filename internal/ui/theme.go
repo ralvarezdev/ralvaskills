@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/charmbracelet/lipgloss"
+	"github.com/lucasb-eyer/go-colorful"
 
 	"github.com/ralvarezdev/termkit"
 )
@@ -23,12 +24,37 @@ var (
 	ColorMuted = termkit.ColorMuted
 )
 
-// wordmarkGradient shades the wordmark row by row along the accent hue.
-var wordmarkGradient = []lipgloss.AdaptiveColor{
-	{Light: "#14B8A6", Dark: "#5EEAD4"},
-	{Light: "#0F9488", Dark: "#2DD4BF"},
-	{Light: "#0D7A70", Dark: "#14B8A6"},
-	{Light: "#0F766E", Dark: "#0D9488"},
+// wordmarkGradientSteps is how far each successive wordmark row darkens
+// toward black, roughly matching the falloff of the old hand-picked teal
+// ramp this replaced.
+var wordmarkGradientSteps = []float64{0, 0.18, 0.34, 0.48}
+
+// wordmarkGradient shades the wordmark row by row, darkened down from the
+// active termkit Palette's accent color — so the banner follows whatever
+// palette termkit is set to instead of a color baked in for one specific
+// scheme.
+var wordmarkGradient = buildWordmarkGradient()
+
+func buildWordmarkGradient() []lipgloss.AdaptiveColor {
+	out := make([]lipgloss.AdaptiveColor, len(wordmarkGradientSteps))
+	for i, t := range wordmarkGradientSteps {
+		out[i] = lipgloss.AdaptiveColor{
+			Light: darken(termkit.ColorAccent.Light, t),
+			Dark:  darken(termkit.ColorAccent.Dark, t),
+		}
+	}
+	return out
+}
+
+// darken blends hex toward black by t (0 = unchanged, 1 = black) in Lab
+// space, which keeps the blend perceptually even. An unparseable hex is
+// returned unchanged rather than panicking.
+func darken(hex string, t float64) string {
+	c, err := colorful.Hex(hex)
+	if err != nil {
+		return hex
+	}
+	return c.BlendLab(colorful.Color{}, t).Hex()
 }
 
 const (
