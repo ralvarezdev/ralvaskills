@@ -11,7 +11,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/mattn/go-isatty v0.0.24
-	github.com/ralvarezdev/termkit v0.3.0
+	github.com/ralvarezdev/termkit v0.5.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 )
