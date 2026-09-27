@@ -64,14 +64,8 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 	errOut := cmd.ErrOrStderr()
 	ctx := cmd.Context()
 
-	if !opts.global && opts.forTool != "" {
-		return errors.New("--for requires --global")
-	}
-	if opts.global && opts.pin {
-		return errors.New("--pin only applies to project installs (drop --global or --pin)")
-	}
-	if opts.version != "" {
-		return errors.New("--version is not yet supported; skills are symlinked from the local repo HEAD")
+	if err := validateInstallOpts(opts); err != nil {
+		return err
 	}
 
 	// Project-bundle install with no args: read rsk.mod and install everything.
@@ -80,12 +74,9 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 	}
 
 	if opts.global && len(args) == 0 {
-		name, err := ui.Ask(out, "Skill or bundle name", "")
+		name, err := promptInstallName(out)
 		if err != nil {
 			return err
-		}
-		if name == "" {
-			return errors.New("specify at least one bundle or skill name")
 		}
 		args = []string{name}
 	}
@@ -109,12 +100,8 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 	}
 	skills = dedupSkills(skills)
 
-	if !opts.personal {
-		for _, s := range skills {
-			if s.IsPersonal {
-				return fmt.Errorf("skill %q is in personal/ — pass --personal to install it", s.Name)
-			}
-		}
+	if err = checkNoPersonalSkills(skills, opts.personal); err != nil {
+		return err
 	}
 
 	if len(skills) == 0 {
@@ -129,6 +116,48 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 		return runInstallGlobal(cmd, cfg, opts, skills, warnings)
 	}
 	return runInstallProject(cmd, args, opts, skills, warnings, errOut)
+}
+
+// validateInstallOpts checks the flag combinations runInstall requires
+// before doing any resolution work.
+func validateInstallOpts(opts installOpts) error {
+	if !opts.global && opts.forTool != "" {
+		return errors.New("--for requires --global")
+	}
+	if opts.global && opts.pin {
+		return errors.New("--pin only applies to project installs (drop --global or --pin)")
+	}
+	if opts.version != "" {
+		return errors.New("--version is not yet supported; skills are symlinked from the local repo HEAD")
+	}
+	return nil
+}
+
+// promptInstallName asks for a bundle or skill name when `rsk install
+// --global` was run with no positional args.
+func promptInstallName(out io.Writer) (string, error) {
+	name, err := ui.Ask(out, "Skill or bundle name", "")
+	if err != nil {
+		return "", err
+	}
+	if name == "" {
+		return "", errors.New("specify at least one bundle or skill name")
+	}
+	return name, nil
+}
+
+// checkNoPersonalSkills rejects the install when any resolved skill lives
+// under personal/ and --personal wasn't passed.
+func checkNoPersonalSkills(skills []skill.Skill, personal bool) error {
+	if personal {
+		return nil
+	}
+	for _, s := range skills {
+		if s.IsPersonal {
+			return fmt.Errorf("skill %q is in personal/ — pass --personal to install it", s.Name)
+		}
+	}
+	return nil
 }
 
 // runInstallGlobal symlinks each resolved skill into the configured global
@@ -202,20 +231,11 @@ func runInstallProject(
 	}
 	targets := projectSkillsDirs(projectRoot, m)
 
-	printInstallPreview(out, skills, targets, warnings, opts.dryRun)
-	if opts.dryRun {
+	if !previewAndConfirm(out, skills, targets, warnings, opts.dryRun) {
 		return nil
 	}
-	if !ui.ConfirmYN(out, "Proceed?") {
-		fmt.Fprintln(out, "Aborted.")
-		return nil
-	}
-	fmt.Fprintln(out)
-
-	for _, target := range targets {
-		if mkdirErr := os.MkdirAll(target, fsperm.Dir); mkdirErr != nil {
-			return fmt.Errorf("create %s: %w", target, mkdirErr)
-		}
+	if err = ensureTargetDirs(targets); err != nil {
+		return err
 	}
 
 	lock, err := manifest.ReadLock(rskDir)
@@ -229,39 +249,21 @@ func runInstallProject(
 		return err
 	}
 
-	var failed int
 	var installedNames []string
-	for _, s := range skills {
-		linkFailed := false
-		for _, target := range targets {
-			if linkErr := skill.Link(s, target); linkErr != nil {
-				ui.Failf(errOut, "link %s → %s: %v", s.Name, target, linkErr)
-				linkFailed = true
-			}
-		}
-		if linkFailed {
-			failed++
-			continue
-		}
+	lock, linked, failed := linkAndLockSkills(errOut, skills, targets, lock)
+	for _, s := range linked {
 		constraint, ok := argConstraints[s.Name]
 		if !ok || constraint == "" {
 			constraint = "*"
 		}
 		m.Skills[s.Name] = constraint
 		installedNames = append(installedNames, s.Name)
-		lock = manifest.UpsertLockEntry(lock, manifest.LockEntry{
-			Name:    s.Name,
-			Version: s.Version,
-			Source:  s.Source,
-			Path:    s.Path,
-		})
 		ui.Success(out, fmt.Sprintf("%s  %s  %s",
 			ui.SkillName(s.Name),
 			ui.Arrow,
 			ui.MutedPath(filepath.Join(targets[0], s.Name)),
 		))
 	}
-
 	if failed > 0 {
 		return fmt.Errorf("%d skill(s) failed to install", failed)
 	}
@@ -289,6 +291,63 @@ func runInstallProject(
 	fmt.Fprintln(out)
 	ui.Info(out, "Run 'rsk status' to verify installed skills.")
 	return nil
+}
+
+// previewAndConfirm renders the install preview and, unless dryRun, asks the
+// user to confirm. It returns false whenever the caller should stop (dry run
+// finished, or the user declined).
+func previewAndConfirm(out io.Writer, skills []skill.Skill, targets, warnings []string, dryRun bool) bool {
+	printInstallPreview(out, skills, targets, warnings, dryRun)
+	if dryRun {
+		return false
+	}
+	if !ui.ConfirmYN(out, "Proceed?") {
+		fmt.Fprintln(out, "Aborted.")
+		return false
+	}
+	fmt.Fprintln(out)
+	return true
+}
+
+// ensureTargetDirs creates every target skills directory that doesn't exist
+// yet.
+func ensureTargetDirs(targets []string) error {
+	for _, target := range targets {
+		if err := os.MkdirAll(target, fsperm.Dir); err != nil {
+			return fmt.Errorf("create %s: %w", target, err)
+		}
+	}
+	return nil
+}
+
+// linkAndLockSkills symlinks each skill into every target dir and upserts a
+// lock entry for it, reporting (rather than aborting on) a link failure so
+// the rest of the batch still installs. It returns the updated lock, the
+// skills that linked cleanly everywhere, and how many did not.
+func linkAndLockSkills(
+	errOut io.Writer, skills []skill.Skill, targets []string, lock manifest.Lock,
+) (updatedLock manifest.Lock, linked []skill.Skill, failed int) {
+	for _, s := range skills {
+		linkFailed := false
+		for _, target := range targets {
+			if err := skill.Link(s, target); err != nil {
+				ui.Failf(errOut, "link %s → %s: %v", s.Name, target, err)
+				linkFailed = true
+			}
+		}
+		if linkFailed {
+			failed++
+			continue
+		}
+		linked = append(linked, s)
+		lock = manifest.UpsertLockEntry(lock, manifest.LockEntry{
+			Name:    s.Name,
+			Version: s.Version,
+			Source:  s.Source,
+			Path:    s.Path,
+		})
+	}
+	return lock, linked, failed
 }
 
 // constraintsFromArgs returns a map of name → version constraint pulled from
@@ -398,20 +457,11 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 		skills = append(skills, s)
 	}
 
-	printInstallPreview(out, skills, targets, warnings, opts.dryRun)
-	if opts.dryRun {
+	if !previewAndConfirm(out, skills, targets, warnings, opts.dryRun) {
 		return nil
 	}
-	if !ui.ConfirmYN(out, "Proceed?") {
-		fmt.Fprintln(out, "Aborted.")
-		return nil
-	}
-	fmt.Fprintln(out)
-
-	for _, target := range targets {
-		if mkdirErr := os.MkdirAll(target, fsperm.Dir); mkdirErr != nil {
-			return fmt.Errorf("create %s: %w", target, mkdirErr)
-		}
+	if err = ensureTargetDirs(targets); err != nil {
+		return err
 	}
 
 	lock, err := manifest.ReadLock(rskDir)
@@ -419,32 +469,14 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 		return err
 	}
 
-	var failed int
-	for _, s := range skills {
-		linkFailed := false
-		for _, target := range targets {
-			if linkErr := skill.Link(s, target); linkErr != nil {
-				ui.Failf(errOut, "link %s → %s: %v", s.Name, target, linkErr)
-				linkFailed = true
-			}
-		}
-		if linkFailed {
-			failed++
-			continue
-		}
-		lock = manifest.UpsertLockEntry(lock, manifest.LockEntry{
-			Name:    s.Name,
-			Version: s.Version,
-			Source:  s.Source,
-			Path:    s.Path,
-		})
+	lock, linked, failed := linkAndLockSkills(errOut, skills, targets, lock)
+	for _, s := range linked {
 		ui.Success(out, fmt.Sprintf("%s  %s  %s",
 			ui.SkillName(s.Name),
 			ui.Arrow,
 			ui.MutedPath(filepath.Join(targets[0], s.Name)),
 		))
 	}
-
 	if failed > 0 {
 		return fmt.Errorf("%d skill(s) failed to install", failed)
 	}
