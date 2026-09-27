@@ -1,7 +1,7 @@
 ---
 name: repo-tooling-architect
-version: 1.1.0
-description: Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), minimal pre-commit, env vars via dotenv + external secret manager, Renovate. Use when scaffolding or auditing a repo's tooling layer.
+version: 1.2.0
+description: Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), CI (GitHub Actions default, act for local/free runs), minimal pre-commit, env vars via dotenv + external secret manager, Renovate. Use when scaffolding or auditing a repo's tooling layer.
 ---
 
 # Repo Tooling Architecture
@@ -279,7 +279,73 @@ The problem: dependency updates accumulate until they hit a security advisory or
 
 For tiny single-language repos where Renovate's flexibility is overkill, GitHub's built-in Dependabot is fine. Same pattern (security immediate, minor grouped, major labeled).
 
-## 8. When to skip the whole thing
+## 8. CI — GitHub Actions (default), act for local/free runs
+
+The problem: GitHub Actions minutes aren't free once the included allowance
+is exceeded (or a payment/spending-limit issue blocks the account) —
+Docker-heavy jobs (multi-platform builds, image scans) burn through them
+fastest.
+
+**Default: GitHub Actions**, workflow files under `.github/workflows/`,
+triggered on `push`/`pull_request` as normal.
+
+**When Actions billing becomes a blocker** (spending limit hit, no card on
+file, or a deliberate "don't pay for CI" stance): run the *same* workflow
+file locally via [`act`](https://github.com/nektos/act) instead of writing
+a second pipeline. `act` reads `.github/workflows/*.yml` and runs each job
+as a sibling Docker container, using a runner image
+(`catthehacker/ubuntu:act-latest` covers most `ubuntu-latest` jobs) that
+closely mirrors GitHub's actual runner — including Docker-in-Docker-style
+builds, since that image ships the Docker CLI against the host daemon.
+
+```
+# .actrc — tracked, no secrets
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+--container-architecture=linux/amd64
+```
+
+```
+# .secrets.example — tracked template; .secrets itself is gitignored
+MY_TOKEN=
+```
+
+Wire it into the task runner so it's one command, not a memorized `act`
+invocation:
+
+```yaml
+  ci:local:
+    desc: Run CI locally via act
+    cmds:
+      - test -f .secrets || (echo "Missing .secrets — cp .secrets.example .secrets" && exit 1)
+      - act push --secret-file .secrets --artifact-server-path .artifacts
+```
+
+- **Switch the workflow's trigger to `workflow_dispatch`-only** if the goal
+  is "never risk a billed run" rather than "have a free local option in
+  addition to GitHub's" — pushing commits/tags then can't accidentally
+  spin up a hosted runner; `workflow_dispatch` stays available from the
+  Actions tab as a manual, opt-in escape hatch.
+- **`--artifact-server-path`** is required for `actions/upload-artifact` /
+  `actions/download-artifact` to work between jobs locally — without it
+  those calls silently no-op instead of erroring.
+- **Secrets and repo variables** come from `--secret-file` / `--var-file`,
+  not GitHub's secret store — gitignore the real file, commit a
+  `.example` template (same shape as the `.env`/`.env.local` pattern in
+  §6).
+- **A tag-triggered job needs a synthesized event file**, not just
+  `act push` — `{"ref": "refs/tags/vX.Y.Z"}` via `-e event.json` sets
+  `github.ref`/`github.ref_name` the same way a real tag push would, which
+  matters for any `if: startsWith(github.ref, 'refs/tags/v')` gate or
+  version string baked into an image tag.
+- **Trade-off, accept it deliberately:** no automatic gate on push anymore
+  if triggers move to `workflow_dispatch`-only. Running the local task
+  before pushing is on the developer, not enforced (a pre-push git hook
+  can close this gap if it becomes a real problem in practice).
+- **Don't reimplement the pipeline as shell scripts instead.** `act` runs
+  the *actual* workflow file — no second definition to drift out of sync
+  with the first.
+
+## 9. When to skip the whole thing
 
 This skill is opinionated about *adding* tools, but the strongest opinion is **don't add what you don't need.**
 

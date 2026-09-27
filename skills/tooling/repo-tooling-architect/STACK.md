@@ -10,6 +10,7 @@
 | gitleaks | 8.21 | Secret detection (called by pre-commit) |
 | Renovate | 43.x | **Default** dependency updater (`renovate.json`) |
 | Dependabot | (GitHub-native) | Acceptable alternative for tiny single-language repos |
+| act | 0.2.89 | Local GitHub Actions runner — free alternative when Actions billing is a blocker |
 
 ## Notes
 
@@ -19,6 +20,7 @@
 - **Pre-commit hooks: minimal only.** Trailing whitespace, EOF fixer, large-files-check, merge-conflict, YAML / JSON validation, gitleaks. Language linters stay in editor (on save) and CI.
 - **Both `mise` and `proto` are committed:** the pinning file is the source of truth. CI uses the same tool, the same versions.
 - **`.editorconfig` and `.gitignore`** are always included; no version to pin.
+- **`act` is opt-in, not default:** GitHub Actions stays the default CI target. `act` only enters the stack when Actions billing specifically becomes a blocker — see §8.
 
-_Last reviewed: 2026-05-21_
-_Skill version at last review: 1.0.0_
+_Last reviewed: 2026-09-27_
+_Skill version at last review: 1.2.0_
