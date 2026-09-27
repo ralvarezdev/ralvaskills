@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -107,43 +108,13 @@ func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 		return fmt.Errorf("%w\n  Run 'rsk init' to set up rsk on this machine", err)
 	}
 
-	localSrc := newLocalSource(cfg)
-	officialSrc := source.NewOfficial(cfg.OfficialCache)
-
-	var all []skill.Skill
-
-	if opts.source == "" || opts.source == skill.SourceLocal.String() {
-		local, walkErr := localSrc.All(ctx)
-		if walkErr != nil {
-			ui.Warn(out, fmt.Sprintf("walk local skills: %v", walkErr))
-		} else {
-			all = append(all, local...)
-		}
-	}
-
-	if opts.source == "" || opts.source == skill.SourceOfficial.String() {
-		official, walkErr := officialSrc.All(ctx)
-		if walkErr != nil {
-			ui.Warn(out, walkErr.Error())
-		} else {
-			all = append(all, official...)
-		}
-	}
+	all := loadSkillsBySource(ctx, out, cfg, opts.source)
 
 	if opts.bundle != "" {
-		catalog, catalogWarn := config.LoadCatalog("")
-		if catalogWarn != nil {
-			ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+		all, err = filterByBundle(out, all, opts.bundle)
+		if err != nil {
+			return err
 		}
-		bundle, ok := config.FindBundle(catalog, opts.bundle)
-		if !ok {
-			return fmt.Errorf("bundle %q not found — run 'rsk catalog --bundles' to see all bundles", opts.bundle)
-		}
-		want := make(map[string]bool, len(bundle.Skills))
-		for _, ref := range bundle.Skills {
-			want[ref.Name] = true
-		}
-		all = filterSkills(all, func(s skill.Skill) bool { return want[s.Name] })
 	}
 
 	if !opts.personal {
@@ -166,6 +137,50 @@ func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 		return writeJSON(out, skillsToEntries(all))
 	}
 	return printCatalogSkillTable(out, all)
+}
+
+// loadSkillsBySource walks the local and/or official sources per sourceFilter
+// ("" means both), warning on (rather than failing for) a source that can't
+// be walked.
+func loadSkillsBySource(ctx context.Context, out io.Writer, cfg config.Config, sourceFilter string) []skill.Skill {
+	var all []skill.Skill
+
+	if sourceFilter == "" || sourceFilter == skill.SourceLocal.String() {
+		local, walkErr := newLocalSource(cfg).All(ctx)
+		if walkErr != nil {
+			ui.Warn(out, fmt.Sprintf("walk local skills: %v", walkErr))
+		} else {
+			all = append(all, local...)
+		}
+	}
+
+	if sourceFilter == "" || sourceFilter == skill.SourceOfficial.String() {
+		official, walkErr := source.NewOfficial(cfg.OfficialCache).All(ctx)
+		if walkErr != nil {
+			ui.Warn(out, walkErr.Error())
+		} else {
+			all = append(all, official...)
+		}
+	}
+
+	return all
+}
+
+// filterByBundle keeps only the skills named in bundleName's catalog entry.
+func filterByBundle(out io.Writer, all []skill.Skill, bundleName string) ([]skill.Skill, error) {
+	catalog, catalogWarn := config.LoadCatalog("")
+	if catalogWarn != nil {
+		ui.Warn(out, fmt.Sprintf("user catalog: %v", catalogWarn))
+	}
+	bundle, ok := config.FindBundle(catalog, bundleName)
+	if !ok {
+		return nil, fmt.Errorf("bundle %q not found — run 'rsk catalog --bundles' to see all bundles", bundleName)
+	}
+	want := make(map[string]bool, len(bundle.Skills))
+	for _, ref := range bundle.Skills {
+		want[ref.Name] = true
+	}
+	return filterSkills(all, func(s skill.Skill) bool { return want[s.Name] }), nil
 }
 
 func printCatalogSkillTable(out io.Writer, skills []skill.Skill) error {

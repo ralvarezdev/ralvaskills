@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -44,8 +45,31 @@ func runDestroy(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	hasSkills := len(installedNames) > 0
+	printDestroyPlan(out, rskDir, cwd, tools, len(installedNames) > 0)
 
+	if !ui.ConfirmYN(out, "Proceed?") {
+		fmt.Fprintln(out, "Aborted.")
+		return nil
+	}
+	fmt.Fprintln(out)
+
+	if err = unlinkAndRemovePinned(out, cwd, tools, installedNames); err != nil {
+		return err
+	}
+	if err = os.RemoveAll(rskDir); err != nil {
+		return fmt.Errorf("remove .rsk: %w", err)
+	}
+
+	fmt.Fprintln(out)
+	ui.Success(out, "removed .rsk/ and cleaned up tool configs")
+	fmt.Fprintln(out)
+	return nil
+}
+
+// printDestroyPlan lists what runDestroy is about to remove: the .rsk/
+// directory, each tool's pinned-skill imports, and (when hasSkills) its
+// skill symlink directory.
+func printDestroyPlan(out io.Writer, rskDir, cwd string, tools []tool.ID, hasSkills bool) {
 	fmt.Fprintln(out)
 	ui.Header(out, "This will remove:")
 	fmt.Fprintf(out, "  %s\n", ui.MutedStyle.Render(rskDir))
@@ -66,13 +90,11 @@ func runDestroy(cmd *cobra.Command, _ []string) error {
 		}
 	}
 	fmt.Fprintln(out)
+}
 
-	if !ui.ConfirmYN(out, "Proceed?") {
-		fmt.Fprintln(out, "Aborted.")
-		return nil
-	}
-	fmt.Fprintln(out)
-
+// unlinkAndRemovePinned removes each installed skill's symlink from every
+// distinct tool skills dir, then clears each tool's pinned-skill imports.
+func unlinkAndRemovePinned(out io.Writer, cwd string, tools []tool.ID, installedNames []string) error {
 	seenDirs := make(map[string]bool)
 	for _, id := range tools {
 		t, ok := tool.Get(id)
@@ -88,17 +110,9 @@ func runDestroy(cmd *cobra.Command, _ []string) error {
 				}
 			}
 		}
-		if err = t.RemovePinned(cwd); err != nil {
+		if err := t.RemovePinned(cwd); err != nil {
 			return err
 		}
 	}
-
-	if err = os.RemoveAll(rskDir); err != nil {
-		return fmt.Errorf("remove .rsk: %w", err)
-	}
-
-	fmt.Fprintln(out)
-	ui.Success(out, "removed .rsk/ and cleaned up tool configs")
-	fmt.Fprintln(out)
 	return nil
 }
