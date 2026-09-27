@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -59,15 +60,9 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
 
-	if len(args) == 0 {
-		name, err := ui.Ask(out, "Skill or bundle to remove", "")
-		if err != nil {
-			return err
-		}
-		if name == "" {
-			return errors.New("specify at least one bundle or skill name")
-		}
-		args = []string{name}
+	args, err := resolveUninstallArgs(out, args)
+	if err != nil {
+		return err
 	}
 	if !opts.global && opts.forTool != "" {
 		return errors.New("--for requires --global")
@@ -92,23 +87,86 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 		return err
 	}
 
-	// Personal guard: check via symlink target path.
-	if !opts.personal {
-		for _, name := range names {
-			for _, target := range targets {
-				linkPath := filepath.Join(target, name)
-				symlinkTarget, readErr := os.Readlink(linkPath)
-				if readErr != nil {
-					continue // not linked here, skip
-				}
-				if skill.IsPersonalPath(symlinkTarget) {
-					return fmt.Errorf("skill %q is in personal/ — pass --personal to uninstall it", name)
-				}
-			}
+	if err = checkNoPersonalUninstall(names, targets, opts.personal); err != nil {
+		return err
+	}
+
+	toRemove := findLinkedEntries(names, targets)
+	if len(toRemove) == 0 {
+		ui.Info(out, "No installed skills matched — nothing to remove.")
+		return nil
+	}
+
+	printUninstallPreview(out, toRemove, opts.dryRun)
+	if opts.dryRun {
+		return nil
+	}
+	if !ui.ConfirmYN(out, "Proceed?") {
+		fmt.Fprintln(out, "Aborted.")
+		return nil
+	}
+	fmt.Fprintln(out)
+
+	if failed := unlinkAll(out, errOut, toRemove); failed > 0 {
+		return fmt.Errorf("%d skill(s) failed to remove", failed)
+	}
+
+	if !opts.global {
+		var rskDir string
+		rskDir, err = manifest.ProjectFolderPath()
+		if err != nil {
+			return err
+		}
+
+		if cleanErr := cleanupManifest(rskDir, toRemove); cleanErr != nil {
+			ui.Warn(out, fmt.Sprintf("update manifest: %v", cleanErr))
 		}
 	}
 
-	// Determine which (name, targetDir) pairs are actually linked.
+	return nil
+}
+
+// resolveUninstallArgs prompts for a name when none was given on the command
+// line.
+func resolveUninstallArgs(out io.Writer, args []string) ([]string, error) {
+	if len(args) > 0 {
+		return args, nil
+	}
+	name, err := ui.Ask(out, "Skill or bundle to remove", "")
+	if err != nil {
+		return nil, err
+	}
+	if name == "" {
+		return nil, errors.New("specify at least one bundle or skill name")
+	}
+	return []string{name}, nil
+}
+
+// checkNoPersonalUninstall rejects the uninstall when any named skill is
+// linked from personal/ and --personal wasn't passed. It checks via the
+// symlink target path, since that's the only place "personal" is recorded.
+func checkNoPersonalUninstall(names, targets []string, personal bool) error {
+	if personal {
+		return nil
+	}
+	for _, name := range names {
+		for _, target := range targets {
+			linkPath := filepath.Join(target, name)
+			symlinkTarget, err := os.Readlink(linkPath)
+			if err != nil {
+				continue // not linked here, skip
+			}
+			if skill.IsPersonalPath(symlinkTarget) {
+				return fmt.Errorf("skill %q is in personal/ — pass --personal to uninstall it", name)
+			}
+		}
+	}
+	return nil
+}
+
+// findLinkedEntries returns the (name, targetDir) pairs among names ×
+// targets that are actually linked.
+func findLinkedEntries(names, targets []string) []removeEntry {
 	var toRemove []removeEntry
 	for _, name := range names {
 		for _, target := range targets {
@@ -117,14 +175,14 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 			}
 		}
 	}
+	return toRemove
+}
 
-	if len(toRemove) == 0 {
-		ui.Info(out, "No installed skills matched — nothing to remove.")
-		return nil
-	}
-
+// printUninstallPreview renders the name → target table for the skills
+// about to be (or that would be, under --dry-run) removed.
+func printUninstallPreview(out io.Writer, toRemove []removeEntry, dryRun bool) {
 	fmt.Fprintln(out)
-	if opts.dryRun {
+	if dryRun {
 		ui.Header(out, "Dry run — would remove:")
 	} else {
 		ui.Header(out, "Skills to remove:")
@@ -144,44 +202,22 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 		)
 	}
 	fmt.Fprintln(out)
+}
 
-	if opts.dryRun {
-		return nil
-	}
-
-	if !ui.ConfirmYN(out, "Proceed?") {
-		fmt.Fprintln(out, "Aborted.")
-		return nil
-	}
-	fmt.Fprintln(out)
-
+// unlinkAll removes each entry's symlink, reporting (rather than aborting
+// on) a failure so the rest of the batch still gets removed. It returns how
+// many failed.
+func unlinkAll(out, errOut io.Writer, toRemove []removeEntry) int {
 	var failed int
 	for _, e := range toRemove {
-		if unlinkErr := skill.Unlink(e.name, e.target); unlinkErr != nil {
-			ui.Failf(errOut, "remove %s: %v", e.name, unlinkErr)
+		if err := skill.Unlink(e.name, e.target); err != nil {
+			ui.Failf(errOut, "remove %s: %v", e.name, err)
 			failed++
 		} else {
 			ui.Success(out, fmt.Sprintf("%s removed from %s", e.name, e.target))
 		}
 	}
-
-	if failed > 0 {
-		return fmt.Errorf("%d skill(s) failed to remove", failed)
-	}
-
-	if !opts.global {
-		var rskDir string
-		rskDir, err = manifest.ProjectFolderPath()
-		if err != nil {
-			return err
-		}
-
-		if cleanErr := cleanupManifest(rskDir, toRemove); cleanErr != nil {
-			ui.Warn(out, fmt.Sprintf("update manifest: %v", cleanErr))
-		}
-	}
-
-	return nil
+	return failed
 }
 
 // cleanupManifest removes uninstalled skills from rsk.mod, rsk.lock, and tool configs.
