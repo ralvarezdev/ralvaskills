@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ralvarezdev/ralvaskills/internal/fsx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/fsx"
 )
 
 const (

@@ -10,14 +10,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/internal/config"
-	rskgit "github.com/ralvarezdev/ralvaskills/internal/git"
-	"github.com/ralvarezdev/ralvaskills/internal/manifest"
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
-	"github.com/ralvarezdev/ralvaskills/internal/source"
-	"github.com/ralvarezdev/ralvaskills/internal/ui"
-	updatecheck "github.com/ralvarezdev/ralvaskills/internal/update"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
+	rskgit "github.com/ralvarezdev/ralvaskills/v2/internal/git"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/source"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
+	updatecheck "github.com/ralvarezdev/ralvaskills/v2/internal/update"
 )
 
 // updatePair is a skill with a newer version available in the registry.

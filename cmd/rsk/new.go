@@ -9,11 +9,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
-	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/internal/manifest"
-	"github.com/ralvarezdev/ralvaskills/internal/tool"
-	"github.com/ralvarezdev/ralvaskills/internal/ui"
+	"github.com/ralvarezdev/ralvaskills/v2/internal"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 var newCmd = &cobra.Command{

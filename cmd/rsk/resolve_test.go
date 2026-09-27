@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 )
 
 func TestDedupSkills(t *testing.T) {

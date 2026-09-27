@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 )
 
 // Local resolves skills from the local ralvaskills repo clone.

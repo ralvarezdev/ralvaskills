@@ -33,7 +33,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/ralvarezdev/ralvaskills
+        - github.com/ralvarezdev/ralvaskills/v2
 
     golines:
       max-len: 120

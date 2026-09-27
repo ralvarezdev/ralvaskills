@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 )
 
 const (

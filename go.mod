@@ -1,4 +1,4 @@
-module github.com/ralvarezdev/ralvaskills
+module github.com/ralvarezdev/ralvaskills/v2
 
 go 1.27.1
 

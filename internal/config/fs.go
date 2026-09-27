@@ -7,7 +7,7 @@ import (
 
 	"github.com/adrg/xdg"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
+	"github.com/ralvarezdev/ralvaskills/v2/internal"
 )
 
 const (

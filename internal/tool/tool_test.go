@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
 )
 
 func TestClaudeID_registered(t *testing.T) {

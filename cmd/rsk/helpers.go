@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ralvarezdev/ralvaskills/internal/ui"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 // nameFromArgsOrPrompt returns args[0] if provided, otherwise prompts interactively.

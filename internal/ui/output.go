@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 )
 
 // Brand prints the rsk name and version header.

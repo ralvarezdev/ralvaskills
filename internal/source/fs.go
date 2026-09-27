@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 )
 
 // fsSource is a shared base for filesystem-backed skill sources (Local and

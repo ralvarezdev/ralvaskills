@@ -10,11 +10,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/internal/config"
-	"github.com/ralvarezdev/ralvaskills/internal/manifest"
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
-	"github.com/ralvarezdev/ralvaskills/internal/ui"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 const versionColumnWidth = 7

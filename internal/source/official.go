@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	rskgit "github.com/ralvarezdev/ralvaskills/internal/git"
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
+	rskgit "github.com/ralvarezdev/ralvaskills/v2/internal/git"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 )
 
 // OfficialSkillsURL is the GitHub URL for the anthropics/skills repo used as

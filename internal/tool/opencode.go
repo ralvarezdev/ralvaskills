@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ralvarezdev/ralvaskills/internal"
-	"github.com/ralvarezdev/ralvaskills/internal/fsx"
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/fsx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 )
 
 const (

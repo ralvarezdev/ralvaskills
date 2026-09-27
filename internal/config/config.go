@@ -10,9 +10,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
-	"github.com/ralvarezdev/ralvaskills/internal/fsx"
-	"github.com/ralvarezdev/ralvaskills/internal/schema"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/fsx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/schema"
 )
 
 const configTempPattern = ".rsk-cfg-*.tmp"

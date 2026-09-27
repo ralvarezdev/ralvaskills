@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/internal/config"
-	"github.com/ralvarezdev/ralvaskills/internal/manifest"
-	"github.com/ralvarezdev/ralvaskills/internal/skill"
-	"github.com/ralvarezdev/ralvaskills/internal/source"
-	"github.com/ralvarezdev/ralvaskills/internal/tool"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/source"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
 )
 
 // newLocalSource returns the appropriate source.Resolver for local skills based

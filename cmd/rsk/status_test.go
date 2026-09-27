@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 )
 
 // TestRunStatusGlobalDoesNotRequireProject guards against the regression where

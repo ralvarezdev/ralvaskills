@@ -1,6 +1,6 @@
 package main
 
-import "github.com/ralvarezdev/ralvaskills/internal/cmdx"
+import "github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 
 // setupCommands registers all subcommands and their flags with the root command.
 func setupCommands() {

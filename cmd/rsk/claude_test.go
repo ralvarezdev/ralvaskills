@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 )
 
 // TestRunClaudeToolsListJSONOutput checks that -o json on `rsk claude tools

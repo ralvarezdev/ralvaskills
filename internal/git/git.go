@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ralvarezdev/ralvaskills/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
 )
 
 // Pull runs "git pull" in dir, streaming output to out.

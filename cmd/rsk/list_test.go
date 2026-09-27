@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 )
 
 // TestRunListGlobalLabelsRowsByTool guards against the regression where a
