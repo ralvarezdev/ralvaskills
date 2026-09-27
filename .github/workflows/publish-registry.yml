@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
+          go-version: "1.27"
           cache: false
 
       # registry/index.json lives in the repo — no need to fetch from R2.

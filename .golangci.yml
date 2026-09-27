@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://golangci-lint.run/jsonschema/golangci.jsonschema.json
 #
 # golangci-lint v2 configuration — adopted from go-architect skill.
-# Pinned to Go 1.26, golangci-lint 2.x.
+# Pinned to Go 1.27, golangci-lint 2.x.
 
 version: "2"
 
@@ -10,7 +10,7 @@ run:
   concurrency: 0
   tests: true
   modules-download-mode: readonly
-  go: "1.26"
+  go: "1.27"
   relative-path-mode: gomod
 
 output:
