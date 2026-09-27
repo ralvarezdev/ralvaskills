@@ -1,6 +1,6 @@
 ---
 name: repo-tooling-architect
-version: 1.2.0
+version: 1.3.0
 description: Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), CI (GitHub Actions default, act for local/free runs), minimal pre-commit, env vars via dotenv + external secret manager, Renovate. Use when scaffolding or auditing a repo's tooling layer.
 ---
 
@@ -337,6 +337,27 @@ invocation:
   `github.ref`/`github.ref_name` the same way a real tag push would, which
   matters for any `if: startsWith(github.ref, 'refs/tags/v')` gate or
   version string baked into an image tag.
+- **A job that builds and pushes a Docker image to a registry running on
+  the same machine hits two more gotchas, in sequence:**
+  1. If that registry sits behind a Cloudflare Tunnel (or similar) whose
+     domain is only meaningful for *remote* access, pushing through it
+     from the same host that runs the registry can hit the tunnel's own
+     edge timeout on a multi-MB layer upload (Cloudflare's is ~100s) —
+     traffic that never needed to leave the machine. Make the registry
+     host a repo variable (`REGISTRY_HOST`, default the real domain) and
+     override it to the registry's local address (e.g. `localhost:5000`)
+     for local `act` runs specifically.
+  2. Bypassing to `localhost` then fails with `connection refused` from
+     inside the builder, even though the *job's own* container is
+     host-networked under `act` — `docker/setup-buildx-action`'s default
+     `docker-container` driver builds in a separate, isolated builder
+     container with its own network namespace. Fix: `driver-opts:
+     network=host` on that action.
+  3. Whatever you use to observe the result, use the task runner's actual
+     exit code, not a wrapper's — `task ci:local:publish | tee log | tail`
+     reports `tail`'s exit status, which is `0` even when the piped
+     command failed. Check the real job output (or the exit code without
+     piping through a second command) before calling a run green.
 - **Trade-off, accept it deliberately:** no automatic gate on push anymore
   if triggers move to `workflow_dispatch`-only. Running the local task
   before pushing is on the developer, not enforced (a pre-push git hook

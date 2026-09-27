@@ -21,6 +21,7 @@
 - **Both `mise` and `proto` are committed:** the pinning file is the source of truth. CI uses the same tool, the same versions.
 - **`.editorconfig` and `.gitignore`** are always included; no version to pin.
 - **`act` is opt-in, not default:** GitHub Actions stays the default CI target. `act` only enters the stack when Actions billing specifically becomes a blocker — see §8.
+- **A Docker-push job under `act`, against a registry on the same machine, needs two extra fixes** beyond the base act setup: a `REGISTRY_HOST` variable to bypass any tunnel in front of the registry for local runs, and `driver-opts: network=host` on `docker/setup-buildx-action` — see §8's numbered gotchas. Confirmed by an actual end-to-end local publish, not written speculatively.
 
 _Last reviewed: 2026-09-27_
-_Skill version at last review: 1.2.0_
+_Skill version at last review: 1.3.0_
