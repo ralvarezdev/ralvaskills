@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -94,20 +95,8 @@ type (
 func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	out := cmd.OutOrStdout()
 
-	if !opts.output.valid() {
-		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
-	}
-	if opts.stack {
-		return errors.New("--stack is not yet implemented")
-	}
-	if !opts.stack && opts.refresh {
-		return errors.New("--refresh requires --stack")
-	}
-	if opts.global && opts.project {
-		return errors.New("--global and --project are mutually exclusive")
-	}
-	if !opts.global && opts.forTool != "" {
-		return errors.New("--for requires --global")
+	if err := validateStatusOpts(opts); err != nil {
+		return err
 	}
 
 	cfg, err := config.Load()
@@ -132,35 +121,71 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	}
 	membership := bundleMembershipIndex(catalog)
 
+	m, modErr := manifest.ReadMod(rskDir)
 	var projectDirs []string
-	if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
+	if modErr == nil {
 		projectDirs = projectSkillsDirs(filepath.Dir(rskDir), m)
 	}
 	sections := buildStatusSections(cfg, opts.global, opts.project, opts.forTool, projectDirs)
 
 	pinnedSet := make(map[string]bool)
-	if m, modErr := manifest.ReadMod(rskDir); modErr == nil {
+	if modErr == nil {
 		for _, p := range m.Pinned {
 			pinnedSet[p] = true
 		}
 	}
 
-	for i := range sections {
-		entries, scanErr := scanLinked(
-			sections[i].dir,
-			cfg.RepoPath, cfg.OfficialCache, cfg.RegistryCache(),
-			membership, opts.personal,
-		)
-		if scanErr != nil {
-			ui.Warn(out, fmt.Sprintf("scan %s: %v", sections[i].dir, scanErr))
-		}
-		sections[i].skills = entries
-	}
+	scanStatusSections(out, sections, cfg, membership, opts.personal)
 
 	if opts.output == outputJSON {
 		return writeJSON(out, statusSectionsToEntries(sections, pinnedSet))
 	}
+	return printStatusText(out, sections, pinnedSet)
+}
 
+// validateStatusOpts checks runStatus's flag combinations before doing any
+// scanning work.
+func validateStatusOpts(opts statusOpts) error {
+	if !opts.output.valid() {
+		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
+	}
+	if opts.stack {
+		return errors.New("--stack is not yet implemented")
+	}
+	if !opts.stack && opts.refresh {
+		return errors.New("--refresh requires --stack")
+	}
+	if opts.global && opts.project {
+		return errors.New("--global and --project are mutually exclusive")
+	}
+	if !opts.global && opts.forTool != "" {
+		return errors.New("--for requires --global")
+	}
+	return nil
+}
+
+// scanStatusSections fills in each section's skills in place by scanning its
+// target directory, warning (rather than failing) on a directory that can't
+// be scanned.
+func scanStatusSections(
+	out io.Writer, sections []statusSection, cfg config.Config, membership map[string][]string, includePersonal bool,
+) {
+	for i := range sections {
+		entries, err := scanLinked(
+			sections[i].dir,
+			cfg.RepoPath, cfg.OfficialCache, cfg.RegistryCache(),
+			membership, includePersonal,
+		)
+		if err != nil {
+			ui.Warn(out, fmt.Sprintf("scan %s: %v", sections[i].dir, err))
+		}
+		sections[i].skills = entries
+	}
+}
+
+// printStatusText renders every non-empty section as a table, or a "no
+// skills installed" notice when all sections are empty.
+func printStatusText(out io.Writer, sections []statusSection, pinnedSet map[string]bool) error {
 	hasAny := false
 	for _, sec := range sections {
 		if len(sec.skills) == 0 {
@@ -169,43 +194,52 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 		hasAny = true
 		fmt.Fprintln(out)
 		ui.SectionHeader(out, sec.title, sec.subtitle)
-
-		names := make([]string, len(sec.skills))
-		for i, e := range sec.skills {
-			names[i] = e.name
-		}
-		nameWidth := ui.MaxWidth(names)
-
-		for _, e := range sec.skills {
-			tags := ""
-			if pinnedSet[e.name] {
-				tags += "  [pinned]"
-			}
-			if len(e.bundles) > 0 {
-				bundleTags := make([]string, len(e.bundles))
-				for i, b := range e.bundles {
-					bundleTags[i] = ui.BundleTag(b)
-				}
-				tags += "  " + strings.Join(bundleTags, " ")
-			}
-			fmt.Fprintf(out, "  %s  %s  %s  %s%s\n",
-				ui.SourceLabel(e.source),
-				ui.PadRight(ui.SkillName(e.name), nameWidth),
-				ui.PadRight(ui.SkillVersion(e.version), versionColumnWidth),
-				ui.SuccessMark,
-				tags,
-			)
-		}
+		printStatusSectionRows(out, sec.skills, pinnedSet)
 	}
 
 	fmt.Fprintln(out)
-
 	if !hasAny {
 		ui.Warn(out, "No skills installed.")
 		ui.Indent(out, "Run 'rsk install <bundle>' to get started.")
 	}
-
 	return nil
+}
+
+// printStatusSectionRows renders one row per linked skill, tagged with
+// [pinned] and/or its bundle memberships.
+func printStatusSectionRows(out io.Writer, skills []linkedEntry, pinnedSet map[string]bool) {
+	names := make([]string, len(skills))
+	for i, e := range skills {
+		names[i] = e.name
+	}
+	nameWidth := ui.MaxWidth(names)
+
+	for _, e := range skills {
+		fmt.Fprintf(out, "  %s  %s  %s  %s%s\n",
+			ui.SourceLabel(e.source),
+			ui.PadRight(ui.SkillName(e.name), nameWidth),
+			ui.PadRight(ui.SkillVersion(e.version), versionColumnWidth),
+			ui.SuccessMark,
+			statusRowTags(e, pinnedSet),
+		)
+	}
+}
+
+// statusRowTags builds the trailing "  [pinned]  bundle-tag ..." suffix for
+// one status row.
+func statusRowTags(e linkedEntry, pinnedSet map[string]bool) string {
+	tags := ""
+	if pinnedSet[e.name] {
+		tags += "  [pinned]"
+	}
+	if len(e.bundles) > 0 {
+		bundleTags := make([]string, len(e.bundles))
+		for i, b := range e.bundles {
+			bundleTags[i] = ui.BundleTag(b)
+		}
+		tags += "  " + strings.Join(bundleTags, " ")
+	}
+	return tags
 }
 
 // statusSectionsToEntries converts the scanned statusSections into their
