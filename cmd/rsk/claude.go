@@ -6,6 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
@@ -165,52 +167,62 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 		return writeJSON(out, claudeToolsPermissions{Allow: allow, Deny: deny})
 	}
 
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, "Claude Code tools available:")
-	fmt.Fprintln(out)
-
-	// Show allowed tools first
-	allowedTools := make([]string, 0)
-	deniedTools := make([]string, 0)
-	unconfiguredTools := make([]string, 0)
-
-	for _, tool := range availableClaudeTools {
+	rows := make([]claudeToolRow, 0, len(availableClaudeTools))
+	for _, t := range availableClaudeTools {
 		switch {
-		case slices.Contains(allow, tool):
-			allowedTools = append(allowedTools, tool)
-		case slices.Contains(deny, tool):
-			deniedTools = append(deniedTools, tool)
+		case slices.Contains(allow, t):
+			rows = append(rows, claudeToolRow{name: t, status: claudeToolAllowed})
+		case slices.Contains(deny, t):
+			rows = append(rows, claudeToolRow{name: t, status: claudeToolDenied})
 		default:
-			unconfiguredTools = append(unconfiguredTools, tool)
+			rows = append(rows, claudeToolRow{name: t, status: claudeToolUnconfigured})
 		}
 	}
 
-	if len(allowedTools) > 0 {
-		fmt.Fprintln(out, "  Explicitly allowed:")
-		for _, t := range allowedTools {
-			fmt.Fprintf(out, "    ✓ %s\n", t)
-		}
-		fmt.Fprintln(out)
-	}
-
-	if len(deniedTools) > 0 {
-		fmt.Fprintln(out, "  Explicitly denied:")
-		for _, t := range deniedTools {
-			fmt.Fprintf(out, "    ✗ %s\n", t)
-		}
-		fmt.Fprintln(out)
-	}
-
-	if len(unconfiguredTools) > 0 {
-		fmt.Fprintln(out, "  Not configured (uses global settings):")
-		for _, t := range unconfiguredTools {
-			fmt.Fprintf(out, "    • %s\n", t)
-		}
-	}
-
+	fmt.Fprintln(out)
+	ui.Header(out, "Claude Code tools available:")
+	termkit.WriteTableStyled(
+		out,
+		[]string{headerName, "Status"},
+		termkit.Rows(rows, claudeToolsTable),
+		false,
+		nil,
+		true,
+	)
 	fmt.Fprintln(out)
 
 	return nil
+}
+
+// claudeToolStatus is a Claude tool's permission state relative to the
+// project's settings.
+type claudeToolStatus int
+
+const (
+	claudeToolAllowed claudeToolStatus = iota
+	claudeToolDenied
+	claudeToolUnconfigured
+)
+
+// claudeToolRow is one row of the tools-available table.
+type claudeToolRow struct {
+	name   string
+	status claudeToolStatus
+}
+
+// claudeToolsTable projects one claudeToolRow, marking each tool's
+// permission state the same way install/uninstall mark their own rows.
+var claudeToolsTable = termkit.Table[claudeToolRow]{
+	Row: func(r claudeToolRow) []any {
+		switch r.status {
+		case claudeToolAllowed:
+			return []any{r.name, ui.SuccessMark + " explicitly allowed"}
+		case claudeToolDenied:
+			return []any{r.name, ui.ErrorMark + " explicitly denied"}
+		default:
+			return []any{r.name, ui.MutedStyle.Render("• not configured (uses global settings)")}
+		}
+	},
 }
 
 func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {

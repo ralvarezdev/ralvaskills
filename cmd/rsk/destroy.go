@@ -8,6 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
@@ -66,29 +68,39 @@ func runDestroy(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
+// destroyPlanRow is one thing runDestroy is about to remove: a path (or tool
+// ID) and what it holds.
+type destroyPlanRow struct {
+	path, what string
+}
+
+// destroyPlanTable projects one destroyPlanRow, both columns muted alike
+// since nothing here is more or less severe than anything else.
+var destroyPlanTable = termkit.Table[destroyPlanRow]{
+	Row: func(r destroyPlanRow) []any {
+		return []any{ui.MutedStyle.Render(r.path), ui.MutedStyle.Render(r.what)}
+	},
+}
+
 // printDestroyPlan lists what runDestroy is about to remove: the .rsk/
 // directory, each tool's pinned-skill imports, and (when hasSkills) its
 // skill symlink directory.
 func printDestroyPlan(out io.Writer, rskDir, cwd string, tools []tool.ID, hasSkills bool) {
-	fmt.Fprintln(out)
-	ui.Header(out, "This will remove:")
-	fmt.Fprintf(out, "  %s\n", ui.MutedStyle.Render(rskDir))
+	rows := []destroyPlanRow{{path: rskDir, what: ""}}
 	for _, id := range tools {
 		t, ok := tool.Get(id)
 		if !ok {
 			continue
 		}
-		fmt.Fprintf(out, "  %s  %s\n",
-			ui.MutedStyle.Render(string(id)),
-			ui.MutedStyle.Render("pinned skill imports"),
-		)
+		rows = append(rows, destroyPlanRow{path: string(id), what: "pinned skill imports"})
 		if hasSkills {
-			fmt.Fprintf(out, "  %s  %s\n",
-				ui.MutedStyle.Render(t.ProjectSkillsDir(cwd)),
-				ui.MutedStyle.Render("skill symlinks"),
-			)
+			rows = append(rows, destroyPlanRow{path: t.ProjectSkillsDir(cwd), what: "skill symlinks"})
 		}
 	}
+
+	fmt.Fprintln(out)
+	ui.Header(out, "This will remove:")
+	termkit.WriteTableStyled(out, []string{"", ""}, termkit.Rows(rows, destroyPlanTable), false, nil, true)
 	fmt.Fprintln(out)
 }
 
