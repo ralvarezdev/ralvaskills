@@ -10,6 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
@@ -188,20 +190,16 @@ func printUninstallPreview(out io.Writer, toRemove []removeEntry, dryRun bool) {
 		ui.Header(out, "Skills to remove:")
 	}
 
-	nameWidth := 0
-	for _, e := range toRemove {
-		if len(e.name) > nameWidth {
-			nameWidth = len(e.name)
-		}
-	}
-	for _, e := range toRemove {
-		fmt.Fprintf(out, "  %s  %s  %s\n",
-			ui.PadRight(ui.SkillName(e.name), nameWidth),
-			ui.Arrow,
-			ui.MutedPath(filepath.Join(e.target, e.name)),
-		)
-	}
+	termkit.WriteTableStyled(out, []string{headerName, "", headerPath},
+		termkit.Rows(toRemove, uninstallPreviewTable), false, nil, true)
 	fmt.Fprintln(out)
+}
+
+// uninstallPreviewTable projects one remove-preview row.
+var uninstallPreviewTable = termkit.Table[removeEntry]{
+	Row: func(e removeEntry) []any {
+		return []any{ui.SkillName(e.name), ui.Arrow, ui.MutedPath(filepath.Join(e.target, e.name))}
+	},
 }
 
 // unlinkAll removes each entry's symlink, reporting (rather than aborting

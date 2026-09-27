@@ -10,6 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
@@ -184,22 +186,18 @@ func filterByBundle(out io.Writer, all []skill.Skill, bundleName string) ([]skil
 }
 
 func printCatalogSkillTable(out io.Writer, skills []skill.Skill) error {
-	names := make([]string, len(skills))
-	for i, s := range skills {
-		names[i] = s.Name
-	}
-	nameWidth := ui.MaxWidth(names)
-
 	fmt.Fprintln(out)
-	for _, s := range skills {
-		fmt.Fprintf(out, "  %s  %s  %s\n",
-			ui.SourceLabel(s.Source),
-			ui.PadRight(ui.SkillName(s.Name), nameWidth),
-			ui.SkillVersion(s.Version),
-		)
-	}
+	termkit.WriteTableStyled(out, []string{headerSource, headerName, headerVersion},
+		termkit.Rows(skills, catalogSkillTable), false, nil, true)
 	fmt.Fprintln(out)
 	return nil
+}
+
+// catalogSkillTable projects one catalog skill row.
+var catalogSkillTable = termkit.Table[skill.Skill]{
+	Row: func(s skill.Skill) []any {
+		return []any{ui.SourceLabel(s.Source), ui.SkillName(s.Name), ui.SkillVersion(s.Version)}
+	},
 }
 
 func skillsToEntries(skills []skill.Skill) []skillEntry {
@@ -261,17 +259,16 @@ func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 }
 
 func printCatalogBundleTable(out io.Writer, rows []bundleRow) error {
-	names := make([]string, len(rows))
-	counts := make([]string, len(rows))
-	for i, r := range rows {
-		names[i] = r.Name
-		counts[i] = fmt.Sprintf("%d/%d", r.linked, r.total)
-	}
-	nameWidth := ui.MaxWidth(names)
-	countWidth := ui.MaxWidth(counts)
-
 	fmt.Fprintln(out)
-	for i, r := range rows {
+	termkit.WriteTableStyled(out, []string{"", "Bundle", "Linked", "Description"},
+		termkit.Rows(rows, catalogBundleTable), false, nil, true)
+	fmt.Fprintln(out)
+	return nil
+}
+
+// catalogBundleTable projects one bundle row.
+var catalogBundleTable = termkit.Table[bundleRow]{
+	Row: func(r bundleRow) []any {
 		mark := ui.ErrorMark
 		switch {
 		case r.linked == r.total && r.total > 0:
@@ -279,15 +276,13 @@ func printCatalogBundleTable(out io.Writer, rows []bundleRow) error {
 		case r.linked > 0:
 			mark = ui.WarnMark
 		}
-		fmt.Fprintf(out, "  %s  %s  %s  %s\n",
+		return []any{
 			mark,
-			ui.PadRight(ui.BundleTag(r.Name), nameWidth),
-			ui.PadRight(ui.MutedStyle.Render(counts[i]), countWidth),
+			ui.BundleTag(r.Name),
+			ui.MutedStyle.Render(fmt.Sprintf("%d/%d", r.linked, r.total)),
 			ui.MutedStyle.Render(r.Description),
-		)
-	}
-	fmt.Fprintln(out)
-	return nil
+		}
+	},
 }
 
 func bundleRowsToEntries(rows []bundleRow) []bundleEntry {

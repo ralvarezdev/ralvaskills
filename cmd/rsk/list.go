@@ -10,6 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
@@ -127,28 +129,23 @@ func runListProject(cmd *cobra.Command, opts listOpts) error {
 }
 
 func printProjectListTable(out io.Writer, rows []listedSkill) {
-	names := make([]string, len(rows))
-	for i, r := range rows {
-		names[i] = r.Name
-	}
-	nameWidth := ui.MaxWidth(names)
+	termkit.WriteTableStyled(out, []string{"", headerName, headerVersion, ""},
+		termkit.Rows(rows, listProjectTable), false, nil, true)
+}
 
-	for _, r := range rows {
+// listProjectTable projects one project-manifest row.
+var listProjectTable = termkit.Table[listedSkill]{
+	Row: func(r listedSkill) []any {
 		mark := ui.SuccessMark
 		if !r.Installed {
 			mark = ui.ErrorMark
 		}
 		pinnedTag := ""
 		if r.Pinned {
-			pinnedTag = "  [pinned]"
+			pinnedTag = "[pinned]"
 		}
-		fmt.Fprintf(out, "  %s  %s  %s%s\n",
-			mark,
-			ui.PadRight(ui.SkillName(r.Name), nameWidth),
-			ui.SkillVersion(r.Version),
-			pinnedTag,
-		)
-	}
+		return []any{mark, ui.SkillName(r.Name), ui.SkillVersion(r.Version), pinnedTag}
+	},
 }
 
 func runListGlobal(cmd *cobra.Command, opts listOpts) error {
@@ -215,21 +212,18 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 }
 
 func printGlobalListTable(out io.Writer, rows []listedSkill) {
-	names := make([]string, len(rows))
-	tools := make([]string, len(rows))
-	for i, r := range rows {
-		names[i] = r.Name
-		tools[i] = r.Tool
-	}
-	nameWidth := ui.MaxWidth(names)
-	toolWidth := ui.MaxWidth(tools)
+	termkit.WriteTableStyled(out, []string{headerSource, "Tool", headerName, headerVersion},
+		termkit.Rows(rows, listGlobalTable), false, nil, true)
+}
 
-	for _, r := range rows {
-		fmt.Fprintf(out, "  %s  %s  %s  %s\n",
+// listGlobalTable projects one global-install row.
+var listGlobalTable = termkit.Table[listedSkill]{
+	Row: func(r listedSkill) []any {
+		return []any{
 			ui.SourceLabel(skill.Source(r.Source)),
-			ui.PadRight(r.Tool, toolWidth),
-			ui.PadRight(ui.SkillName(r.Name), nameWidth),
+			r.Tool,
+			ui.SkillName(r.Name),
 			ui.SkillVersion(r.Version),
-		)
-	}
+		}
+	},
 }

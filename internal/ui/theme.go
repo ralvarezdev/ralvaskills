@@ -1,24 +1,26 @@
 package ui
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
 
-// Adaptive palette. Each color picks between a light-background and a
-// dark-background value so the banner and picker stay legible either way.
-// These mirror the fixed colors in style.go, which most output helpers still
-// use directly — this palette exists for the new banner/picker surfaces.
+	"github.com/ralvarezdev/termkit"
+)
+
+// Adaptive palette, re-exported from termkit so the banner and picker share
+// one palette with every other consumer.
 var (
 	// ColorAccent is the brand accent: the wordmark, the picker's selection,
 	// and picker titles.
-	ColorAccent = lipgloss.AdaptiveColor{Light: "#0F766E", Dark: "#2DD4BF"}
+	ColorAccent = termkit.ColorAccent
 
 	// ColorDanger marks errors and destructive actions.
-	ColorDanger = lipgloss.AdaptiveColor{Light: "#DC2626", Dark: "#F87171"}
+	ColorDanger = termkit.ColorDanger
 
 	// ColorWarning marks warnings and caution messages.
-	ColorWarning = lipgloss.AdaptiveColor{Light: "#B45309", Dark: "#FBBF24"}
+	ColorWarning = termkit.ColorWarning
 
 	// ColorMuted is for secondary text: hints, descriptions, key help.
-	ColorMuted = lipgloss.AdaptiveColor{Light: "#52525B", Dark: "#A1A1AA"}
+	ColorMuted = termkit.ColorMuted
 )
 
 // wordmarkGradient shades the wordmark row by row along the accent hue.

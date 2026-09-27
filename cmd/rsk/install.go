@@ -11,6 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
@@ -376,28 +378,20 @@ func printInstallPreview(out io.Writer, skills []skill.Skill, targets, warnings 
 		ui.Header(out, "Skills to install:")
 	}
 
-	names := make([]string, len(skills))
-	for i, s := range skills {
-		names[i] = s.Name
-	}
-	nameWidth := ui.MaxWidth(names)
-
+	rows := make([]installPlanRow, 0, len(targets)*len(skills))
 	for _, s := range skills {
 		for _, target := range targets {
-			suffix := ""
-			if skill.IsLinked(s.Name, target) {
-				suffix = "  " + ui.ReLink
-			}
-			fmt.Fprintf(out, "  %s  %s  %s  %s  %s%s\n",
-				ui.SourceLabel(s.Source),
-				ui.PadRight(ui.SkillName(s.Name), nameWidth),
-				ui.PadRight(ui.SkillVersion(s.Version), versionColumnWidth),
-				ui.Arrow,
-				ui.MutedPath(filepath.Join(target, s.Name)),
-				suffix,
-			)
+			rows = append(rows, installPlanRow{
+				source: ui.SourceLabel(s.Source),
+				name:   ui.SkillName(s.Name),
+				ver:    ui.SkillVersion(s.Version),
+				target: ui.MutedPath(filepath.Join(target, s.Name)),
+				relink: skill.IsLinked(s.Name, target),
+			})
 		}
 	}
+	termkit.WriteTableStyled(out, []string{headerSource, headerName, headerVersion, "", headerPath, ""},
+		termkit.Rows(rows, installPlanTable), false, nil, true)
 
 	for _, w := range warnings {
 		fmt.Fprintln(out)
@@ -491,4 +485,24 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 	fmt.Fprintln(out)
 	ui.Info(out, "Run 'rsk status' to verify installed skills.")
 	return nil
+}
+
+// installPlanRow is one row of the "skills to install" preview.
+type installPlanRow struct {
+	source string
+	name   string
+	ver    string
+	target string
+	relink bool
+}
+
+// installPlanTable projects one install-preview row.
+var installPlanTable = termkit.Table[installPlanRow]{
+	Row: func(r installPlanRow) []any {
+		suffix := ""
+		if r.relink {
+			suffix = ui.ReLink
+		}
+		return []any{r.source, r.name, r.ver, ui.Arrow, r.target, suffix}
+	},
 }

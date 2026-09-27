@@ -1,30 +1,18 @@
 package ui
 
 import (
-	"strings"
-
-	"github.com/charmbracelet/lipgloss"
+	"github.com/ralvarezdev/termkit"
 )
 
 // PadRight pads s to visual width n, correctly handling ANSI escape codes.
-func PadRight(s string, n int) string {
-	w := lipgloss.Width(s)
-	if w >= n {
-		return s
-	}
-	return s + strings.Repeat(" ", n-w)
-}
+//
+// Deprecated: use termkit.PadRight.
+func PadRight(s string, n int) string { return termkit.PadRight(s, n) }
 
 // MaxWidth returns the visual width of the longest string in items.
-func MaxWidth(items []string) int {
-	w := 0
-	for _, s := range items {
-		if vw := lipgloss.Width(s); vw > w {
-			w = vw
-		}
-	}
-	return w
-}
+//
+// Deprecated: use termkit.MaxWidth.
+func MaxWidth(items []string) int { return termkit.MaxWidth(items) }
 
 // SkillName returns a styled skill name for table rows.
 func SkillName(name string) string {

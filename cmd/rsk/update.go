@@ -10,6 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	rskgit "github.com/ralvarezdev/ralvaskills/v2/internal/git"
@@ -455,25 +457,20 @@ func findOutdatedSkills(
 func printRegistryUpdatePlan(out io.Writer, toUpdate []updatePair) {
 	fmt.Fprintln(out)
 	ui.Header(out, "Skills to update:")
-	nameWidth := 0
-	for _, u := range toUpdate {
-		if len(u.name) > nameWidth {
-			nameWidth = len(u.name)
-		}
-	}
-	for _, u := range toUpdate {
+	termkit.WriteTableStyled(out, []string{headerName, "From", "", "To"},
+		termkit.Rows(toUpdate, updatePlanTable), false, nil, true)
+	fmt.Fprintln(out)
+}
+
+// updatePlanTable projects one update-plan row.
+var updatePlanTable = termkit.Table[updatePair]{
+	Row: func(u updatePair) []any {
 		from := u.installed
 		if from == "" {
 			from = "?"
 		}
-		fmt.Fprintf(out, "  %s  %s  %s  %s\n",
-			ui.PadRight(ui.SkillName(u.name), nameWidth),
-			ui.SkillVersion(from),
-			ui.Arrow,
-			ui.SkillVersion(u.latest),
-		)
-	}
-	fmt.Fprintln(out)
+		return []any{ui.SkillName(u.name), ui.SkillVersion(from), ui.Arrow, ui.SkillVersion(u.latest)}
+	},
 }
 
 // relinkOutdated re-links each outdated skill wherever it's currently

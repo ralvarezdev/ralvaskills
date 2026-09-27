@@ -10,14 +10,14 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
-
-const versionColumnWidth = 7
 
 var statusCmd = &cobra.Command{
 	Use:   "status [flags]",
@@ -208,20 +208,23 @@ func printStatusText(out io.Writer, sections []statusSection, pinnedSet map[stri
 // printStatusSectionRows renders one row per linked skill, tagged with
 // [pinned] and/or its bundle memberships.
 func printStatusSectionRows(out io.Writer, skills []linkedEntry, pinnedSet map[string]bool) {
-	names := make([]string, len(skills))
-	for i, e := range skills {
-		names[i] = e.name
-	}
-	nameWidth := ui.MaxWidth(names)
+	termkit.WriteTableStyled(out, []string{headerSource, headerName, headerVersion, "", ""},
+		termkit.Rows(skills, statusRowTable(pinnedSet)), false, nil, true)
+}
 
-	for _, e := range skills {
-		fmt.Fprintf(out, "  %s  %s  %s  %s%s\n",
-			ui.SourceLabel(e.source),
-			ui.PadRight(ui.SkillName(e.name), nameWidth),
-			ui.PadRight(ui.SkillVersion(e.version), versionColumnWidth),
-			ui.SuccessMark,
-			statusRowTags(e, pinnedSet),
-		)
+// statusRowTable projects one linked skill into its status row. The pinned set
+// is captured because it is per-section, not per-entry.
+func statusRowTable(pinnedSet map[string]bool) termkit.Table[linkedEntry] {
+	return termkit.Table[linkedEntry]{
+		Row: func(e linkedEntry) []any {
+			return []any{
+				ui.SourceLabel(e.source),
+				ui.SkillName(e.name),
+				ui.SkillVersion(e.version),
+				ui.SuccessMark,
+				statusRowTags(e, pinnedSet),
+			}
+		},
 	}
 }
 
