@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-27T18:46:40Z",
+  "generated_at": "2026-09-27T21:10:27Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -494,7 +494,7 @@
     "repo-tooling-architect": {
       "name": "repo-tooling-architect",
       "description": "Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), CI (GitHub Actions default, act for local/free runs), minimal pre-commit, env vars via dotenv + external secret manager, Renovate. Use when scaffolding or auditing a repo's tooling layer.",
-      "latest": "1.2.0",
+      "latest": "1.3.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -510,6 +510,11 @@
           "version": "1.2.0",
           "published_at": "2026-09-27T18:46:40Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/repo-tooling-architect@v1.2.0/repo-tooling-architect-v1.2.0.tar.gz"
+        },
+        "1.3.0": {
+          "version": "1.3.0",
+          "published_at": "2026-09-27T21:10:27Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/repo-tooling-architect@v1.3.0/repo-tooling-architect-v1.3.0.tar.gz"
         }
       }
     },
