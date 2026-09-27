@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/debug"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -108,7 +109,10 @@ func buildInfoFallback(curVersion, curCommit, curBuildDate string) (version, com
 	}
 
 	if info.Main.Version != "" && info.Main.Version != "(devel)" {
-		version = info.Main.Version
+		// Module versions carry a leading "v" (e.g. "v2.0.3"); strip it to
+		// match the unprefixed version goreleaser's ldflags inject, so
+		// `--version` reads the same regardless of install method.
+		version = strings.TrimPrefix(info.Main.Version, "v")
 	}
 
 	for _, setting := range info.Settings {
