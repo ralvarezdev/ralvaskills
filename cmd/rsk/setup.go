@@ -98,4 +98,10 @@ func setupCommands() {
 	// in the TUI, instead of leaving the view to type the name.
 	ui.MarkRowAction(catalogCmd, "i", "install", installCmd)
 	ui.MarkRowAction(listCmd, "u", "uninstall", uninstallCmd)
+
+	// row actions for the Claude tools view: allow, deny, or remove the tool
+	// under the cursor without leaving the table to type its rule.
+	ui.MarkRowAction(claudeToolsListCmd, "a", "allow", claudeToolsAllowCmd)
+	ui.MarkRowAction(claudeToolsListCmd, "d", "deny", claudeToolsDenyCmd)
+	ui.MarkRowAction(claudeToolsListCmd, "x", "remove", claudeToolsRemoveCmd)
 }

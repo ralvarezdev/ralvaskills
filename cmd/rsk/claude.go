@@ -183,7 +183,13 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 	header := []string{headerName, "Status"}
 	tableRows := termkit.Rows(rows, claudeToolsTable)
 	if capture != nil {
-		capture.AddTable(termkit.Data{Headers: header, Rows: tableRows})
+		capture.AddTable(termkit.Data{
+			Headers: header,
+
+			Rows:    tableRows,
+			IDs:     claudeToolNames(),
+			Actions: ui.RowActionsFor(cmd),
+		})
 		return nil
 	}
 
@@ -224,6 +230,15 @@ var claudeToolsTable = termkit.Table[claudeToolRow]{
 			return []any{r.name, ui.MutedStyle.Render("• not configured (uses global settings)")}
 		}
 	},
+}
+
+// claudeToolNames lists the tools table's row IDs — the bare tool name
+// allow/deny/remove accept as a rule — parallel to claudeToolsTable's rows,
+// which are built by walking availableClaudeTools in order.
+func claudeToolNames() []string {
+	names := make([]string, len(availableClaudeTools))
+	copy(names, availableClaudeTools)
+	return names
 }
 
 func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {

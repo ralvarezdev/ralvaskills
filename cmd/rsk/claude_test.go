@@ -126,4 +126,28 @@ func TestRunClaudeToolsListCapture(t *testing.T) {
 	if len(tables[0].Rows) != len(availableClaudeTools) {
 		t.Fatalf("expected %d captured rows, got %d", len(availableClaudeTools), len(tables[0].Rows))
 	}
+	if len(tables[0].IDs) != len(availableClaudeTools) {
+		t.Fatalf("expected %d captured row IDs, got %d", len(availableClaudeTools), len(tables[0].IDs))
+	}
+	for i, id := range tables[0].IDs {
+		if id != availableClaudeTools[i] {
+			t.Fatalf("row ID %d = %q, want %q", i, id, availableClaudeTools[i])
+		}
+	}
+
+	// The three row actions registered in setupCommands must reach the
+	// captured table, sorted by key, so pressing one in the result view runs
+	// allow/deny/remove for the tool under the cursor.
+	wantActions := []struct{ key, label string }{{"a", "allow"}, {"d", "deny"}, {"x", "remove"}}
+	if len(tables[0].Actions) != len(wantActions) {
+		t.Fatalf(
+			"expected %d captured row actions, got %d: %+v",
+			len(wantActions), len(tables[0].Actions), tables[0].Actions,
+		)
+	}
+	for i, want := range wantActions {
+		if tables[0].Actions[i].Key != want.key || tables[0].Actions[i].Label != want.label {
+			t.Fatalf("action %d = %+v, want {Key:%s Label:%s}", i, tables[0].Actions[i], want.key, want.label)
+		}
+	}
 }
