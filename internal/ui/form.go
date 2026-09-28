@@ -10,6 +10,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 )
 
 // argsFieldName is the reserved values() key for the positional-arguments
@@ -66,8 +68,14 @@ func newBoolField(key, label, help string, value bool) *formField {
 func commandFields(cmd *cobra.Command) []*formField {
 	var fields []*formField
 
+	tableView := IsTableView(cmd)
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		if flag.Name == "help" {
+			return
+		}
+		// Captured table views always render tables, so the output format
+		// would be silently ignored; leave it to the CLI.
+		if tableView && flag.Name == cmdx.FlagOutput {
 			return
 		}
 		label := "--" + flag.Name

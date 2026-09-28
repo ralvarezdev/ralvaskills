@@ -1,12 +1,16 @@
 package main
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 // setupCommands registers all subcommands and their flags with the root command.
 func setupCommands() {
+	rootCmd.AddGroup(rootGroups...)
+
 	// catalog command
 	rootCmd.AddCommand(catalogCmd)
 	ui.MarkTableView(catalogCmd)
@@ -108,4 +112,22 @@ func setupCommands() {
 	// status renders one table per scanned directory, so its uninstall action
 	// resolves --global/--for from the table the row came from.
 	ui.MarkRowActionScoped(statusCmd, "u", "uninstall", uninstallCmd, statusRowActionScope)
+
+	assignGroups()
+}
+
+// assignGroups files each top-level command under its help section.
+func assignGroups() {
+	for id, cmds := range map[string][]*cobra.Command{
+		groupMachine:   {initCmd},
+		groupProject:   {newCmd, destroyCmd},
+		groupInstall:   {installCmd, uninstallCmd, updateCmd},
+		groupPinning:   {pinCmd, unpinCmd},
+		groupToolsConf: {claudeCmd},
+		groupViews:     {listCmd, catalogCmd, statusCmd},
+	} {
+		for _, cmd := range cmds {
+			cmd.GroupID = id
+		}
+	}
 }

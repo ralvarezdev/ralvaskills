@@ -16,6 +16,16 @@ import (
 
 const exitAborted = 130 // SIGINT + 128 per POSIX convention
 
+// Cobra group IDs for the root command's sections, in help/picker order.
+const (
+	groupMachine   = "machine"
+	groupProject   = "project"
+	groupInstall   = "install"
+	groupPinning   = "pinning"
+	groupToolsConf = "tools"
+	groupViews     = "views"
+)
+
 // Build metadata — injected via -ldflags at release time.
 var (
 	version   = "dev"
@@ -23,37 +33,21 @@ var (
 	buildDate = "unknown"
 )
 
+// rootGroups are the root command's help sections, in display order. The TUI
+// picker orders its top-level rows by the same list.
+var rootGroups = []*cobra.Group{
+	{ID: groupMachine, Title: "Machine setup:"},
+	{ID: groupProject, Title: "Project lifecycle:"},
+	{ID: groupInstall, Title: "Install / uninstall / update (use --global for system-wide):"},
+	{ID: groupPinning, Title: "Project pinning (auto-import into each tool's project config):"},
+	{ID: groupToolsConf, Title: "Tool configuration:"},
+	{ID: groupViews, Title: "Read-only views:"},
+}
+
 var rootCmd = &cobra.Command{
-	Use:   "rsk",
-	Short: "Manage ralvaskills — install, update, and check AI skill bundles.",
-	Long: `rsk manages your local and official AI skills for Claude Code and OpenCode.
-
-Machine setup:
-  rsk init                       Set up rsk for this machine
-
-Project lifecycle:
-  rsk new                        Initialize an rsk project in this directory
-  rsk destroy                    Remove .rsk/ and clean up tool configs
-
-Install / uninstall / update (use --global for system-wide):
-  rsk install                    Install everything tracked in rsk.mod
-  rsk install <name>             Install bundles or skills by name
-  rsk uninstall <name>           Remove installed bundles or skills
-  rsk update [name]              Pull latest and re-link
-
-Project pinning (auto-import into each tool's project config):
-  rsk pin <name>                 Pin an installed skill
-  rsk unpin <name>               Unpin a skill
-
-Tool configuration:
-  rsk claude tools               Manage Claude Code tool permissions
-
-Read-only views:
-  rsk list                       Show installed skills (project / --global)
-  rsk catalog                    Browse available skills and bundles
-  rsk status                     Combined view across project + global
-
-Use 'rsk <command> --help' for command-specific help.`,
+	Use:           "rsk",
+	Short:         "Manage ralvaskills — install, update, and check AI skill bundles.",
+	Long:          "rsk manages your local and official AI skills for Claude Code and OpenCode.",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	RunE: func(cmd *cobra.Command, _ []string) error {

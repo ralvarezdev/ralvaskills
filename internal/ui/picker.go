@@ -2,10 +2,12 @@ package ui
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -14,8 +16,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// backRowTitle labels the row that returns to the parent level.
-const backRowTitle = ".. back"
+const (
+	// backRowTitle labels the row that returns to the parent level.
+	backRowTitle = ".. back"
+
+	// breadcrumbSep joins the level names in the list title.
+	breadcrumbSep = " › "
+
+	// singleChildLevelRows is the row count (back row + one child) of a level
+	// with exactly one visible child.
+	singleChildLevelRows = 2
+)
 
 // keyCtrlC is the abort key, checked in enough places (the picker, the form,
 // the session's running/result screens) to warrant a shared constant.
@@ -46,20 +57,52 @@ func backRow() pickItem {
 }
 
 // childLevel builds the rows shown for cmds: a back row (unless this is the
-// root level), then one row per visible, runnable-or-nested child — the same
-// filter the flat picker used to apply.
+// root level), then one row per visible, runnable-or-nested child, ordered by
+// cobra group (in the order the parent declared them, ungrouped last) and
+// alphabetically within a group.
 func childLevel(cmds []*cobra.Command, isRoot bool) []pickItem {
 	items := make([]pickItem, 0, len(cmds)+1)
 	if !isRoot {
 		items = append(items, backRow())
 	}
+	rank := groupRanks(cmds)
+	rows := make([]pickItem, 0, len(cmds))
 	for _, c := range cmds {
 		if c.Hidden || (!c.Runnable() && len(c.Commands()) == 0) {
 			continue
 		}
-		items = append(items, pickItem{title: c.Name(), desc: c.Short, cmd: c})
+		if isRoot && isCobraBuiltin(c) {
+			continue
+		}
+		rows = append(rows, pickItem{title: c.Name(), desc: c.Short, cmd: c})
 	}
-	return items
+	slices.SortStableFunc(rows, func(a, b pickItem) int {
+		return cmp.Compare(rank(a.cmd), rank(b.cmd))
+	})
+	return append(items, rows...)
+}
+
+// groupRanks returns a function mapping a command to the position of its
+// cobra group among the parent's declared groups; ungrouped commands (and
+// commands without a parent) rank after every group.
+func groupRanks(cmds []*cobra.Command) func(*cobra.Command) int {
+	var order []*cobra.Group
+	if len(cmds) > 0 && cmds[0].HasParent() {
+		order = cmds[0].Parent().Groups()
+	}
+	return func(c *cobra.Command) int {
+		i := slices.IndexFunc(order, func(g *cobra.Group) bool { return g.ID == c.GroupID })
+		if i < 0 || c.GroupID == "" {
+			return len(order)
+		}
+		return i
+	}
+}
+
+// isCobraBuiltin reports whether c is one of cobra's auto-generated top-level
+// commands (help, completion), which are noise in the picker.
+func isCobraBuiltin(c *cobra.Command) bool {
+	return c.Name() == "help" || c.Name() == "completion"
 }
 
 // commandFinishedMsg reports the outcome of the most recently run command, so
@@ -69,14 +112,22 @@ type commandFinishedMsg struct {
 	err  error
 }
 
+// pickerLevel is one screen of the picker's navigation stack. name is the
+// breadcrumb segment that led here ("" for the root); cursor is the list index
+// of the row the user descended from, restored when they come back.
+type pickerLevel struct {
+	name   string
+	items  []pickItem
+	cursor int
+}
+
 // pickerModel drives the command list as a stack of levels: the root lists
 // top-level commands, descending into a domain shows its children. Enter on
 // a leaf sets m.selected and quits so the session can decide what to do next
 // (run directly, or collect its parameters first); ctrl+c/q/esc leave the
 // picker.
 type pickerModel struct {
-	levels        [][]pickItem
-	trail         []string
+	stack         []pickerLevel // stack[0] is the root; the last entry is on screen
 	list          list.Model
 	cancelled     bool
 	selected      *cobra.Command
@@ -98,17 +149,14 @@ func NewPicker(cmds []*cobra.Command, in io.Reader, out io.Writer, notice string
 
 func newPickerModel(cmds []*cobra.Command, notice string) *pickerModel {
 	capa := NewCapability()
-	root := childLevel(cmds, true)
 	m := &pickerModel{
-		levels: [][]pickItem{root},
+		stack:  []pickerLevel{{items: childLevel(cmds, true)}},
 		cap:    capa,
 		width:  defaultPickerWidth,
 		height: defaultPickerHeight,
 		notice: notice,
 	}
-	m.list = newPickerList(root, capa)
-	m.fit()
-	m.updateTitle()
+	m.show()
 	return m
 }
 
@@ -239,42 +287,57 @@ func (m *pickerModel) choose(item pickItem) (tea.Model, tea.Cmd) {
 	}
 }
 
-// descend pushes item's children onto the level stack.
+// current returns the level on screen.
+func (m *pickerModel) current() *pickerLevel { return &m.stack[len(m.stack)-1] }
+
+// canPop reports whether popping is possible (not at the root).
+func (m *pickerModel) canPop() bool { return len(m.stack) > 1 }
+
+// descend pushes item's children as a new level. A group whose only visible
+// child is itself a group (claude -> tools) is collapsed: the levels in
+// between are skipped and the breadcrumb names the whole chain.
 func (m *pickerModel) descend(item pickItem) {
-	m.push(item.title, childLevel(item.cmd.Commands(), false))
+	names := []string{item.title}
+	items := childLevel(item.cmd.Commands(), false)
+	for len(items) == singleChildLevelRows && items[1].cmd != nil && len(items[1].cmd.Commands()) > 0 {
+		names = append(names, items[1].title)
+		items = childLevel(items[1].cmd.Commands(), false)
+	}
+	m.current().cursor = m.list.GlobalIndex() // unfiltered position, valid even when descending from a filtered view
+	m.stack = append(m.stack, pickerLevel{name: strings.Join(names, breadcrumbSep), items: items})
+	m.show()
 }
 
-// push shows level as the child of the current one, named name.
-func (m *pickerModel) push(name string, level []pickItem) {
-	m.trail = append(m.trail, name)
-	m.levels = append(m.levels, level)
-	m.list = newPickerList(level, m.cap)
-	m.fit()
-	m.updateTitle()
-}
-
-// pop returns to the previous level.
+// pop returns to the previous level, restoring the cursor to the row the user
+// descended from.
 func (m *pickerModel) pop() {
 	if !m.canPop() {
 		return
 	}
-	m.levels = m.levels[:len(m.levels)-1]
-	m.trail = m.trail[:len(m.trail)-1]
-	m.list = newPickerList(m.levels[len(m.levels)-1], m.cap)
+	m.stack = m.stack[:len(m.stack)-1]
+	m.show()
+	m.list.Select(m.current().cursor)
+}
+
+// show rebuilds the list for the current level and refreshes its sizing and
+// breadcrumb title; it is the only place the list is (re)built.
+func (m *pickerModel) show() {
+	m.list = newPickerList(m.current().items, m.cap)
 	m.fit()
 	m.updateTitle()
 }
 
-// canPop reports whether popping is possible (not at the root).
-func (m *pickerModel) canPop() bool { return len(m.levels) > 1 }
-
 // updateTitle refreshes the list title with the breadcrumb.
 func (m *pickerModel) updateTitle() {
-	if len(m.trail) == 0 {
-		m.list.Title = "rsk — pick a command"
-		return
+	title := "rsk — pick a command"
+	if m.canPop() {
+		names := make([]string, 0, len(m.stack)-1)
+		for _, level := range m.stack[1:] {
+			names = append(names, level.name)
+		}
+		title = "rsk — " + strings.Join(names, breadcrumbSep)
 	}
-	m.list.Title = "rsk — " + strings.Join(m.trail, " › ")
+	m.list.Title = title
 }
 
 // commandExec adapts a cobra.Command to tea.ExecCommand so tea.Exec can run

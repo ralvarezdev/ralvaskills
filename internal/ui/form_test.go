@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 )
 
 func TestArgsLabel(t *testing.T) {
@@ -140,5 +142,35 @@ func TestCommandFields_flagsAndArgs(t *testing.T) {
 	}
 	if args.label != "name..." {
 		t.Errorf("args label = %q, want %q", args.label, "name...")
+	}
+}
+
+func TestCommandFields_outputFlagDroppedForTableViews(t *testing.T) {
+	t.Parallel()
+
+	build := func() *cobra.Command {
+		cmd := &cobra.Command{Use: "list [flags]"}
+		cmd.Flags().String(cmdx.FlagOutput, "text", "Output format: text|json")
+		cmd.Flags().Bool("all", false, "include all")
+		return cmd
+	}
+
+	plain := build()
+	if got := commandFields(plain); len(got) != 2 {
+		t.Errorf("non-table command fields = %d, want 2 (output kept)", len(got))
+	}
+
+	view := build()
+	MarkTableView(view)
+	got := commandFields(view)
+	if len(got) != 1 || got[0].key != "all" {
+		t.Errorf("table view fields = %+v, want only --all", got)
+	}
+
+	onlyOutput := &cobra.Command{Use: "status"}
+	onlyOutput.Flags().String(cmdx.FlagOutput, "text", "")
+	MarkTableView(onlyOutput)
+	if commandFields(onlyOutput) != nil {
+		t.Error("table view with only --output should have no form")
 	}
 }
