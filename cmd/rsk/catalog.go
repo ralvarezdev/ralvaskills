@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -140,8 +139,8 @@ func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 		return nil
 	}
 
-	if opts.output == outputJSON && capture == nil {
-		return writeJSON(out, skillsToEntries(all))
+	if opts.output == outputJSON {
+		return writeOrCaptureJSON(out, capture, skillsToEntries(all))
 	}
 	return printCatalogSkillTable(out, capture, all)
 }
@@ -228,12 +227,6 @@ func skillsToEntries(skills []skill.Skill) []skillEntry {
 	return out
 }
 
-func writeJSON(w io.Writer, v any) error {
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(v)
-}
-
 func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 	out := cmd.OutOrStdout()
 	capture := ui.CaptureFromContext(cmd.Context())
@@ -271,8 +264,8 @@ func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 		return nil
 	}
 
-	if opts.output == outputJSON && capture == nil {
-		return writeJSON(out, bundleRowsToEntries(rows))
+	if opts.output == outputJSON {
+		return writeOrCaptureJSON(out, capture, bundleRowsToEntries(rows))
 	}
 	return printCatalogBundleTable(out, capture, rows)
 }

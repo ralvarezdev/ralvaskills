@@ -138,8 +138,8 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 
 	scanStatusSections(out, capture, sections, cfg, membership, opts.personal)
 
-	if opts.output == outputJSON && capture == nil {
-		return writeJSON(out, statusSectionsToEntries(sections, pinnedSet))
+	if opts.output == outputJSON {
+		return writeOrCaptureJSON(out, capture, statusSectionsToEntries(sections, pinnedSet))
 	}
 	return printStatusText(out, capture, sections, pinnedSet)
 }

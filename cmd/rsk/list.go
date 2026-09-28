@@ -122,11 +122,8 @@ func runListProject(cmd *cobra.Command, opts listOpts) error {
 		return nil
 	}
 
-	// Under capture, the table is what the TUI's result screen renders, so
-	// -o json (were it reachable through the picker's form) is moot — always
-	// take the table branch, the only one the captured path understands.
-	if opts.output == outputJSON && capture == nil {
-		return writeJSON(out, rows)
+	if opts.output == outputJSON {
+		return writeOrCaptureJSON(out, capture, rows)
 	}
 
 	if capture != nil {
@@ -223,8 +220,8 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 		return rows[i].Name < rows[j].Name
 	})
 
-	if opts.output == outputJSON && capture == nil {
-		return writeJSON(out, rows)
+	if opts.output == outputJSON {
+		return writeOrCaptureJSON(out, capture, rows)
 	}
 
 	if capture != nil {

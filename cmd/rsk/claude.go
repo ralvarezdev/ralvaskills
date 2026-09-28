@@ -164,8 +164,8 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if output == outputJSON && capture == nil {
-		return writeJSON(out, claudeToolsPermissions{Allow: allow, Deny: deny})
+	if output == outputJSON {
+		return writeOrCaptureJSON(out, capture, claudeToolsPermissions{Allow: allow, Deny: deny})
 	}
 
 	rows := make([]claudeToolRow, 0, len(availableClaudeTools))

@@ -43,11 +43,13 @@ type sessionModel struct {
 }
 
 // capturedMsg reports a read-only command that ran in-process under a
-// termkit.Capture, carrying the tables and messages the TUI renders.
+// termkit.Capture, carrying the tables, messages, and raw payload the TUI
+// renders.
 type capturedMsg struct {
 	line     string
 	tables   []termkit.Data
 	messages []string
+	raw      string
 	err      error
 }
 
@@ -242,7 +244,9 @@ func (s *sessionModel) startCaptured(cmd *cobra.Command, args []string) tea.Cmd 
 		if err != nil {
 			err = fmt.Errorf("run %s: %w", cmd.Name(), err)
 		}
-		return capturedMsg{line: line, tables: capture.Tables(), messages: capture.Messages(), err: err}
+		return capturedMsg{
+			line: line, tables: capture.Tables(), messages: capture.Messages(), raw: capture.Raw(), err: err,
+		}
 	}
 }
 
@@ -262,6 +266,7 @@ func (s *sessionModel) captured(msg capturedMsg) {
 		Breadcrumb: s.resultCrumb,
 		Messages:   msg.messages,
 		Tables:     msg.tables,
+		Raw:        msg.raw,
 	}, s.width, s.height)
 	s.screen = screenResult
 }
