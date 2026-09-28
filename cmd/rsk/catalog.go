@@ -142,7 +142,7 @@ func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 	if opts.output == outputJSON {
 		return writeOrCaptureJSON(out, capture, skillsToEntries(all))
 	}
-	return printCatalogSkillTable(out, capture, all)
+	return printCatalogSkillTable(out, capture, cmd, all)
 }
 
 // loadSkillsBySource walks the local and/or official sources per sourceFilter
@@ -193,17 +193,33 @@ func filterByBundle(
 	return filterSkills(all, func(s skill.Skill) bool { return want[s.Name] }), nil
 }
 
-func printCatalogSkillTable(out io.Writer, capture *termkit.Capture, skills []skill.Skill) error {
+func printCatalogSkillTable(out io.Writer, capture *termkit.Capture, cmd *cobra.Command, skills []skill.Skill) error {
 	header := []string{headerSource, headerName, headerVersion}
 	rows := termkit.Rows(skills, catalogSkillTable)
 	if capture != nil {
-		capture.AddTable(termkit.Data{Headers: header, Rows: rows})
+		capture.AddTable(termkit.Data{
+			Headers: header,
+			Rows:    rows,
+			IDs:     skillNames(skills),
+			Actions: ui.RowActionsFor(cmd),
+		})
 		return nil
 	}
 	fmt.Fprintln(out)
 	termkit.WriteTableStyled(out, header, rows, false, nil, true, false)
 	fmt.Fprintln(out)
 	return nil
+}
+
+// skillNames extracts each skill's name, parallel to catalogSkillTable's
+// rows, so a captured table can identify the row a RowAction fires on
+// independently of how it's displayed.
+func skillNames(skills []skill.Skill) []string {
+	names := make([]string, len(skills))
+	for i, s := range skills {
+		names[i] = s.Name
+	}
+	return names
 }
 
 // catalogSkillTable projects one catalog skill row.
@@ -267,20 +283,36 @@ func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 	if opts.output == outputJSON {
 		return writeOrCaptureJSON(out, capture, bundleRowsToEntries(rows))
 	}
-	return printCatalogBundleTable(out, capture, rows)
+	return printCatalogBundleTable(out, capture, cmd, rows)
 }
 
-func printCatalogBundleTable(out io.Writer, capture *termkit.Capture, rows []bundleRow) error {
+func printCatalogBundleTable(out io.Writer, capture *termkit.Capture, cmd *cobra.Command, rows []bundleRow) error {
 	header := []string{"", "Bundle", "Linked", "Description"}
 	tableRows := termkit.Rows(rows, catalogBundleTable)
 	if capture != nil {
-		capture.AddTable(termkit.Data{Headers: header, Rows: tableRows})
+		capture.AddTable(termkit.Data{
+			Headers: header,
+			Rows:    tableRows,
+			IDs:     bundleNames(rows),
+			Actions: ui.RowActionsFor(cmd),
+		})
 		return nil
 	}
 	fmt.Fprintln(out)
 	termkit.WriteTableStyled(out, header, tableRows, false, nil, true, false)
 	fmt.Fprintln(out)
 	return nil
+}
+
+// bundleNames extracts each bundle's name, parallel to catalogBundleTable's
+// rows, so a captured table can identify the row a RowAction fires on
+// independently of how it's displayed.
+func bundleNames(rows []bundleRow) []string {
+	names := make([]string, len(rows))
+	for i, r := range rows {
+		names[i] = r.Name
+	}
+	return names
 }
 
 // catalogBundleTable projects one bundle row.

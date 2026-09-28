@@ -12,7 +12,7 @@ require (
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/lucasb-eyer/go-colorful v1.4.1
 	github.com/mattn/go-isatty v0.0.24
-	github.com/ralvarezdev/termkit v0.7.3
+	github.com/ralvarezdev/termkit v0.8.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 )

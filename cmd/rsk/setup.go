@@ -93,4 +93,9 @@ func setupCommands() {
 	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in the update")
 	f.Bool(cmdx.FlagOfficial, false, "Sync the official skill cache")
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be updated without doing it")
+
+	// row actions: install/uninstall directly from a catalog/list table row
+	// in the TUI, instead of leaving the view to type the name.
+	ui.MarkRowAction(catalogCmd, "i", "install", installCmd)
+	ui.MarkRowAction(listCmd, "u", "uninstall", uninstallCmd)
 }

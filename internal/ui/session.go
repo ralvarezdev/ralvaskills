@@ -9,6 +9,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/ralvarezdev/termkit"
 	"github.com/spf13/cobra"
+
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 )
 
 // sessionScreen is the screen the session is currently showing.
@@ -40,12 +42,17 @@ type sessionModel struct {
 	runningLine string
 	resultLine  string
 	resultCrumb string
+	// resultCmd is the command whose captured run produced the current
+	// result screen, used to resolve a termkit.RowActionMsg fired from it
+	// (see handleRowAction) — nil outside screenResult.
+	resultCmd *cobra.Command
 }
 
 // capturedMsg reports a read-only command that ran in-process under a
 // termkit.Capture, carrying the tables, messages, and raw payload the TUI
 // renders.
 type capturedMsg struct {
+	cmd      *cobra.Command
 	line     string
 	tables   []termkit.Data
 	messages []string
@@ -89,6 +96,11 @@ func (s *sessionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if captured, ok := msg.(capturedMsg); ok {
 		s.captured(captured)
 		return s, nil
+	}
+
+	if action, ok := msg.(termkit.RowActionMsg); ok {
+		cmd := s.handleRowAction(action)
+		return s, cmd
 	}
 
 	// While a captured command runs in-process it mutates the cobra tree, so
@@ -245,7 +257,7 @@ func (s *sessionModel) startCaptured(cmd *cobra.Command, args []string) tea.Cmd 
 			err = fmt.Errorf("run %s: %w", cmd.Name(), err)
 		}
 		return capturedMsg{
-			line: line, tables: capture.Tables(), messages: capture.Messages(), raw: capture.Raw(), err: err,
+			cmd: cmd, line: line, tables: capture.Tables(), messages: capture.Messages(), raw: capture.Raw(), err: err,
 		}
 	}
 }
@@ -262,6 +274,7 @@ func (s *sessionModel) captured(msg capturedMsg) {
 	}
 
 	s.resultLine = msg.line
+	s.resultCmd = msg.cmd
 	s.result = termkit.NewResultView(termkit.Result{
 		Breadcrumb: s.resultCrumb,
 		Messages:   msg.messages,
@@ -269,6 +282,46 @@ func (s *sessionModel) captured(msg capturedMsg) {
 		Raw:        msg.raw,
 	}, s.width, s.height)
 	s.screen = screenResult
+}
+
+// handleRowAction runs the command registered via MarkRowAction for the
+// result screen's source command and the fired RowAction's key, passing the
+// selected row's ID as its sole argument — the same as picking that command
+// from the menu and typing the name into its own form — and carrying over
+// any --global/--for/--personal scope the source command was run with, so
+// e.g. uninstalling from `list --global --for claude-code` targets the same
+// scope instead of silently defaulting to the project.
+func (s *sessionModel) handleRowAction(msg termkit.RowActionMsg) tea.Cmd {
+	if s.resultCmd == nil || msg.ID == "" {
+		return nil
+	}
+	target, ok := rowActionTargetFor(s.resultCmd, msg.Key)
+	if !ok {
+		return nil
+	}
+
+	termkit.ResetFlags(target)
+	copySharedFlags(s.resultCmd, target, cmdx.FlagGlobal, cmdx.FlagFor, cmdx.FlagPersonal)
+
+	s.result, s.screen, s.resultCmd = nil, screenPicker, nil
+	return s.run(target, []string{msg.ID})
+}
+
+// copySharedFlags copies each named flag's value from source to target when
+// both define it and the user actually set it on source, so running target
+// for a row action carries over the same scope filters source was browsed
+// with instead of guessing.
+func copySharedFlags(source, target *cobra.Command, names ...string) {
+	for _, name := range names {
+		sourceFlag := source.Flags().Lookup(name)
+		targetFlag := target.Flags().Lookup(name)
+		if sourceFlag == nil || targetFlag == nil || !sourceFlag.Changed {
+			continue
+		}
+		//nolint:errcheck // re-parsing a value already validated on source's own flag cannot fail
+		targetFlag.Value.Set(sourceFlag.Value.String())
+		targetFlag.Changed = true
+	}
 }
 
 // updateResult forwards keys to the result screen and, when it closes,

@@ -183,3 +183,61 @@ func TestSessionRunningGatesKeys(t *testing.T) {
 		t.Error("ctrl+c while running did not mark the picker cancelled")
 	}
 }
+
+// TestSessionHandleRowActionRunsTargetWithScopeCopied checks that firing a
+// RowActionMsg registered via MarkRowAction closes the result screen, copies
+// the source command's --global scope onto the target before running it, and
+// returns a non-nil tea.Cmd (the target's tea.Exec run).
+func TestSessionHandleRowActionRunsTargetWithScopeCopied(t *testing.T) {
+	t.Parallel()
+
+	source := tableViewCmd(t)
+	source.Flags().Bool("global", false, "")
+	if err := source.Flags().Set("global", "true"); err != nil {
+		t.Fatal(err)
+	}
+
+	target := &cobra.Command{Use: "uninstall", RunE: func(*cobra.Command, []string) error { return nil }}
+	target.Flags().Bool("global", false, "")
+	MarkRowAction(source, "u", "uninstall", target)
+
+	session := newSessionModel([]*cobra.Command{source}, "")
+	session.width, session.height = 80, 24
+	session.captured(capturedMsg{cmd: source, line: "catalog"})
+	if session.resultCmd != source {
+		t.Fatal("session.resultCmd was not set from capturedMsg.cmd")
+	}
+
+	teaCmd := session.handleRowAction(termkit.RowActionMsg{ID: "go-grpc", Key: "u"})
+
+	if teaCmd == nil {
+		t.Fatal("handleRowAction returned a nil tea.Cmd for a registered action")
+	}
+	if session.screen != screenPicker {
+		t.Errorf("session.screen = %v, want screenPicker after a row action", session.screen)
+	}
+	if session.result != nil || session.resultCmd != nil {
+		t.Error("session.result/resultCmd should be cleared after a row action")
+	}
+	if v, _ := target.Flags().GetBool("global"); !v {
+		t.Error("handleRowAction did not copy --global from the source command onto the target")
+	}
+}
+
+// TestSessionHandleRowActionNoopWithoutRegistration checks that a
+// RowActionMsg for a key with no MarkRowAction registration is ignored.
+func TestSessionHandleRowActionNoopWithoutRegistration(t *testing.T) {
+	t.Parallel()
+
+	source := tableViewCmd(t)
+	session := newSessionModel([]*cobra.Command{source}, "")
+	session.width, session.height = 80, 24
+	session.captured(capturedMsg{cmd: source, line: "catalog"})
+
+	if cmd := session.handleRowAction(termkit.RowActionMsg{ID: "go-grpc", Key: "x"}); cmd != nil {
+		t.Error("handleRowAction should return nil for an unregistered key")
+	}
+	if session.screen != screenResult {
+		t.Error("session.screen should stay screenResult when the row action is a no-op")
+	}
+}
