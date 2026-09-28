@@ -18,7 +18,10 @@ var (
 into every configured tool's project config (.rsk/CLAUDE.md for Claude Code,
 opencode.json for OpenCode) so it is auto-loaded by agents in this project.
 
-The skill must already be in rsk.mod — run 'rsk install <name>' first.`,
+The skill must already be in rsk.mod — run 'rsk install <name>' first.
+
+Examples:
+  rsk pin <name>`,
 		RunE: runPin,
 	}
 
@@ -27,7 +30,10 @@ The skill must already be in rsk.mod — run 'rsk install <name>' first.`,
 		Short: "Remove a skill from the pinned list.",
 		Long: `Remove a skill from the pinned list. The skill stays installed (still
 symlinked into .rsk/skills/) but is no longer auto-imported into each tool's
-project config.`,
+project config.
+
+Examples:
+  rsk unpin <name>`,
 		RunE: runUnpin,
 	}
 )

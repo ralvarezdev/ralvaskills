@@ -149,17 +149,19 @@ rsk status                                # combined view + drift
 rsk update [name]                         # pull latest and re-link
 rsk uninstall <name>                      # remove (cleans manifest in project scope)
 rsk pin <name> / rsk unpin <name>         # toggle auto-load in CLAUDE.md / opencode.json
-rsk destroy                               # remove .rsk/ and tool config entries
+rsk destroy                               # remove .rsk/ and tool config entries (--yes skips the prompt)
 
-# Claude Code tool permissions
-rsk claude tools list                     # current permissions for this project
-rsk claude tools allow <rule>             # allow a tool
-rsk claude tools deny <rule>              # deny a tool
+# Tool permissions (Claude Code by default; --for selects the tool)
+rsk tools list                            # current permissions for this project
+rsk tools allow <rule>                    # allow a tool
+rsk tools deny <rule>                     # deny a tool
+rsk tools remove <rule>                   # drop a rule
+# (the older `rsk claude tools ...` path still works as a hidden alias)
 ```
 
 ### Interactive mode
 
-Running `rsk` with no arguments and a real terminal opens an interactive picker instead of printing help: a nested menu (`enter` descends into a group like `claude tools`, `esc`/`q` backs out), and any command that takes flags or positional arguments shows a short parameter form — fill it in, confirm, and it runs inline, returning to the picker afterward. Non-interactive contexts (pipes, CI) fall back to the plain `--help` output.
+Running `rsk` with no arguments and a real terminal opens an interactive picker instead of printing help: a nested menu (`enter` descends into a group like `tools`, `esc`/`q` backs out), and any command that takes flags or positional arguments shows a short parameter form — fill it in, confirm, and it runs inline, returning to the picker afterward. Non-interactive contexts (pipes, CI) fall back to the plain `--help` output.
 
 ---
 

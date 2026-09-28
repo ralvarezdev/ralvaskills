@@ -11,6 +11,7 @@ import (
 	"github.com/ralvarezdev/termkit"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
@@ -23,7 +24,14 @@ var destroyCmd = &cobra.Command{
 	Long: `Remove .rsk/ from the current directory and clean up tool-specific config
 (CLAUDE.md import, opencode.json entries).
 
-This does not touch globally installed skills or the user-level config.`,
+This does not touch globally installed skills or the user-level config.
+
+It asks for confirmation first (a plain-text prompt when piped, which aborts
+if no answer is given); pass --yes to skip the prompt.
+
+Examples:
+  rsk destroy
+  rsk destroy --yes`,
 	RunE: runDestroy,
 }
 
@@ -49,7 +57,7 @@ func runDestroy(cmd *cobra.Command, _ []string) error {
 
 	printDestroyPlan(out, rskDir, cwd, tools, len(installedNames) > 0)
 
-	if !ui.ConfirmYN(out, "Proceed?") {
+	if !confirmDestructive(cmd, out, cmdx.Bool(cmd, cmdx.FlagYes)) {
 		fmt.Fprintln(out, "Aborted.")
 		return nil
 	}

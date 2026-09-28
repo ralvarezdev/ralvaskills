@@ -21,8 +21,10 @@ import (
 
 var listCmd = &cobra.Command{
 	Use:   "list [flags]",
-	Short: "Show installed skills.",
-	Long: `List installed skills.
+	Short: "Show installed skills (project / --global).",
+	Long: `List installed skills (project / --global). This is the offline view of what
+the manifest and the skills directories contain; for version drift see
+'rsk status'.
 
 Without --global, shows the skills tracked in the current project's rsk.mod
 (with install + pin marks). With --global, shows skills symlinked into the

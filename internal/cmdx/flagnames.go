@@ -16,6 +16,7 @@ const (
 	FlagOfficial = "official"
 	FlagPin      = "pin"
 	FlagForce    = "force"
+	FlagYes      = "yes"
 )
 
 // ScopeAll selects every configured tool when used as the --for flag value or

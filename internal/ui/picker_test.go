@@ -186,3 +186,30 @@ func TestPopRestoresCursor(t *testing.T) {
 		t.Errorf("cursor after pop = %d, want %d", m.list.Index(), idx)
 	}
 }
+
+func TestPickerOffersToolsLeavesAndHidesLegacyClaude(t *testing.T) {
+	t.Parallel()
+
+	root := &cobra.Command{Use: "rsk"}
+	tools := &cobra.Command{Use: "tools"}
+	tools.AddCommand(leafCmd("allow"), leafCmd("deny"), leafCmd("list"), leafCmd("remove"))
+	legacy := &cobra.Command{Use: "claude", Hidden: true}
+	legacy.AddCommand(&cobra.Command{Use: "tools"})
+	root.AddCommand(tools, legacy)
+
+	m := newPickerModel(root.Commands(), "")
+	if got := len(m.current().items); got != 1 || m.current().items[0].title != "tools" {
+		t.Fatalf("root rows = %d, want only tools", got)
+	}
+	m.choose(pickItem{title: "tools", cmd: tools})
+	if got, want := m.list.Title, "rsk — tools"; got != want {
+		t.Errorf("title = %q, want %q", got, want)
+	}
+	names := make([]string, 0, 4)
+	for _, it := range m.current().items[1:] {
+		names = append(names, it.title)
+	}
+	if !slices.Equal(names, []string{"allow", "deny", "list", "remove"}) {
+		t.Errorf("tools leaves = %v", names)
+	}
+}

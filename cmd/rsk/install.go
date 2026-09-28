@@ -37,6 +37,7 @@ With --global the install targets the configured global skills directories
 without touching any project manifest.
 
 Examples:
+  rsk install <name>                           # install a bundle or skill by name
   rsk install                                  # project: install everything in rsk.mod
   rsk install go-grpc                          # project: bundle + manifest track
   rsk install go-architect --pin               # project: install + pin in CLAUDE.md

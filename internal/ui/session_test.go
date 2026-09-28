@@ -12,7 +12,7 @@ import (
 
 // tableViewCmd builds a leaf command marked with MarkTableView whose RunE
 // records a table into whatever capture is on its context, mirroring how
-// list/status/catalog/claude tools list behave once captured.
+// list/status/catalog/tools list behave once captured.
 func tableViewCmd(t *testing.T) *cobra.Command {
 	t.Helper()
 	cmd := &cobra.Command{

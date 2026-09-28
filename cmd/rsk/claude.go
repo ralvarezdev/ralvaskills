@@ -58,40 +58,66 @@ var availableClaudeTools = []string{
 	"Write",
 }
 
+// toolsForHint is the --for flag's help text, shared by every tools subcommand.
+const toolsForHint = "Tool to configure (only claude-code is supported for now)"
+
+type (
+	// toolsCmds is one registered copy of the tools command tree: the parent
+	// and its four subcommands.
+	toolsCmds struct {
+		root, list, allow, deny, remove *cobra.Command
+	}
+)
+
 var (
+	// claudeCmd is the legacy `rsk claude` parent, kept hidden so
+	// `rsk claude tools ...` keeps working; the canonical path is `rsk tools`.
 	claudeCmd = &cobra.Command{
-		Use:   "claude",
-		Short: "Manage Claude Code configuration for this project.",
-		Long: `Manage Claude Code configuration, including tool permissions
-and other Claude-specific settings in .claude/settings.json.`,
+		Use:    "claude",
+		Short:  "Legacy alias: use 'rsk tools' instead.",
+		Hidden: true,
+		Long: `Legacy path kept for compatibility. 'rsk claude tools <sub>' behaves
+exactly like 'rsk tools <sub>' (with --for claude-code).`,
 	}
 
-	claudeToolsCmd = &cobra.Command{
+	// canonicalTools is `rsk tools`; legacyTools is `rsk claude tools`. Both
+	// come from the same factory so their behavior cannot drift.
+	canonicalTools = newToolsCmds("rsk tools")
+	legacyTools    = newToolsCmds("rsk claude tools")
+)
+
+// newToolsCmds builds a tools command tree whose help examples are written
+// with prefix (e.g. "rsk tools"). Every subcommand carries its own --for flag
+// so the TUI parameter form and row actions see it.
+func newToolsCmds(prefix string) toolsCmds {
+	root := &cobra.Command{
 		Use:   "tools",
-		Short: "Manage Claude Code tool permissions.",
-		Long: `Manage which Claude Code tools (Bash, Read, Write, etc.) are
-allowed or denied in this project. Changes are written to
-.claude/settings.json and override global tool permissions.
+		Short: "Manage tool permissions (allow/deny/list/remove).",
+		Long: fmt.Sprintf(`Manage which tools (Bash, Read, Write, etc.) are allowed or denied in
+this project. For Claude Code, changes are written to .claude/settings.json
+and override global tool permissions.
+
+Use --for to pick the AI tool (default claude-code; other tools are not
+supported yet). The older path 'rsk claude tools ...' still works.
 
 Examples:
-  rsk claude tools list
-  rsk claude tools allow Bash(npm run *)
-  rsk claude tools deny Write(**)
-  rsk claude tools remove Bash(npm run *)`,
+  %[1]s list
+  %[1]s allow Bash(npm run *)
+  %[1]s deny Write(**)
+  %[1]s remove Bash(npm run *)`, prefix),
 	}
 
-	claudeToolsListCmd = &cobra.Command{
+	list := &cobra.Command{
 		Use:   "list",
 		Short: "List current tool permissions for this project.",
-		Long: `List current tool permissions for this project.
+		Long: fmt.Sprintf(`List current tool permissions for this project.
 
 Examples:
-  rsk claude tools list
-  rsk claude tools list -o json`,
+  %[1]s list
+  %[1]s list -o json`, prefix),
 		RunE: runClaudeToolsList,
 	}
-
-	claudeToolsAllowCmd = &cobra.Command{
+	allow := &cobra.Command{
 		Use:   "allow [rule]",
 		Short: "Allow a tool in this project.",
 		Long: `Add a tool rule to the permissions.allow list in .claude/settings.json.
@@ -101,8 +127,7 @@ The rule format is Tool(specifier), for example:
   WebFetch(domain:example.com)`,
 		RunE: runClaudeToolsAllow,
 	}
-
-	claudeToolsDenyCmd = &cobra.Command{
+	deny := &cobra.Command{
 		Use:   "deny [rule]",
 		Short: "Deny a tool in this project.",
 		Long: `Add a tool rule to the permissions.deny list in .claude/settings.json.
@@ -112,14 +137,34 @@ The rule format is Tool(specifier), for example:
   WebFetch`,
 		RunE: runClaudeToolsDeny,
 	}
-
-	claudeToolsRemoveCmd = &cobra.Command{
+	remove := &cobra.Command{
 		Use:   "remove [rule]",
 		Short: "Remove a tool rule from permissions.",
 		Long:  `Remove a tool rule from either the allow or deny list.`,
 		RunE:  runClaudeToolsRemove,
 	}
-)
+
+	root.AddCommand(list, allow, deny, remove)
+	for _, c := range []*cobra.Command{list, allow, deny, remove} {
+		c.Flags().String(cmdx.FlagFor, string(tool.ClaudeID), toolsForHint)
+	}
+	list.Flags().StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
+	return toolsCmds{root: root, list: list, allow: allow, deny: deny, remove: remove}
+}
+
+// requireClaudeTarget validates the --for flag of a tools subcommand. Only
+// Claude Code is supported today: other known tools (or "all") get a "not
+// supported yet" error, anything else an unknown-tool error.
+func requireClaudeTarget(cmd *cobra.Command) error {
+	target := cmdx.String(cmd, cmdx.FlagFor)
+	if target == "" || target == string(tool.ClaudeID) {
+		return nil
+	}
+	if _, known := tool.Get(tool.ID(target)); known || target == cmdx.ForAll {
+		return fmt.Errorf("--for %s is not supported yet: tools subcommands only support %s", target, tool.ClaudeID)
+	}
+	return fmt.Errorf("unknown tool %q for --for (supported: %s)", target, tool.ClaudeID)
+}
 
 func claudeToolGet() (*tool.ClaudeTool, error) {
 	t, ok := tool.Get(tool.ClaudeID)
@@ -141,6 +186,9 @@ type claudeToolsPermissions struct {
 }
 
 func runClaudeToolsList(cmd *cobra.Command, args []string) error {
+	if err := requireClaudeTarget(cmd); err != nil {
+		return err
+	}
 	out := cmd.OutOrStdout()
 	capture := ui.CaptureFromContext(cmd.Context())
 
@@ -242,6 +290,9 @@ func claudeToolNames() []string {
 }
 
 func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {
+	if err := requireClaudeTarget(cmd); err != nil {
+		return err
+	}
 	out := cmd.OutOrStdout()
 	rule, err := nameFromArgsOrPrompt(cmd, args, "Tool rule (e.g. Bash(npm run *))")
 	if err != nil {
@@ -284,6 +335,9 @@ func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {
 }
 
 func runClaudeToolsDeny(cmd *cobra.Command, args []string) error {
+	if err := requireClaudeTarget(cmd); err != nil {
+		return err
+	}
 	out := cmd.OutOrStdout()
 	rule, err := nameFromArgsOrPrompt(cmd, args, "Tool rule (e.g. Write(**) or Bash)")
 	if err != nil {
@@ -326,6 +380,9 @@ func runClaudeToolsDeny(cmd *cobra.Command, args []string) error {
 }
 
 func runClaudeToolsRemove(cmd *cobra.Command, args []string) error {
+	if err := requireClaudeTarget(cmd); err != nil {
+		return err
+	}
 	out := cmd.OutOrStdout()
 	rule, err := nameFromArgsOrPrompt(cmd, args, "Tool rule to remove")
 	if err != nil {

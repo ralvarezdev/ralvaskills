@@ -29,6 +29,23 @@ func writeOrCaptureJSON(out io.Writer, capture *termkit.Capture, v any) error {
 	return err
 }
 
+// shouldConfirm reports whether a destructive command must ask "Proceed?":
+// always, except with --yes, or inside the TUI session, whose form already
+// showed a "Will run:" line. Piped runs still ask (a plain-text prompt that
+// aborts on EOF), as before.
+func shouldConfirm(cmd *cobra.Command, yes bool) bool {
+	return !yes && !ui.InSession(cmd.Context())
+}
+
+// confirmDestructive asks "Proceed?" when shouldConfirm says so and reports
+// whether the command may go ahead; every other case proceeds silently.
+func confirmDestructive(cmd *cobra.Command, out io.Writer, yes bool) bool {
+	if !shouldConfirm(cmd, yes) {
+		return true
+	}
+	return ui.ConfirmYN(out, "Proceed?")
+}
+
 // nameFromArgsOrPrompt returns args[0] if provided, otherwise prompts interactively.
 func nameFromArgsOrPrompt(cmd *cobra.Command, args []string, label string) (string, error) {
 	if len(args) > 0 {

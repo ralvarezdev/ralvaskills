@@ -294,7 +294,7 @@ func (m *pickerModel) current() *pickerLevel { return &m.stack[len(m.stack)-1] }
 func (m *pickerModel) canPop() bool { return len(m.stack) > 1 }
 
 // descend pushes item's children as a new level. A group whose only visible
-// child is itself a group (claude -> tools) is collapsed: the levels in
+// child is itself a group (a group whose only child is a group) is collapsed: the levels in
 // between are skipped and the breadcrumb names the whole chain.
 func (m *pickerModel) descend(item pickItem) {
 	names := []string{item.title}
@@ -386,6 +386,10 @@ func (c *commandExec) Run() error {
 		}
 		c.cmd.SetContext(ctx)
 	}
+
+	prevCtx := c.cmd.Context()
+	c.cmd.SetContext(WithSession(prevCtx))
+	defer c.cmd.SetContext(prevCtx)
 
 	fmt.Fprintf(c.out, "\n$ rsk %s\n\n", c.cmd.Name())
 	err := c.runCommand()

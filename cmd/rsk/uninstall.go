@@ -31,8 +31,13 @@ By default operates on the current project (.rsk/skills/) and cleans up
 .rsk/rsk.mod, .rsk/rsk.lock, and pinned skill imports. With --global the
 operation targets the configured global skills directories instead.
 
+It asks for confirmation first (a plain-text prompt when piped, which aborts
+if no answer is given); pass --yes to skip the prompt.
+
 Examples:
+  rsk uninstall <name>                  # remove a bundle or skill
   rsk uninstall go-grpc
+  rsk uninstall go-grpc --yes           # skip the confirmation
   rsk uninstall go-architect
   rsk uninstall global --global
   rsk uninstall go-grpc --dry-run`,
@@ -41,6 +46,7 @@ Examples:
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
 			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
+			yes:      cmdx.Bool(cmd, cmdx.FlagYes),
 			forTool:  cmdx.String(cmd, cmdx.FlagFor),
 		}, args)
 	},
@@ -53,8 +59,8 @@ type (
 	}
 
 	uninstallOpts struct {
-		global, dryRun, personal bool
-		forTool                  string
+		global, dryRun, personal, yes bool
+		forTool                       string
 	}
 )
 
@@ -103,7 +109,7 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	if opts.dryRun {
 		return nil
 	}
-	if !ui.ConfirmYN(out, "Proceed?") {
+	if !confirmDestructive(cmd, out, opts.yes) {
 		fmt.Fprintln(out, "Aborted.")
 		return nil
 	}

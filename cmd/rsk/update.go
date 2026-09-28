@@ -45,6 +45,7 @@ to that bundle's skills; otherwise it's treated as a single skill.
 Use --official to also refresh the anthropics/skills cache.
 
 Examples:
+  rsk update [name]                # pull latest and re-link (all when no name)
   rsk update                       # local mode: git pull the local clone
   rsk update --official            # also refresh the anthropics/skills cache
   rsk update grpc-architect        # update one skill

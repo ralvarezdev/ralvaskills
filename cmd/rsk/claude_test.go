@@ -40,19 +40,19 @@ func TestRunClaudeToolsListJSONOutput(t *testing.T) {
 	}
 
 	// setupCommands (invoked from this package's init) already registered
-	// --output on claudeToolsListCmd, so just flip its value and restore the
+	// --output on canonicalTools.list, so just flip its value and restore the
 	// default afterward rather than re-declaring the flag.
-	f := claudeToolsListCmd.Flags()
+	f := canonicalTools.list.Flags()
 	t.Cleanup(func() { _ = f.Set(cmdx.FlagOutput, string(outputText)) })
 	if err = f.Set(cmdx.FlagOutput, string(outputJSON)); err != nil {
 		t.Fatal(err)
 	}
 
 	var buf bytes.Buffer
-	claudeToolsListCmd.SetOut(&buf)
-	t.Cleanup(func() { claudeToolsListCmd.SetOut(nil) })
+	canonicalTools.list.SetOut(&buf)
+	t.Cleanup(func() { canonicalTools.list.SetOut(nil) })
 
-	if err = runClaudeToolsList(claudeToolsListCmd, nil); err != nil {
+	if err = runClaudeToolsList(canonicalTools.list, nil); err != nil {
 		t.Fatalf("runClaudeToolsList with -o json: unexpected error: %v", err)
 	}
 
@@ -71,7 +71,7 @@ func TestRunClaudeToolsListJSONOutput(t *testing.T) {
 		t.Fatal(err)
 	}
 	buf.Reset()
-	if err = runClaudeToolsList(claudeToolsListCmd, nil); err == nil {
+	if err = runClaudeToolsList(canonicalTools.list, nil); err == nil {
 		t.Fatal("expected error for invalid --output value, got nil")
 	}
 }
@@ -92,26 +92,26 @@ func TestRunClaudeToolsListCapture(t *testing.T) {
 		t.Fatalf("write rsk.mod: %v", err)
 	}
 
-	f := claudeToolsListCmd.Flags()
+	f := canonicalTools.list.Flags()
 	t.Cleanup(func() { _ = f.Set(cmdx.FlagOutput, string(outputText)) })
 	if err := f.Set(cmdx.FlagOutput, string(outputText)); err != nil {
 		t.Fatal(err)
 	}
 
 	var buf bytes.Buffer
-	claudeToolsListCmd.SetOut(&buf)
-	claudeToolsListCmd.SetContext(ui.WithCapture(t.Context(), &termkit.Capture{}))
+	canonicalTools.list.SetOut(&buf)
+	canonicalTools.list.SetContext(ui.WithCapture(t.Context(), &termkit.Capture{}))
 	t.Cleanup(func() {
-		claudeToolsListCmd.SetOut(nil)
-		claudeToolsListCmd.SetContext(context.Background())
+		canonicalTools.list.SetOut(nil)
+		canonicalTools.list.SetContext(context.Background())
 	})
 
-	capture := ui.CaptureFromContext(claudeToolsListCmd.Context())
+	capture := ui.CaptureFromContext(canonicalTools.list.Context())
 	if capture == nil {
 		t.Fatal("expected a capture on the command's context")
 	}
 
-	if err := runClaudeToolsList(claudeToolsListCmd, nil); err != nil {
+	if err := runClaudeToolsList(canonicalTools.list, nil); err != nil {
 		t.Fatalf("runClaudeToolsList: unexpected error: %v", err)
 	}
 

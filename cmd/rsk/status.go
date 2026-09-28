@@ -21,8 +21,10 @@ import (
 
 var statusCmd = &cobra.Command{
 	Use:   "status [flags]",
-	Short: "Show installed skills and version drift.",
-	Long: `List installed skills with their versions.
+	Short: "Show installed skills and version drift (see also: list).",
+	Long: `List installed skills with their versions and drift. Unlike 'rsk list'
+(the offline manifest/installed view), status compares versions across
+project + global.
 
 Without --stack, no network calls are made.
 With --stack, fetches latest versions from proxy.golang.org and pypi.org

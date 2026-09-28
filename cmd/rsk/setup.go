@@ -22,19 +22,17 @@ func setupCommands() {
 	f.String(cmdx.FlagSource, "", "Filter by source: local|official")
 	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
 
-	// claude command and subcommands
+	// tools command (canonical) and the hidden legacy `claude tools` path,
+	// both built by the same factory.
+	rootCmd.AddCommand(canonicalTools.root)
+	ui.MarkTableView(canonicalTools.list)
 	rootCmd.AddCommand(claudeCmd)
-	claudeCmd.AddCommand(claudeToolsCmd)
-	claudeToolsCmd.AddCommand(claudeToolsListCmd)
-	ui.MarkTableView(claudeToolsListCmd)
-	f = claudeToolsListCmd.Flags()
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
-	claudeToolsCmd.AddCommand(claudeToolsAllowCmd)
-	claudeToolsCmd.AddCommand(claudeToolsDenyCmd)
-	claudeToolsCmd.AddCommand(claudeToolsRemoveCmd)
+	claudeCmd.AddCommand(legacyTools.root)
+	ui.MarkTableView(legacyTools.list)
 
 	// destroy command
 	rootCmd.AddCommand(destroyCmd)
+	destroyCmd.Flags().BoolP(cmdx.FlagYes, "y", false, "Skip the confirmation prompt")
 
 	// init command
 	rootCmd.AddCommand(initCmd)
@@ -88,6 +86,7 @@ func setupCommands() {
 	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
 	f.Bool(cmdx.FlagPersonal, false, "Allow uninstalling personal/ skills")
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be uninstalled without doing it")
+	f.BoolP(cmdx.FlagYes, "y", false, "Skip the confirmation prompt")
 
 	// update command
 	rootCmd.AddCommand(updateCmd)
@@ -105,9 +104,11 @@ func setupCommands() {
 
 	// row actions for the Claude tools view: allow, deny, or remove the tool
 	// under the cursor without leaving the table to type its rule.
-	ui.MarkRowAction(claudeToolsListCmd, "a", "allow", claudeToolsAllowCmd)
-	ui.MarkRowAction(claudeToolsListCmd, "d", "deny", claudeToolsDenyCmd)
-	ui.MarkRowAction(claudeToolsListCmd, "x", "remove", claudeToolsRemoveCmd)
+	for _, t := range []toolsCmds{canonicalTools, legacyTools} {
+		ui.MarkRowAction(t.list, "a", "allow", t.allow)
+		ui.MarkRowAction(t.list, "d", "deny", t.deny)
+		ui.MarkRowAction(t.list, "x", "remove", t.remove)
+	}
 
 	// status renders one table per scanned directory, so its uninstall action
 	// resolves --global/--for from the table the row came from.
@@ -123,7 +124,7 @@ func assignGroups() {
 		groupProject:   {newCmd, destroyCmd},
 		groupInstall:   {installCmd, uninstallCmd, updateCmd},
 		groupPinning:   {pinCmd, unpinCmd},
-		groupToolsConf: {claudeCmd},
+		groupToolsConf: {canonicalTools.root},
 		groupViews:     {listCmd, catalogCmd, statusCmd},
 	} {
 		for _, cmd := range cmds {
