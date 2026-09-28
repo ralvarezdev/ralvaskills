@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
@@ -16,10 +17,20 @@ func setupCommands() {
 	ui.MarkTableView(catalogCmd)
 	f := catalogCmd.Flags()
 	f.Bool(cmdx.FlagStack, false, "Fetch and display dependency metadata alongside skills")
-	f.Bool(cmdx.FlagBundles, false, "Show bundles instead of individual skills")
-	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in output")
-	f.String(cmdx.FlagBundle, "", "List the skills inside a single bundle")
+	f.Bool(cmdx.FlagBundles, false, "Alias for --bundle with no name")
+	f.String(cmdx.FlagBundle, "", "List bundles; with a name (--bundle NAME), list that bundle's skills")
+	f.Lookup(cmdx.FlagBundle).NoOptDefVal = bundleListSentinel
+	f.Lookup(cmdx.FlagBundles).Hidden = true
+	cmdx.RegisterInclude(catalogCmd, "Include extra skills in the output", cmdx.IncludePersonal)
 	f.String(cmdx.FlagSource, "", "Filter by source: local|official")
+	err := catalogCmd.RegisterFlagCompletionFunc(cmdx.FlagSource,
+		func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+			return []string{skill.SourceLocal.String(), skill.SourceOfficial.String()},
+				cobra.ShellCompDirectiveNoFileComp
+		})
+	if err != nil {
+		panic("register --source completion: " + err.Error())
+	}
 	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
 
 	// tools command (canonical) and the hidden legacy `claude tools` path,
@@ -44,7 +55,7 @@ func setupCommands() {
 	f = installCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "Install to the configured global skills dir(s)")
 	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
-	f.Bool(cmdx.FlagPersonal, false, "Allow installing personal/ skills")
+	cmdx.RegisterInclude(installCmd, "Allow installing extra skills", cmdx.IncludePersonal)
 	f.Bool(cmdx.FlagPin, false, "Also pin installed skills in the project (project scope only)")
 	f.String(cmdx.FlagVersion, "", "Pin to a specific repo tag (local skills only)")
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be installed without doing it")
@@ -55,7 +66,7 @@ func setupCommands() {
 	f = listCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "List global skills")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
-	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in output")
+	cmdx.RegisterInclude(listCmd, "Include extra skills in the output", cmdx.IncludePersonal)
 	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
 
 	// new command
@@ -66,6 +77,7 @@ func setupCommands() {
 	// pin and unpin commands
 	rootCmd.AddCommand(pinCmd)
 	rootCmd.AddCommand(unpinCmd)
+	pinCmd.Flags().Bool(cmdx.FlagRemove, false, "Unpin the skill instead of pinning it")
 
 	// status command
 	rootCmd.AddCommand(statusCmd)
@@ -76,7 +88,7 @@ func setupCommands() {
 	f.Bool("project", false, "Show project skills only")
 	f.Bool(cmdx.FlagStack, false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
 	f.Bool(cmdx.FlagRefresh, false, "With --stack: bypass the 24h cache and force a re-fetch")
-	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in output")
+	cmdx.RegisterInclude(statusCmd, "Include extra skills in the output", cmdx.IncludePersonal)
 	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
 
 	// uninstall command
@@ -84,7 +96,7 @@ func setupCommands() {
 	f = uninstallCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "Uninstall from the configured global skills dir(s)")
 	f.String(cmdx.FlagFor, "", "With --global, scope to a single tool (claude-code|opencode)")
-	f.Bool(cmdx.FlagPersonal, false, "Allow uninstalling personal/ skills")
+	cmdx.RegisterInclude(uninstallCmd, "Allow uninstalling extra skills", cmdx.IncludePersonal)
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be uninstalled without doing it")
 	f.BoolP(cmdx.FlagYes, "y", false, "Skip the confirmation prompt")
 
@@ -93,8 +105,12 @@ func setupCommands() {
 	f = updateCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "Update global skills")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
-	f.Bool(cmdx.FlagPersonal, false, "Include personal/ skills in the update")
-	f.Bool(cmdx.FlagOfficial, false, "Sync the official skill cache")
+	cmdx.RegisterInclude(
+		updateCmd,
+		"Also update extra skills; official also syncs the official skill cache",
+		cmdx.IncludePersonal,
+		cmdx.IncludeOfficial,
+	)
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be updated without doing it")
 
 	// row actions: install/uninstall directly from a catalog/list table row
@@ -123,7 +139,7 @@ func assignGroups() {
 		groupMachine:   {initCmd},
 		groupProject:   {newCmd, destroyCmd},
 		groupInstall:   {installCmd, uninstallCmd, updateCmd},
-		groupPinning:   {pinCmd, unpinCmd},
+		groupPinning:   {pinCmd},
 		groupToolsConf: {canonicalTools.root},
 		groupViews:     {listCmd, catalogCmd, statusCmd},
 	} {

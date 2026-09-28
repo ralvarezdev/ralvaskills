@@ -32,7 +32,7 @@ func NewOfficial(cacheDir string) *Official {
 			src:  skill.SourceOfficial,
 			notFound: func(name string) error {
 				return fmt.Errorf(
-					"%w: official skill %q — run 'rsk update --official' to refresh the cache",
+					"%w: official skill %q — run 'rsk update --include official' to refresh the cache",
 					ErrNotFound, name,
 				)
 			},

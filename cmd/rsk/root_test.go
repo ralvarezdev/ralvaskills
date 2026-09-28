@@ -121,3 +121,82 @@ func TestDestructiveCommandsHaveYesFlag(t *testing.T) {
 		}
 	}
 }
+
+func TestLegacyUnpinIsHiddenButReachable(t *testing.T) {
+	t.Parallel()
+
+	found, _, err := rootCmd.Find([]string{"unpin"})
+	if err != nil || found != unpinCmd || !unpinCmd.Hidden {
+		t.Fatalf("unpin: found=%v hidden=%v err=%v, want hidden and reachable", found, unpinCmd.Hidden, err)
+	}
+	if pinCmd.Hidden || pinCmd.GroupID != groupPinning {
+		t.Errorf("pin: hidden=%v group=%q, want visible in %q", pinCmd.Hidden, pinCmd.GroupID, groupPinning)
+	}
+	if pinCmd.Flags().Lookup(cmdx.FlagRemove) == nil {
+		t.Error("pin is missing --remove")
+	}
+}
+
+func TestSourceScopeFlagsRegistered(t *testing.T) {
+	t.Parallel()
+
+	for _, cmd := range []*cobra.Command{installCmd, uninstallCmd, updateCmd, listCmd, statusCmd, catalogCmd} {
+		if f := cmd.Flags().Lookup(cmdx.FlagInclude); f == nil || f.Hidden {
+			t.Errorf("%s: --include missing or hidden", cmd.Name())
+		}
+		if f := cmd.Flags().Lookup(cmdx.FlagPersonal); f == nil || !f.Hidden {
+			t.Errorf("%s: --personal must be a hidden alias", cmd.Name())
+		}
+	}
+	if f := updateCmd.Flags().Lookup(cmdx.FlagOfficial); f == nil || !f.Hidden {
+		t.Error("update: --official must be a hidden alias")
+	}
+	if f := catalogCmd.Flags().Lookup(cmdx.FlagBundles); f == nil || !f.Hidden {
+		t.Error("catalog: --bundles must be a hidden alias")
+	}
+	if f := catalogCmd.Flags().Lookup(cmdx.FlagBundle); f == nil || f.NoOptDefVal != bundleListSentinel {
+		t.Error("catalog: --bundle must be an optional-value flag")
+	}
+	if catalogCmd.Flags().Lookup(cmdx.FlagSource) == nil {
+		t.Error("catalog: --source (local|official) must be kept")
+	}
+}
+
+func TestResolveBundleFlag(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		flag      string
+		alias     bool
+		args      []string
+		wantList  bool
+		wantName  string
+		wantError bool
+	}{
+		{"unset", "", false, nil, false, "", false},
+		{"bare --bundle lists bundles", bundleListSentinel, false, nil, true, "", false},
+		{"--bundle=NAME", "go-grpc", false, nil, false, "go-grpc", false},
+		{"--bundle NAME (positional)", bundleListSentinel, false, []string{"go-grpc"}, false, "go-grpc", false},
+		{"--bundles alias", "", true, nil, true, "", false},
+		{"--bundles with name keeps conflict", "go-grpc", true, nil, true, "go-grpc", false},
+		{"stray positional", "", false, []string{"x"}, false, "", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			list, name, err := resolveBundleFlag(tt.flag, tt.alias, tt.args)
+			if (err != nil) != tt.wantError || list != tt.wantList || name != tt.wantName {
+				t.Errorf(
+					"got (%v, %q, %v), want (%v, %q, err=%v)",
+					list,
+					name,
+					err,
+					tt.wantList,
+					tt.wantName,
+					tt.wantError,
+				)
+			}
+		})
+	}
+}

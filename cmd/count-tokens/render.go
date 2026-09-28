@@ -238,7 +238,7 @@ func writeUnbundledSkillsSection(buf *bytes.Buffer, t renderTotals) {
 	}
 	buf.WriteString("## Personal / unbundled skills\n\n")
 	buf.WriteString("These skills are not part of any bundle. " +
-		"They are installed individually with `rsk install <name> --personal` " +
+		"They are installed individually with `rsk install <name> --include personal` " +
 		"and their desc tokens are only paid when explicitly installed.\n\n")
 	buf.WriteString("| Skill | Category | ~Body tkns | ~Desc tkns | ~Side tkns |\n")
 	buf.WriteString("|---|---|---:|---:|---:|\n")

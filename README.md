@@ -148,7 +148,7 @@ rsk status                                # combined view + drift
 # Updates and removal
 rsk update [name]                         # pull latest and re-link
 rsk uninstall <name>                      # remove (cleans manifest in project scope)
-rsk pin <name> / rsk unpin <name>         # toggle auto-load in CLAUDE.md / opencode.json
+rsk pin <name> [--remove]                # toggle auto-load in CLAUDE.md / opencode.json (`rsk unpin` still works)
 rsk destroy                               # remove .rsk/ and tool config entries (--yes skips the prompt)
 
 # Tool permissions (Claude Code by default; --for selects the tool)

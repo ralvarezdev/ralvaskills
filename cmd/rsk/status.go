@@ -38,12 +38,16 @@ Examples:
   rsk status --stack --refresh
   rsk status -o json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		inc, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal)
+		if err != nil {
+			return err
+		}
 		return runStatus(cmd, statusOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			project:  cmdx.Bool(cmd, "project"),
 			stack:    cmdx.Bool(cmd, cmdx.FlagStack),
 			refresh:  cmdx.Bool(cmd, cmdx.FlagRefresh),
-			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
+			personal: inc.Personal,
 			forTool:  cmdx.String(cmd, cmdx.FlagFor),
 			output:   outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
 		})

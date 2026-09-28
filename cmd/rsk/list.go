@@ -36,6 +36,11 @@ Examples:
   rsk list --global --for claude-code   # one tool's global skills
   rsk list -o json`,
 	RunE: func(cmd *cobra.Command, _ []string) error {
+		// --include personal is accepted (and validated) for symmetry; list
+		// has never filtered on it.
+		if _, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal); err != nil {
+			return err
+		}
 		return runList(cmd, listOpts{
 			global:  cmdx.Bool(cmd, cmdx.FlagGlobal),
 			forTool: cmdx.String(cmd, cmdx.FlagFor),

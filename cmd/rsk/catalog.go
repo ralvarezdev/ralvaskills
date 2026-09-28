@@ -26,26 +26,64 @@ const (
 var catalogCmd = &cobra.Command{
 	Use:   "catalog [flags]",
 	Short: "Browse the catalog of available skills and bundles.",
-	Long: `Browse what rsk knows about. By default lists every skill. Use --bundles to
-list bundles instead, or --bundle <name> to list the skills inside a single
-bundle.
+	Args:  cobra.MaximumNArgs(1),
+	Long: `Browse what rsk knows about. By default lists every skill. Use --bundle
+alone to list bundles instead, or --bundle <name> to list the skills inside a
+single bundle.
+
+The older --bundles and --personal flags still work as hidden aliases of
+--bundle and --include personal.
 
 Examples:
   rsk catalog                       # all skills
-  rsk catalog --bundles             # all bundles
+  rsk catalog --bundle              # all bundles
   rsk catalog --bundle go-grpc      # skills inside the go-grpc bundle
   rsk catalog --source local        # filter by source
-  rsk catalog --personal            # include personal/ skills
+  rsk catalog --include personal    # include personal/ skills
   rsk catalog -o json`,
-	RunE: func(cmd *cobra.Command, _ []string) error {
+	RunE: func(cmd *cobra.Command, args []string) error {
+		inc, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal)
+		if err != nil {
+			return err
+		}
+		bundles, bundle, err := resolveBundleFlag(
+			cmdx.String(cmd, cmdx.FlagBundle), cmdx.Bool(cmd, cmdx.FlagBundles), args,
+		)
+		if err != nil {
+			return err
+		}
 		return runCatalog(cmd, catalogOpts{
-			bundles:  cmdx.Bool(cmd, cmdx.FlagBundles),
-			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
-			bundle:   cmdx.String(cmd, cmdx.FlagBundle),
+			bundles:  bundles,
+			personal: inc.Personal,
+			bundle:   bundle,
 			source:   cmdx.String(cmd, cmdx.FlagSource),
 			output:   outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
 		})
 	},
+}
+
+// bundleListSentinel is --bundle's NoOptDefVal: the value the flag takes when
+// given with no explicit name, meaning "list the bundles themselves".
+const bundleListSentinel = "*"
+
+// resolveBundleFlag folds --bundle [name], the hidden --bundles alias and an
+// optional positional name into (list bundles?, bundle name). pflag only
+// binds a NoOptDefVal flag's value with --bundle=NAME, so a lone positional
+// argument after a bare --bundle is taken as the name (--bundle NAME).
+func resolveBundleFlag(flagValue string, bundlesAlias bool, args []string) (listBundles bool, name string, err error) {
+	if len(args) > 0 && flagValue != bundleListSentinel {
+		return false, "", fmt.Errorf("unexpected argument %q (a bundle name goes after --bundle)", args[0])
+	}
+	if len(args) > 0 {
+		flagValue = args[0]
+	}
+	if flagValue == bundleListSentinel {
+		return true, "", nil
+	}
+	if bundlesAlias {
+		return true, flagValue, nil
+	}
+	return false, flagValue, nil
 }
 
 type (
@@ -88,7 +126,7 @@ func runCatalog(cmd *cobra.Command, opts catalogOpts) error {
 		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
 	}
 	if opts.bundles && (opts.bundle != "" || opts.personal || opts.source != "") {
-		return errors.New("--bundle, --personal, and --source apply when listing skills, not --bundles")
+		return errors.New("--bundle <name>, --include, and --source apply when listing skills, not bundles")
 	}
 	if opts.bundles {
 		return runCatalogBundles(cmd, opts)

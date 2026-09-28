@@ -185,7 +185,7 @@ func sourceForRef(
 	src skill.Source, localSrc, officialSrc source.Resolver,
 ) (resolver source.Resolver, notFoundMsg string) {
 	if src == skill.SourceOfficial {
-		return officialSrc, "%s (official) not in cache — run 'rsk update --official' to fetch it"
+		return officialSrc, "%s (official) not in cache — run 'rsk update --include official' to fetch it"
 	}
 	return localSrc, "%s is not yet available (planned) — skipped"
 }

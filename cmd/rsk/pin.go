@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
@@ -20,14 +21,20 @@ opencode.json for OpenCode) so it is auto-loaded by agents in this project.
 
 The skill must already be in rsk.mod — run 'rsk install <name>' first.
 
+Use --remove to unpin instead: the skill stays installed (still symlinked
+into .rsk/skills/) but is no longer auto-imported. The older 'rsk unpin' still
+works as a hidden alias of 'rsk pin --remove'.
+
 Examples:
-  rsk pin <name>`,
+  rsk pin <name>
+  rsk pin <name> --remove`,
 		RunE: runPin,
 	}
 
 	unpinCmd = &cobra.Command{
-		Use:   "unpin [name]",
-		Short: "Remove a skill from the pinned list.",
+		Use:    "unpin [name]",
+		Hidden: true,
+		Short:  "Remove a skill from the pinned list.",
 		Long: `Remove a skill from the pinned list. The skill stays installed (still
 symlinked into .rsk/skills/) but is no longer auto-imported into each tool's
 project config.
@@ -39,6 +46,9 @@ Examples:
 )
 
 func runPin(cmd *cobra.Command, args []string) error {
+	if cmdx.Bool(cmd, cmdx.FlagRemove) {
+		return runUnpin(cmd, args)
+	}
 	out := cmd.OutOrStdout()
 	name, err := nameFromArgsOrPrompt(cmd, args, "Skill to pin")
 	if err != nil {

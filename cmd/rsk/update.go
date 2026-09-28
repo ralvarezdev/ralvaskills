@@ -42,21 +42,25 @@ skills with new versions.
 Names are resolved against the catalog: a name that matches a bundle expands
 to that bundle's skills; otherwise it's treated as a single skill.
 
-Use --official to also refresh the anthropics/skills cache.
+Use --include official (legacy: --official) to also refresh the anthropics/skills cache.
 
 Examples:
   rsk update [name]                # pull latest and re-link (all when no name)
   rsk update                       # local mode: git pull the local clone
-  rsk update --official            # also refresh the anthropics/skills cache
+  rsk update --include official    # also refresh the anthropics/skills cache
   rsk update grpc-architect        # update one skill
   rsk update docs                  # update everything in the docs bundle
   rsk update go-grpc --global`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		inc, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal, cmdx.IncludeOfficial)
+		if err != nil {
+			return err
+		}
 		return runUpdate(cmd, updateOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
-			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
-			official: cmdx.Bool(cmd, cmdx.FlagOfficial),
+			personal: inc.Personal,
+			official: inc.Official,
 			forTool:  cmdx.String(cmd, cmdx.FlagFor),
 		}, args)
 	},

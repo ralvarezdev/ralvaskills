@@ -36,7 +36,7 @@ rsk new                                # creates .rsk/rsk.mod + .rsk/CLAUDE.md +
 rsk install <name[@version]>           # adds to manifest, symlinks into .rsk/skills/, updates rsk.lock
 rsk install <name> --pin               # also imports skill into .rsk/CLAUDE.md (auto-loaded in this project)
 rsk pin <name>                         # pin an already-installed skill
-rsk unpin <name>                       # remove the import (skill stays installed)
+rsk pin <name> --remove                 # remove the import (skill stays installed; `rsk unpin` still works)
 rsk list                               # show manifest entries with pinned/installed marks
 rsk update <name>                      # re-resolve + re-link to latest available version
 rsk install                            # (no args) re-installs everything in rsk.mod (after clone, after edits)
@@ -53,7 +53,7 @@ Install a curated bundle or single skill into the project (`.rsk/skills/`) or gl
 rsk install <name...>                              # project: bundle or skill → .rsk/skills/, writes rsk.mod
 rsk install <name...> --global                     # global: all configured tool dirs, no manifest
 rsk install <name> --global --for claude-code      # global, one tool only
-rsk install <name> --personal                      # personal/ skill, explicit opt-in
+rsk install <name> --include personal            # personal/ skill, explicit opt-in (`--personal` still works)
 rsk install <name> --dry-run                       # preview without writing
 ```
 
@@ -68,10 +68,10 @@ Names are auto-resolved against the catalog: a name that matches a bundle expand
 | Command | Purpose |
 |---|---|
 | `rsk catalog` | All available skills |
-| `rsk catalog --bundles` | All available bundles |
-| `rsk catalog --bundle <name>` | Skills in a specific bundle |
+| `rsk catalog --bundle` | All available bundles (`--bundles` still works) |
+| `rsk catalog --bundle <name>` (or `--bundle=<name>`) | Skills in a specific bundle |
 | `rsk catalog --source local\|official` | Filter by source |
-| `rsk catalog --personal` | Include personal skills |
+| `rsk catalog --include personal` (`--personal` still works) | Include personal skills |
 | `rsk catalog -o json` | Machine-readable output |
 | `rsk list` | Project manifest entries (installed/pinned marks) |
 | `rsk list --global` | Skills linked in global tool dirs |
@@ -96,16 +96,16 @@ rsk init --force                      # overwrite existing config
 ### Update (state-changing — ask first)
 
 ```bash
-rsk update [name...] [--global] [--for <tool>] [--official] [--personal] [--dry-run]
+rsk update [name...] [--global] [--for <tool>] [--include official,personal] [--dry-run]
 ```
 
-- Local-clone mode: `git pull` on the repo (symlinks update automatically). Add `--official` to also pull `anthropics/skills` cache.
+- Local-clone mode: `git pull` on the repo (symlinks update automatically). Add `--include official` (legacy `--official`) to also pull `anthropics/skills` cache.
 - Registry mode: fetches latest index, re-downloads + re-links any skill whose installed version is behind.
 
 ### Uninstall (state-changing — ask first)
 
 ```bash
-rsk uninstall <name...> [--global] [--for <tool>] [--personal] [--dry-run]
+rsk uninstall <name...> [--global] [--for <tool>] [--include personal] [--dry-run]
 ```
 
 Project uninstall also cleans the matching entries from `rsk.mod` / `rsk.lock` and unpins them from `.rsk/CLAUDE.md` (or `opencode.json`).
@@ -139,7 +139,7 @@ Per the spec this is opt-in with a 24h cache; the current build returns an expli
 - Tracked: `rsk install <name>` (+ `--pin` if it should auto-load)
 - Untracked, system-wide: `rsk install <name> --global`
 
-**Update everything** — `rsk update` (local clone) or `rsk update --official` (also refresh Anthropic cache)
+**Update everything** — `rsk update` (local clone) or `rsk update --include official` (also refresh Anthropic cache)
 
 **Upgrade a single manifest skill** — `rsk update <name>`
 

@@ -292,7 +292,7 @@ func (s *sessionModel) captured(msg capturedMsg) {
 // result screen's source command and the fired RowAction's key, passing the
 // selected row's ID as its sole argument — the same as picking that command
 // from the menu and typing the name into its own form — and carrying over
-// any --global/--for/--personal scope the source command was run with, so
+// any --global/--for scope the source command was run with, so
 // e.g. uninstalling from `list --global --for claude-code` targets the same
 // scope instead of silently defaulting to the project.
 //

@@ -70,7 +70,7 @@ func commandFields(cmd *cobra.Command) []*formField {
 
 	tableView := IsTableView(cmd)
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
-		if flag.Name == "help" {
+		if flag.Name == "help" || flag.Hidden {
 			return
 		}
 		// Captured table views always render tables, so the output format
@@ -83,7 +83,17 @@ func commandFields(cmd *cobra.Command) []*formField {
 			fields = append(fields, newBoolField(flag.Name, label, flag.Usage, flag.DefValue == "true"))
 			return
 		}
-		fields = append(fields, newTextField(flag.Name, label, flag.Usage, flag.DefValue, false))
+		help := flag.Usage
+		if flag.NoOptDefVal != "" {
+			// An optional-value flag: the bare flag means NoOptDefVal, which
+			// a text field can only express by typing it.
+			help += fmt.Sprintf(" (empty: off; %q: flag alone)", flag.NoOptDefVal)
+		}
+		def := flag.DefValue
+		if def == "[]" && flag.Value.Type() == "stringSlice" {
+			def = "" // an empty list renders as "[]", which is not a value
+		}
+		fields = append(fields, newTextField(flag.Name, label, help, def, false))
 	})
 
 	if takesArgs(cmd) {

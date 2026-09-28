@@ -69,7 +69,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── install.go                # rsk install [name...] [flags] (bare form installs from rsk.mod)
 │   │   ├── uninstall.go              # rsk uninstall <name...> [flags] (cleans manifest for project removes)
 │   │   ├── update.go                 # rsk update [name...] [flags]
-│   │   ├── pin.go                    # rsk pin <name> / rsk unpin <name>
+│   │   ├── pin.go                    # rsk pin <name> [--remove] (rsk unpin kept as hidden alias)
 │   │   ├── status.go                 # rsk status [flags]
 │   │   ├── list.go                   # rsk list [flags]              (installed view: project / --global)
 │   │   ├── catalog.go                # rsk catalog [flags]           (browse skills + bundles)
@@ -630,7 +630,7 @@ rsk destroy                            # delete .rsk/; remove the `@.rsk/CLAUDE.
 rsk install <name[@version]>           # resolve via local→official; symlink into .rsk/skills/; upsert rsk.mod + rsk.lock
 rsk install <name> --pin               # also pin (add to .rsk/CLAUDE.md)
 rsk pin <name>                         # pin an already-installed skill (no-op if already pinned)
-rsk unpin <name>                       # remove from pinned list (skill stays installed)
+rsk pin <name> --remove                 # remove from pinned list (skill stays installed; `rsk unpin <name>` still works as a hidden alias)
 rsk list                               # show all manifest entries with installed / pinned marks
 rsk update <name>                      # re-resolve + re-link to the latest available version; updates rsk.lock
 ```
@@ -656,7 +656,7 @@ Flags:
   --global            Install to global skills dir(s) instead of <project>/.rsk/skills/
   --for <tool>        Scope --global to a single configured tool (claude-code|opencode)
   --pin               Also pin in the project's CLAUDE.md (project scope only)
-  --personal          Allow installing from personal/ folder (opt-in)
+  --include personal  Allow installing from personal/ folder (opt-in; `--personal` still works)
   --version <v>       (planned) Pin to a specific repo tag. Not yet supported — current build errors if passed.
   --dry-run           Show what would be installed without doing it
 ```
@@ -671,7 +671,7 @@ rsk install go-grpc                               # stack bundle for current pro
 rsk install design docs                           # multiple bundles at once
 rsk install go-architect                          # single skill (no matching bundle)
 rsk install go-architect --pin                    # install + pin for auto-load in this project
-rsk install demo-script-architect --personal      # personal skill, explicit opt-in
+rsk install demo-script-architect --include personal  # personal skill, explicit opt-in
 rsk install go-grpc --dry-run                     # preview without writing
 ```
 
@@ -700,8 +700,8 @@ rsk update [name...] [flags]
 Flags:
   --global          Target global skills dir(s)
   --for <tool>      Scope --global to a single configured tool (claude-code|opencode)
-  --official        Also re-fetch official (anthropics/skills) cache
-  --personal        Include personal/ skills in update
+  --include official  Also re-fetch official (anthropics/skills) cache (`--official` still works)
+  --include personal  Include personal/ skills in update (`--personal` still works)
   --dry-run         Show what would change
 ```
 
@@ -710,7 +710,7 @@ Each positional name is auto-resolved as a bundle (expands) or a single skill. `
 Examples:
 ```bash
 rsk update                          # git pull (clone mode) or registry index check (registry mode)
-rsk update --official               # also re-fetch anthropics/skills cache
+rsk update --include official     # also re-fetch anthropics/skills cache
 rsk update docs                     # restrict to the docs bundle's skills
 rsk update grpc-architect           # update one skill
 ```
@@ -735,7 +735,7 @@ Flags:
   --project         Show project skills only
   --stack           (planned) Fetch latest versions and show per-skill STACK.md drift — currently errors with "not yet implemented"
   --refresh         With --stack: bypass the 24h cache and force a re-fetch
-  --personal        Include personal/ skills in output
+  --include personal  Include personal/ skills in output (`--personal` still works)
 ```
 
 The current build scans each configured global target directory and `<cwd>/.rsk/skills/`, identifies symlinks, reads each target skill's `version` from frontmatter, infers source (local clone, registry cache, or official cache), tags bundle membership, and marks pinned skills (read from `rsk.mod`).
@@ -784,10 +784,10 @@ Without `--global`, `rsk list` shows the project manifest contents (`.rsk/rsk.mo
 rsk catalog [flags]
 
 Flags:
-  --bundles         List bundles instead of skills
-  --bundle <name>   Show skills in a specific bundle
+  --bundle          List bundles instead of skills (`--bundles` still works)
+  --bundle <name>   Show skills in a specific bundle (`--bundle=<name>` also)
   --source <s>      Filter by source: local | official
-  --personal        Include personal/ skills in listing
+  --include personal  Include personal/ skills in listing (`--personal` still works)
   -o, --output <f>  Output format: text (default) | json
 ```
 
@@ -803,7 +803,7 @@ rsk uninstall <name...> [flags]
 Flags:
   --global          Target global skills dir(s)
   --for <tool>      Scope --global to a single configured tool (claude-code|opencode)
-  --personal        Allow uninstalling from personal/ folder (must match install opt-in)
+  --include personal  Allow uninstalling from personal/ folder (must match install opt-in)
   --dry-run         Show what would be removed without doing it
 ```
 
@@ -817,7 +817,7 @@ Each positional name is auto-resolved as a bundle (expands) or a single skill. `
 
 ```bash
 rsk pin <name>      # add to .rsk/rsk.mod's pinned list; re-sync .rsk/CLAUDE.md and opencode.json
-rsk unpin <name>    # remove from pinned list; the skill stays installed
+rsk pin <name> --remove    # remove from pinned list; the skill stays installed (`rsk unpin` still works)
 ```
 
 Both commands operate on a project manifest (`.rsk/rsk.mod` must exist). `rsk pin` requires the skill to already be present in the manifest — install it first with `rsk install <name>`. Pinning rewrites every configured tool's project config to reflect the manifest's `pinned` list.
@@ -1248,16 +1248,16 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | `rsk init` | ✅ | Config file setup; prompts for skill source (local clone vs registry), AI tools, global dirs, default scope; `--force` overwrites |
 | `rsk new` | ✅ | Initialize `.rsk/` project manifest in the current directory; `--for claude-code\|opencode\|all` selects which tools to configure; idempotent `@.rsk/CLAUDE.md` import in `./CLAUDE.md` |
 | `rsk destroy` | ✅ | Remove `.rsk/` and strip tool-specific config (CLAUDE.md import, opencode.json entries); idempotent |
-| `rsk install` | ✅ | Auto-resolves names as bundles or skills via the catalog (bundles win); project installs write `rsk.mod`/`rsk.lock`; `--global` skips manifest tracking; `--pin` shortcut for project installs; `--personal` opt-in; bare form reads `rsk.mod`; `--dry-run`; `Proceed?` confirmation |
+| `rsk install` | ✅ | Auto-resolves names as bundles or skills via the catalog (bundles win); project installs write `rsk.mod`/`rsk.lock`; `--global` skips manifest tracking; `--pin` shortcut for project installs; `--include personal` opt-in (`--personal` still works); bare form reads `rsk.mod`; `--dry-run`; `Proceed?` confirmation |
 | `rsk install --version` | 📋 | Pin to a specific repo tag — currently errors with "not yet supported" |
-| `rsk update` | ✅ | Local-clone mode: `git pull` (+ optional `--official`). Registry mode: index check + re-download newer versions; positional bundle/skill names auto-resolve; in-project updates also bump `rsk.lock` |
+| `rsk update` | ✅ | Local-clone mode: `git pull` (+ optional `--include official`; `--official` still works). Registry mode: index check + re-download newer versions; positional bundle/skill names auto-resolve; in-project updates also bump `rsk.lock` |
 | `rsk status` | ✅ | Scans global + project dirs, source labels `[ralva]`/`[anthr]`, bundle tags, `[pinned]` marker from `rsk.mod`; `--global` / `--project` / `--for` scope flags |
 | `rsk status --stack` | 📋 | Reads each skill's `STACK.md`, fetches latest versions from `proxy.golang.org` (Go) and `pypi.org` (Python), highlights stale skills; results cached 24 h; opt-in only — current build errors with "not yet implemented" |
 | `rsk list` | ✅ | Installed view: project manifest entries (with installed + pinned marks) or `--global` symlinks in tool dirs; `-o text\|json` |
-| `rsk catalog` | ✅ | Browse view: every available skill, or `--bundles` for the bundle list, or `--bundle <name>` for the skills in one bundle; `--source`, `--personal`, `-o text\|json` |
+| `rsk catalog` | ✅ | Browse view: every available skill, or bare `--bundle` for the bundle list (`--bundles` still works), or `--bundle <name>` for the skills in one bundle; `--source`, `--include personal` (`--personal` still works), `-o text\|json` |
 | `rsk uninstall` | ✅ | Remove symlinks for bundles or skills (auto-resolved); project removes also clean `rsk.mod` / `rsk.lock` / `.rsk/CLAUDE.md`; `--dry-run` |
-| `rsk pin` / `rsk unpin` | ✅ | Toggle a manifest skill's entry in the `pinned` list and re-sync every configured tool's project config |
-| Official skill cache | ✅ | Clone and cache `anthropics/skills` at `~/.ralvaskills/cache/anthropic/` via `rsk update --official` |
+| `rsk pin [--remove]` (hidden `rsk unpin`) | ✅ | Toggle a manifest skill's entry in the `pinned` list and re-sync every configured tool's project config |
+| Official skill cache | ✅ | Clone and cache `anthropics/skills` at `~/.ralvaskills/cache/anthropic/` via `rsk update --include official` |
 | Registry source mode | ✅ | Hosted skills.ralvarez.dev backend; per-skill `~/.ralvaskills/cache/registry/<name>/<version>/` cache; index-driven updates |
 | GitHub Actions release | 📋 | Cross-platform binaries (linux/mac/windows) on tag push |
 | Homebrew tap | 📋 | `brew install ralvarezdev/tap/rsk` |

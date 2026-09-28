@@ -114,7 +114,7 @@ rsk install go-architect
 
 Two modes, picked by config:
 
-**Local-repo mode** (`repo_path` set): runs `git pull` in the local clone; symlinks pick up the new files automatically. `--official` also refreshes the `anthropics/skills` clone under `official_cache`.
+**Local-repo mode** (`repo_path` set): runs `git pull` in the local clone; symlinks pick up the new files automatically. `--include official` (legacy `--official`) also refreshes the `anthropics/skills` clone under `official_cache`.
 
 **Registry mode** (`registry_url` set):
 

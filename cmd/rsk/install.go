@@ -43,13 +43,17 @@ Examples:
   rsk install go-architect --pin               # project: install + pin in CLAUDE.md
   rsk install global --global                  # global: bundle to every tool dir
   rsk install go-grpc --global --for claude-code
-  rsk install demo-script-architect --personal
+  rsk install demo-script-architect --include personal
   rsk install go-grpc --dry-run`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		inc, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal)
+		if err != nil {
+			return err
+		}
 		return runInstall(cmd, installOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
-			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
+			personal: inc.Personal,
 			pin:      cmdx.Bool(cmd, cmdx.FlagPin),
 			forTool:  cmdx.String(cmd, cmdx.FlagFor),
 			version:  cmdx.String(cmd, cmdx.FlagVersion),
@@ -157,7 +161,7 @@ func checkNoPersonalSkills(skills []skill.Skill, personal bool) error {
 	}
 	for _, s := range skills {
 		if s.IsPersonal {
-			return fmt.Errorf("skill %q is in personal/ — pass --personal to install it", s.Name)
+			return fmt.Errorf("skill %q is in personal/ — pass --include personal to install it", s.Name)
 		}
 	}
 	return nil

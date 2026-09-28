@@ -2,6 +2,7 @@ package ui
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -172,5 +173,32 @@ func TestCommandFields_outputFlagDroppedForTableViews(t *testing.T) {
 	MarkTableView(onlyOutput)
 	if commandFields(onlyOutput) != nil {
 		t.Error("table view with only --output should have no form")
+	}
+}
+
+func TestCommandFieldsSkipsHiddenAndHandlesOptionalValue(t *testing.T) {
+	t.Parallel()
+
+	cmd := &cobra.Command{Use: "catalog [flags]"}
+	f := cmd.Flags()
+	f.String("bundle", "", "bundle usage")
+	f.Lookup("bundle").NoOptDefVal = "*"
+	f.Bool("bundles", false, "alias")
+	f.Lookup("bundles").Hidden = true
+	f.StringSlice("include", nil, "include usage")
+
+	fields := commandFields(cmd)
+	keys := make([]string, 0, len(fields))
+	for _, field := range fields {
+		keys = append(keys, field.key)
+	}
+	if !reflect.DeepEqual(keys, []string{"bundle", "include"}) {
+		t.Fatalf("fields = %v, want [bundle include] (hidden skipped)", keys)
+	}
+	if !strings.Contains(fields[0].help, `"*"`) {
+		t.Errorf("bundle help %q should explain the bare-flag value", fields[0].help)
+	}
+	if got := fields[1].input.Value(); got != "" {
+		t.Errorf("include default = %q, want empty (not \"[]\")", got)
 	}
 }

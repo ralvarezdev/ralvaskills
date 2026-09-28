@@ -42,10 +42,14 @@ Examples:
   rsk uninstall global --global
   rsk uninstall go-grpc --dry-run`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		inc, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal)
+		if err != nil {
+			return err
+		}
 		return runUninstall(cmd, uninstallOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
-			personal: cmdx.Bool(cmd, cmdx.FlagPersonal),
+			personal: inc.Personal,
 			yes:      cmdx.Bool(cmd, cmdx.FlagYes),
 			forTool:  cmdx.String(cmd, cmdx.FlagFor),
 		}, args)
@@ -165,7 +169,7 @@ func checkNoPersonalUninstall(names, targets []string, personal bool) error {
 				continue // not linked here, skip
 			}
 			if skill.IsPersonalPath(symlinkTarget) {
-				return fmt.Errorf("skill %q is in personal/ — pass --personal to uninstall it", name)
+				return fmt.Errorf("skill %q is in personal/ — pass --include personal to uninstall it", name)
 			}
 		}
 	}
