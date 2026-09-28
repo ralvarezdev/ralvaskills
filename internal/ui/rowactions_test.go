@@ -3,6 +3,7 @@ package ui
 import (
 	"testing"
 
+	"github.com/ralvarezdev/termkit"
 	"github.com/spf13/cobra"
 )
 
@@ -18,13 +19,38 @@ func TestMarkRowActionAndRowActionsFor(t *testing.T) {
 		t.Fatalf("RowActionsFor(source) = %+v, want one {Key:i Label:install}", actions)
 	}
 
-	target, ok := rowActionTargetFor(source, "i")
-	if !ok || target != install {
-		t.Fatalf("rowActionTargetFor(source, %q) = (%v, %v), want (install, true)", "i", target, ok)
+	target, scope, ok := rowActionFor(source, "i")
+	if !ok || target != install || scope != nil {
+		t.Fatalf("rowActionFor(source, %q) = (%v, %v, %v), want (install, <nil>, true)", "i", target, scope, ok)
 	}
 
-	if _, found := rowActionTargetFor(source, "u"); found {
-		t.Error("rowActionTargetFor with an unregistered key should return ok=false")
+	if _, _, found := rowActionFor(source, "u"); found {
+		t.Error("rowActionFor with an unregistered key should return ok=false")
+	}
+}
+
+// TestMarkRowActionScoped checks that the scope resolver registered with
+// MarkRowActionScoped is returned by rowActionFor and that RowActionsFor
+// still surfaces the keybinding.
+func TestMarkRowActionScoped(t *testing.T) {
+	t.Parallel()
+
+	source := &cobra.Command{Use: "status"}
+	target := &cobra.Command{Use: "uninstall"}
+	scope := func(termkit.Data) map[string]string { return map[string]string{"global": "true"} }
+	MarkRowActionScoped(source, "u", "uninstall", target, scope)
+
+	got, gotScope, ok := rowActionFor(source, "u")
+	if !ok || got != target || gotScope == nil {
+		t.Fatalf("rowActionFor(source, %q) = (%v, %v, %v), want (uninstall, <scope>, true)", "u", got, gotScope, ok)
+	}
+	if v := gotScope(termkit.Data{})["global"]; v != "true" {
+		t.Errorf("scope(Data{})[global] = %q, want true", v)
+	}
+
+	actions := RowActionsFor(source)
+	if len(actions) != 1 || actions[0].Key != "u" || actions[0].Label != "uninstall" {
+		t.Fatalf("RowActionsFor(source) = %+v, want one {Key:u Label:uninstall}", actions)
 	}
 }
 

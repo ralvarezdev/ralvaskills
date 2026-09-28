@@ -104,4 +104,8 @@ func setupCommands() {
 	ui.MarkRowAction(claudeToolsListCmd, "a", "allow", claudeToolsAllowCmd)
 	ui.MarkRowAction(claudeToolsListCmd, "d", "deny", claudeToolsDenyCmd)
 	ui.MarkRowAction(claudeToolsListCmd, "x", "remove", claudeToolsRemoveCmd)
+
+	// status renders one table per scanned directory, so its uninstall action
+	// resolves --global/--for from the table the row came from.
+	ui.MarkRowActionScoped(statusCmd, "u", "uninstall", uninstallCmd, statusRowActionScope)
 }

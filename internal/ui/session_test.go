@@ -2,6 +2,7 @@ package ui
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -239,5 +240,49 @@ func TestSessionHandleRowActionNoopWithoutRegistration(t *testing.T) {
 	}
 	if session.screen != screenResult {
 		t.Error("session.screen should stay screenResult when the row action is a no-op")
+	}
+}
+
+// TestSessionHandleRowActionAppliesTableScope checks that a row action
+// registered with MarkRowActionScoped sets its target's flags from the table
+// the action fired on, so a view whose tables cover more than one scope (e.g.
+// status's one table per target directory) runs the target against the scope
+// of the selected row rather than the source view's own flags.
+func TestSessionHandleRowActionAppliesTableScope(t *testing.T) {
+	t.Parallel()
+
+	source := tableViewCmd(t)
+	target := &cobra.Command{Use: "uninstall", RunE: func(*cobra.Command, []string) error { return nil }}
+	target.Flags().Bool("global", false, "")
+	target.Flags().String("for", "", "")
+	MarkRowActionScoped(source, "u", "uninstall", target, func(table termkit.Data) map[string]string {
+		if tool, ok := strings.CutPrefix(table.Title, "Global — "); ok {
+			return map[string]string{"global": "true", "for": tool}
+		}
+		return nil
+	})
+
+	session := newSessionModel([]*cobra.Command{source}, "")
+	session.width, session.height = 80, 24
+	session.captured(capturedMsg{
+		cmd:  source,
+		line: "status",
+		tables: []termkit.Data{
+			{Title: "Global — opencode", Headers: []string{"Name"}, Rows: [][]any{{"a"}}, IDs: []string{"a"}},
+			{Title: "Project", Headers: []string{"Name"}, Rows: [][]any{{"b"}}, IDs: []string{"b"}},
+		},
+	})
+
+	if cmd := session.handleRowAction(termkit.RowActionMsg{Table: 0, ID: "a", Key: "u"}); cmd == nil {
+		t.Fatal("handleRowAction returned a nil tea.Cmd for a registered scoped action")
+	}
+	if v, _ := target.Flags().GetBool("global"); !v {
+		t.Error("scoped action did not set --global from the fired table")
+	}
+	if v, _ := target.Flags().GetString("for"); v != "opencode" {
+		t.Errorf("scoped action set --for = %q, want opencode", v)
+	}
+	if session.resultTables != nil {
+		t.Error("session.resultTables should be cleared after a row action")
 	}
 }

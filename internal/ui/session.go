@@ -44,8 +44,11 @@ type sessionModel struct {
 	resultCrumb string
 	// resultCmd is the command whose captured run produced the current
 	// result screen, used to resolve a termkit.RowActionMsg fired from it
-	// (see handleRowAction) — nil outside screenResult.
-	resultCmd *cobra.Command
+	// (see handleRowAction) — nil outside screenResult. resultTables are the
+	// captured tables it rendered, so a scoped row action can be resolved
+	// against the table it fired on.
+	resultCmd    *cobra.Command
+	resultTables []termkit.Data
 }
 
 // capturedMsg reports a read-only command that ran in-process under a
@@ -275,6 +278,7 @@ func (s *sessionModel) captured(msg capturedMsg) {
 
 	s.resultLine = msg.line
 	s.resultCmd = msg.cmd
+	s.resultTables = msg.tables
 	s.result = termkit.NewResultView(termkit.Result{
 		Breadcrumb: s.resultCrumb,
 		Messages:   msg.messages,
@@ -291,20 +295,54 @@ func (s *sessionModel) captured(msg capturedMsg) {
 // any --global/--for/--personal scope the source command was run with, so
 // e.g. uninstalling from `list --global --for claude-code` targets the same
 // scope instead of silently defaulting to the project.
+//
+// When the action was registered with MarkRowActionScoped, the table the
+// action fired on further narrows that scope (status renders one table per
+// target directory), so e.g. uninstalling from the "Global — opencode"
+// section targets that tool.
 func (s *sessionModel) handleRowAction(msg termkit.RowActionMsg) tea.Cmd {
 	if s.resultCmd == nil || msg.ID == "" {
 		return nil
 	}
-	target, ok := rowActionTargetFor(s.resultCmd, msg.Key)
+	target, scope, ok := rowActionFor(s.resultCmd, msg.Key)
 	if !ok {
 		return nil
 	}
 
 	termkit.ResetFlags(target)
 	copySharedFlags(s.resultCmd, target, cmdx.FlagGlobal, cmdx.FlagFor, cmdx.FlagPersonal)
+	applyRowActionScope(target, scope, s.tableAt(msg.Table))
 
-	s.result, s.screen, s.resultCmd = nil, screenPicker, nil
+	s.result, s.screen, s.resultCmd, s.resultTables = nil, screenPicker, nil, nil
 	return s.run(target, []string{msg.ID})
+}
+
+// tableAt returns the captured table at index i, or the zero Data when the
+// index is out of range.
+func (s *sessionModel) tableAt(i int) termkit.Data {
+	if i < 0 || i >= len(s.resultTables) {
+		return termkit.Data{}
+	}
+	return s.resultTables[i]
+}
+
+// applyRowActionScope sets scope's flag values on target, skipping any flag
+// target doesn't define and any value it rejects, so a scoped row action
+// runs against the same scope as the row it fired on.
+func applyRowActionScope(target *cobra.Command, scope RowActionScope, table termkit.Data) {
+	if scope == nil {
+		return
+	}
+	for name, value := range scope(table) {
+		flag := target.Flags().Lookup(name)
+		if flag == nil {
+			continue
+		}
+		if err := flag.Value.Set(value); err != nil {
+			continue
+		}
+		flag.Changed = true
+	}
 }
 
 // copySharedFlags copies each named flag's value from source to target when
@@ -338,7 +376,7 @@ func (s *sessionModel) updateResult(msg tea.Msg) tea.Cmd {
 	_, cmd := s.result.Update(msg)
 	if s.result.Closed() {
 		s.picker.Update(commandFinishedMsg{name: s.resultLine, err: nil})
-		s.result, s.screen = nil, screenPicker
+		s.result, s.screen, s.resultTables = nil, screenPicker, nil
 	}
 	return cmd
 }
