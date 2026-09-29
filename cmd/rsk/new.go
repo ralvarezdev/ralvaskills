@@ -97,6 +97,9 @@ func resolveForFlag(cmd *cobra.Command, out io.Writer) (string, error) {
 	if cmd.Flags().Changed(cmdx.FlagFor) {
 		return forFlag, nil
 	}
+	if ui.InSession(cmd.Context()) {
+		return "", fieldError(cmdx.FlagFor, "choose which tools to configure")
+	}
 
 	choices := []string{string(tool.ClaudeID), string(tool.OpenCodeID), cmdx.ForAll}
 	idx, err := ui.Select(out, "Tools to configure", choices, 0)

@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
@@ -64,7 +66,8 @@ func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string
 	if forTool != "" {
 		dir, ok := cfg.GlobalTargets[forTool]
 		if !ok {
-			return nil, fmt.Errorf(
+			return nil, fieldError(
+				cmdx.FlagFor,
 				"tool %q is not configured — configured tools: %s",
 				forTool, joinKeys(cfg.GlobalTargets),
 			)
@@ -131,7 +134,7 @@ func resolveNames(
 	for _, raw := range names {
 		bareName, _, err := parseNameVersion(raw)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, termkit.NewFieldError(fieldArgName, err)
 		}
 		if bundle, ok := config.FindBundle(catalog, bareName); ok {
 			ss, ws, resolveErr := resolveBundleSkills(ctx, bundle, localSrc, officialSrc)
@@ -144,7 +147,7 @@ func resolveNames(
 		}
 		s, findErr := findSkillByName(ctx, bareName, localSrc, officialSrc)
 		if findErr != nil {
-			return nil, nil, findErr
+			return nil, nil, termkit.NewFieldError(fieldArgName, findErr)
 		}
 		skills = append(skills, s)
 	}

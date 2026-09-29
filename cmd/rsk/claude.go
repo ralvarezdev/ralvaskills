@@ -283,7 +283,7 @@ func runClaudeToolsAllow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	out := cmd.OutOrStdout()
-	rule, err := nameFromArgsOrPrompt(cmd, args, "Tool rule (e.g. Bash(npm run *))")
+	rule, err := nameFromArgsOrPrompt(cmd, args, fieldArgRule, "Tool rule (e.g. Bash(npm run *))")
 	if err != nil {
 		return err
 	}
@@ -328,7 +328,7 @@ func runClaudeToolsDeny(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	out := cmd.OutOrStdout()
-	rule, err := nameFromArgsOrPrompt(cmd, args, "Tool rule (e.g. Write(**) or Bash)")
+	rule, err := nameFromArgsOrPrompt(cmd, args, fieldArgRule, "Tool rule (e.g. Write(**) or Bash)")
 	if err != nil {
 		return err
 	}
@@ -373,7 +373,7 @@ func runClaudeToolsRemove(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	out := cmd.OutOrStdout()
-	rule, err := nameFromArgsOrPrompt(cmd, args, "Tool rule to remove")
+	rule, err := nameFromArgsOrPrompt(cmd, args, fieldArgRule, "Tool rule to remove")
 	if err != nil {
 		return err
 	}

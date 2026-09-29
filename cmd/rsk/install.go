@@ -81,7 +81,7 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 	}
 
 	if opts.global && len(args) == 0 {
-		name, err := promptInstallName(out)
+		name, err := promptInstallName(cmd, out)
 		if err != nil {
 			return err
 		}
@@ -129,20 +129,26 @@ func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
 // before doing any resolution work.
 func validateInstallOpts(opts installOpts) error {
 	if !opts.global && opts.forTool != "" {
-		return errors.New("--for requires --global")
+		return fieldError(cmdx.FlagFor, "--for requires --global")
 	}
 	if opts.global && opts.pin {
-		return errors.New("--pin only applies to project installs (drop --global or --pin)")
+		return fieldError(cmdx.FlagPin, "--pin only applies to project installs (drop --global or --pin)")
 	}
 	if opts.version != "" {
-		return errors.New("--version is not yet supported; skills are symlinked from the local repo HEAD")
+		return fieldError(
+			cmdx.FlagVersion,
+			"--version is not yet supported; skills are symlinked from the local repo HEAD",
+		)
 	}
 	return nil
 }
 
 // promptInstallName asks for a bundle or skill name when `rsk install
 // --global` was run with no positional args.
-func promptInstallName(out io.Writer) (string, error) {
+func promptInstallName(cmd *cobra.Command, out io.Writer) (string, error) {
+	if ui.InSession(cmd.Context()) {
+		return "", fieldError(fieldArgName, "specify at least one bundle or skill name")
+	}
 	name, err := ui.Ask(out, "Skill or bundle name", "")
 	if err != nil {
 		return "", err
@@ -185,7 +191,7 @@ func runInstallGlobal(
 	if opts.dryRun {
 		return nil
 	}
-	if !ui.ConfirmYN(out, "Proceed?") {
+	if !confirmProceed(cmd, out, "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		return nil
 	}
@@ -238,7 +244,7 @@ func runInstallProject(
 	}
 	targets := projectSkillsDirs(projectRoot, m)
 
-	if !previewAndConfirm(out, skills, targets, warnings, opts.dryRun) {
+	if !previewAndConfirm(cmd, out, skills, targets, warnings, opts.dryRun) {
 		return nil
 	}
 	if err = ensureTargetDirs(targets); err != nil {
@@ -303,12 +309,14 @@ func runInstallProject(
 // previewAndConfirm renders the install preview and, unless dryRun, asks the
 // user to confirm. It returns false whenever the caller should stop (dry run
 // finished, or the user declined).
-func previewAndConfirm(out io.Writer, skills []skill.Skill, targets, warnings []string, dryRun bool) bool {
+func previewAndConfirm(
+	cmd *cobra.Command, out io.Writer, skills []skill.Skill, targets, warnings []string, dryRun bool,
+) bool {
 	printInstallPreview(out, skills, targets, warnings, dryRun)
 	if dryRun {
 		return false
 	}
-	if !ui.ConfirmYN(out, "Proceed?") {
+	if !confirmProceed(cmd, out, "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		return false
 	}
@@ -456,7 +464,7 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 		skills = append(skills, s)
 	}
 
-	if !previewAndConfirm(out, skills, targets, warnings, opts.dryRun) {
+	if !previewAndConfirm(cmd, out, skills, targets, warnings, opts.dryRun) {
 		return nil
 	}
 	if err = ensureTargetDirs(targets); err != nil {

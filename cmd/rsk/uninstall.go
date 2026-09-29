@@ -72,12 +72,12 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	out := cmd.OutOrStdout()
 	errOut := cmd.ErrOrStderr()
 
-	args, err := resolveUninstallArgs(out, args)
+	args, err := resolveUninstallArgs(cmd, out, args)
 	if err != nil {
 		return err
 	}
 	if !opts.global && opts.forTool != "" {
-		return errors.New("--for requires --global")
+		return fieldError(cmdx.FlagFor, "--for requires --global")
 	}
 
 	cfg, err := config.Load()
@@ -140,9 +140,12 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 
 // resolveUninstallArgs prompts for a name when none was given on the command
 // line.
-func resolveUninstallArgs(out io.Writer, args []string) ([]string, error) {
+func resolveUninstallArgs(cmd *cobra.Command, out io.Writer, args []string) ([]string, error) {
 	if len(args) > 0 {
 		return args, nil
+	}
+	if ui.InSession(cmd.Context()) {
+		return nil, fieldError(fieldArgName, "specify at least one bundle or skill name")
 	}
 	name, err := ui.Ask(out, "Skill or bundle to remove", "")
 	if err != nil {

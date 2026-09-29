@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -73,7 +72,7 @@ type updateOpts struct {
 
 func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {
 	if !opts.global && opts.forTool != "" {
-		return errors.New("--for requires --global")
+		return fieldError(cmdx.FlagFor, "--for requires --global")
 	}
 
 	cfg, err := config.Load()
@@ -102,7 +101,7 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 		return nil
 	}
 
-	if !ui.ConfirmYN(out, "Proceed?") {
+	if !confirmProceed(cmd, out, "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		return nil
 	}
@@ -313,7 +312,7 @@ func runOfficialCacheRefresh(cmd *cobra.Command, cfg config.Config, dryRun bool)
 		return nil
 	}
 
-	if !ui.ConfirmYN(out, "Refresh anthropics/skills cache?") {
+	if !confirmProceed(cmd, out, "Refresh anthropics/skills cache?") {
 		fmt.Fprintln(out, "Skipped official cache refresh.")
 		return nil
 	}
@@ -365,7 +364,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
 		return nil
 	}
-	if !ui.ConfirmYN(out, "Proceed?") {
+	if !confirmProceed(cmd, out, "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
 		return nil

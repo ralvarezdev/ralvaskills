@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
@@ -113,7 +115,16 @@ func setupCommands() {
 	)
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be updated without doing it")
 
+	markDestructive()
 	assignGroups()
+}
+
+// markDestructive flags the commands that change or delete files, so the
+// interactive session asks before running them (unless --yes is given).
+func markDestructive() {
+	for _, cmd := range []*cobra.Command{destroyCmd, installCmd, uninstallCmd, updateCmd} {
+		termkit.MarkDestructive(cmd)
+	}
 }
 
 // assignGroups files each top-level command under its help section.

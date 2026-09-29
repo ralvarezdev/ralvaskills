@@ -50,7 +50,7 @@ func runPin(cmd *cobra.Command, args []string) error {
 		return runUnpin(cmd, args)
 	}
 	out := cmd.OutOrStdout()
-	name, err := nameFromArgsOrPrompt(cmd, args, "Skill to pin")
+	name, err := nameFromArgsOrPrompt(cmd, args, fieldArgName, "Skill to pin")
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func runPin(cmd *cobra.Command, args []string) error {
 
 func runUnpin(cmd *cobra.Command, args []string) error {
 	out := cmd.OutOrStdout()
-	name, err := nameFromArgsOrPrompt(cmd, args, "Skill to unpin")
+	name, err := nameFromArgsOrPrompt(cmd, args, fieldArgName, "Skill to unpin")
 	if err != nil {
 		return err
 	}

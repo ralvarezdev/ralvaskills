@@ -6,6 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 )
 
@@ -67,6 +69,20 @@ func TestReadIncludes(t *testing.T) {
 				t.Fatalf("got %+v, %v; want %+v", got, err, tt.want)
 			}
 		})
+	}
+}
+
+func TestReadIncludesBlamesTheIncludeField(t *testing.T) {
+	t.Parallel()
+
+	cmd := newIncludeCmd(cmdx.IncludePersonal)
+	if err := cmd.ParseFlags([]string{"--include", "bogus"}); err != nil {
+		t.Fatal(err)
+	}
+	_, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal)
+	fieldErrs := termkit.FieldErrors(err)
+	if len(fieldErrs) != 1 || fieldErrs[0].Field != cmdx.FlagInclude {
+		t.Fatalf("field errors = %+v, want one for %q", fieldErrs, cmdx.FlagInclude)
 	}
 }
 

@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/ralvarezdev/termkit"
 )
 
 // Values accepted by the --include flag.
@@ -59,12 +61,12 @@ func ReadIncludes(cmd *cobra.Command, allowed ...string) (Includes, error) {
 		switch v := strings.ToLower(strings.TrimSpace(value)); {
 		case v == "":
 		case !slices.Contains(allowed, v):
-			return Includes{}, fmt.Errorf(
+			return Includes{}, termkit.NewFieldError(FlagInclude, fmt.Errorf(
 				"--%s: invalid value %q (allowed: %s)",
 				FlagInclude,
 				value,
 				strings.Join(allowed, ", "),
-			)
+			))
 		case v == IncludePersonal:
 			inc.Personal = true
 		case v == IncludeOfficial:

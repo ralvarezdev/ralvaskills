@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -29,10 +31,33 @@ func writeOrCaptureJSON(out io.Writer, capture *termkit.Capture, v any) error {
 	return err
 }
 
+// Names of the session form fields (form.Field.Name) that validation errors
+// are blamed on: a positional argument is "arg:<name from the Use string>", a
+// flag is its own name.
+const (
+	fieldArgName = "arg:name"
+	fieldArgRule = "arg:rule"
+)
+
+// fieldError marks err as caused by the form field named field, so the
+// interactive session shows it on that field instead of dropping back to the
+// picker. On the command line it is the same error.
+func fieldError(field, message string, args ...any) error {
+	return termkit.NewFieldError(field, fmt.Errorf(message, args...))
+}
+
+// confirmProceed asks prompt on the terminal and reports whether to go ahead.
+// Inside the interactive session it always does: a destructive command was
+// already confirmed there (termkit.MarkDestructive), and the session owns the
+// terminal, so there is nothing to ask on.
+func confirmProceed(cmd *cobra.Command, out io.Writer, prompt string) bool {
+	return ui.InSession(cmd.Context()) || ui.ConfirmYN(out, prompt)
+}
+
 // shouldConfirm reports whether a destructive command must ask "Proceed?":
-// always, except with --yes, or inside the TUI session, whose form already
-// showed a "Will run:" line. Piped runs still ask (a plain-text prompt that
-// aborts on EOF), as before.
+// always, except with --yes, or inside the TUI session, whose confirm screen
+// already asked. Piped runs still ask (a plain-text prompt that aborts on
+// EOF), as before.
 func shouldConfirm(cmd *cobra.Command, yes bool) bool {
 	return !yes && !ui.InSession(cmd.Context())
 }
@@ -46,10 +71,15 @@ func confirmDestructive(cmd *cobra.Command, out io.Writer, yes bool) bool {
 	return ui.ConfirmYN(out, "Proceed?")
 }
 
-// nameFromArgsOrPrompt returns args[0] if provided, otherwise prompts interactively.
-func nameFromArgsOrPrompt(cmd *cobra.Command, args []string, label string) (string, error) {
+// nameFromArgsOrPrompt returns args[0] if provided, otherwise prompts
+// interactively. Inside the session, which cannot prompt, the missing value is
+// reported against the form field named field.
+func nameFromArgsOrPrompt(cmd *cobra.Command, args []string, field, label string) (string, error) {
 	if len(args) > 0 {
 		return args[0], nil
+	}
+	if ui.InSession(cmd.Context()) {
+		return "", fieldError(field, "%s is required", strings.ToLower(label))
 	}
 	name, err := ui.Ask(cmd.OutOrStdout(), label, "")
 	if err != nil {
