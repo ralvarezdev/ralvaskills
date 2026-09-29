@@ -89,11 +89,4 @@ const (
 	// fallbackTermWidth centers the static banner when the terminal will not
 	// report its size.
 	fallbackTermWidth = 80
-
-	// defaultPickerWidth and defaultPickerHeight size the picker's list
-	// before the terminal reports its size; minPickerListHeight is the floor
-	// so a tiny terminal still shows some rows.
-	defaultPickerWidth  = 80
-	defaultPickerHeight = 24
-	minPickerListHeight = 6
 )

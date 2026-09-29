@@ -57,8 +57,27 @@ var rootCmd = &cobra.Command{
 		if !ui.IsTTY() {
 			return printHome(cmd, notice)
 		}
-		return ui.RunPicker(cmd.Commands(), cmd.OutOrStdout(), notice)
+		return ui.RunSession(cmd.Context(), ui.SessionOptions{
+			Root:     cmd.Root(),
+			Runnable: sessionRunnable,
+			Notice:   notice,
+		})
 	},
+}
+
+// sessionRunnable offers a command in the interactive picker unless it is
+// cobra's own help/completion machinery or `init`, whose setup wizard prompts
+// on the terminal, which the session owns while it runs.
+func sessionRunnable(cmd *cobra.Command) bool {
+	top := cmd
+	for top.HasParent() && top.Parent().HasParent() {
+		top = top.Parent()
+	}
+	switch top.Name() {
+	case "help", "completion", initCmd.Name():
+		return false
+	}
+	return true
 }
 
 // printHome prints the plain banner + cobra help shown for a bare `rsk`

@@ -147,7 +147,7 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	if opts.output == outputJSON {
 		return writeOrCaptureJSON(out, capture, statusSectionsToEntries(sections, pinnedSet))
 	}
-	return printStatusText(out, capture, cmd, sections, pinnedSet)
+	return printStatusText(out, capture, sections, pinnedSet)
 }
 
 // warnOrCapture reports msg on the capture (when a captured in-process run is
@@ -205,7 +205,7 @@ func scanStatusSections(
 // printStatusText renders every non-empty section as a table, or a "no
 // skills installed" notice when all sections are empty.
 func printStatusText(
-	out io.Writer, capture *termkit.Capture, cmd *cobra.Command, sections []statusSection, pinnedSet map[string]bool,
+	out io.Writer, capture *termkit.Capture, sections []statusSection, pinnedSet map[string]bool,
 ) error {
 	hasAny := false
 	for _, sec := range sections {
@@ -217,7 +217,7 @@ func printStatusText(
 			fmt.Fprintln(out)
 			ui.SectionHeader(out, sec.title, sec.subtitle)
 		}
-		printStatusSectionRows(out, capture, cmd, sec.title, sec.skills, pinnedSet)
+		printStatusSectionRows(out, capture, sec.title, sec.skills, pinnedSet)
 	}
 
 	if capture != nil {
@@ -240,7 +240,7 @@ func printStatusText(
 // Title, so the result view's tab line identifies which section is active
 // when a captured status run has more than one.
 func printStatusSectionRows(
-	out io.Writer, capture *termkit.Capture, cmd *cobra.Command, title string,
+	out io.Writer, capture *termkit.Capture, title string,
 
 	skills []linkedEntry, pinnedSet map[string]bool,
 ) {
@@ -252,36 +252,11 @@ func printStatusSectionRows(
 
 			Headers: header,
 
-			Rows:    rows,
-			IDs:     linkedSkillNames(skills),
-			Actions: ui.RowActionsFor(cmd),
+			Rows: rows,
 		})
 		return
 	}
 	termkit.WriteTableStyled(out, header, rows, false, nil, termkit.TableBorderless, ui.Theme)
-}
-
-// linkedSkillNames extracts each linked skill's name, parallel to
-// statusRowTable's rows, so a captured status table can identify the row a
-// RowAction fires on independently of how it's displayed.
-func linkedSkillNames(skills []linkedEntry) []string {
-	names := make([]string, len(skills))
-	for i, e := range skills {
-		names[i] = e.name
-	}
-	return names
-}
-
-// statusRowActionScope resolves the captured status table a row action fired
-// on to the uninstall scope its rows belong to: a "Global — <tool>" section
-// runs uninstall with --global --for <tool>, while a "Project" section keeps
-// uninstall's project default. This is what lets a bare `rsk status`, which
-// renders one table per scanned directory, uninstall from the right one.
-func statusRowActionScope(table termkit.Data) map[string]string {
-	if tool, ok := strings.CutPrefix(table.Title, "Global — "); ok {
-		return map[string]string{cmdx.FlagGlobal: "true", cmdx.FlagFor: tool}
-	}
-	return nil
 }
 
 // statusRowTable projects one linked skill into its status row. The pinned set

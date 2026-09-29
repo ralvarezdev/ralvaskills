@@ -134,41 +134,28 @@ func runListProject(cmd *cobra.Command, opts listOpts) error {
 	}
 
 	if capture != nil {
-		printProjectListTable(out, capture, cmd, rows)
+		printProjectListTable(out, capture, rows)
 		return nil
 	}
 
 	fmt.Fprintln(out)
 	ui.Header(out, "Project skills:")
-	printProjectListTable(out, capture, cmd, rows)
+	printProjectListTable(out, capture, rows)
 	fmt.Fprintln(out)
 	return nil
 }
 
-func printProjectListTable(out io.Writer, capture *termkit.Capture, cmd *cobra.Command, rows []listedSkill) {
+func printProjectListTable(out io.Writer, capture *termkit.Capture, rows []listedSkill) {
 	header := []string{"", headerName, headerVersion, ""}
 	tableRows := termkit.Rows(rows, listProjectTable)
 	if capture != nil {
 		capture.AddTable(termkit.Data{
 			Headers: header,
 			Rows:    tableRows,
-			IDs:     listedSkillNames(rows),
-			Actions: ui.RowActionsFor(cmd),
 		})
 		return
 	}
 	termkit.WriteTableStyled(out, header, tableRows, false, nil, termkit.TableBorderless, ui.Theme)
-}
-
-// listedSkillNames extracts each row's skill name, parallel to
-// listProjectTable/listGlobalTable's rows, so a captured table can identify
-// the row a RowAction fires on independently of how it's displayed.
-func listedSkillNames(rows []listedSkill) []string {
-	names := make([]string, len(rows))
-	for i, r := range rows {
-		names[i] = r.Name
-	}
-	return names
 }
 
 // listProjectTable projects one project-manifest row.
@@ -248,26 +235,24 @@ func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 	}
 
 	if capture != nil {
-		printGlobalListTable(out, capture, cmd, rows)
+		printGlobalListTable(out, capture, rows)
 		return nil
 	}
 
 	fmt.Fprintln(out)
 	ui.Header(out, "Global skills:")
-	printGlobalListTable(out, capture, cmd, rows)
+	printGlobalListTable(out, capture, rows)
 	fmt.Fprintln(out)
 	return nil
 }
 
-func printGlobalListTable(out io.Writer, capture *termkit.Capture, cmd *cobra.Command, rows []listedSkill) {
+func printGlobalListTable(out io.Writer, capture *termkit.Capture, rows []listedSkill) {
 	header := []string{headerSource, "Tool", headerName, headerVersion}
 	tableRows := termkit.Rows(rows, listGlobalTable)
 	if capture != nil {
 		capture.AddTable(termkit.Data{
 			Headers: header,
 			Rows:    tableRows,
-			IDs:     listedSkillNames(rows),
-			Actions: ui.RowActionsFor(cmd),
 		})
 		return
 	}

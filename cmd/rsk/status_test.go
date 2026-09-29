@@ -10,7 +10,6 @@ import (
 
 	"github.com/ralvarezdev/termkit"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
@@ -165,31 +164,5 @@ func TestRunStatusCapture(t *testing.T) {
 	}
 	if len(tables[0].Rows) != 1 {
 		t.Fatalf("expected exactly one captured row, got %d: %+v", len(tables[0].Rows), tables[0].Rows)
-	}
-	if len(tables[0].IDs) != 1 || tables[0].IDs[0] != "demo-skill" {
-		t.Fatalf("expected row IDs [demo-skill], got %+v", tables[0].IDs)
-	}
-	if len(tables[0].Actions) != 1 || tables[0].Actions[0].Key != "u" || tables[0].Actions[0].Label != "uninstall" {
-		t.Fatalf("expected one {Key:u Label:uninstall} action, got %+v", tables[0].Actions)
-	}
-}
-
-// TestStatusRowActionScope checks that the uninstall scope is resolved from
-// the captured table a status row action fired on: a "Global — <tool>"
-// section targets that tool globally, and a "Project" section keeps
-// uninstall's project default.
-func TestStatusRowActionScope(t *testing.T) {
-	t.Parallel()
-
-	scope := statusRowActionScope(termkit.Data{Title: "Global — claude-code"})
-	if scope[cmdx.FlagGlobal] != "true" {
-		t.Errorf("global section scope[%s] = %q, want true", cmdx.FlagGlobal, scope[cmdx.FlagGlobal])
-	}
-	if scope[cmdx.FlagFor] != "claude-code" {
-		t.Errorf("global section scope[%s] = %q, want claude-code", cmdx.FlagFor, scope[cmdx.FlagFor])
-	}
-
-	if got := statusRowActionScope(termkit.Data{Title: "Project"}); got != nil {
-		t.Errorf("project section scope = %+v, want nil", got)
 	}
 }

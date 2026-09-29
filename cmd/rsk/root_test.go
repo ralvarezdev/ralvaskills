@@ -88,8 +88,6 @@ func TestShouldConfirm(t *testing.T) {
 
 	plain := &cobra.Command{Use: "x"}
 	plain.SetContext(context.Background())
-	session := &cobra.Command{Use: "x"}
-	session.SetContext(ui.WithSession(context.Background()))
 	captured := &cobra.Command{Use: "x"}
 	captured.SetContext(ui.WithCapture(context.Background(), &termkit.Capture{}))
 
@@ -101,7 +99,6 @@ func TestShouldConfirm(t *testing.T) {
 	}{
 		{"prompts by default", plain, false, true},
 		{"--yes skips", plain, true, false},
-		{"tea.Exec session skips", session, false, false},
 		{"captured session skips", captured, false, false},
 	}
 	for _, tc := range cases {
@@ -198,5 +195,35 @@ func TestResolveBundleFlag(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestSessionRunnable(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		cmd  *cobra.Command
+		name string
+		want bool
+	}{
+		{installCmd, "install", true},
+		{listCmd, "list", true},
+		{canonicalTools.allow, "tools allow", true},
+		{initCmd, "init (interactive wizard)", false},
+	}
+	for _, tc := range cases {
+		if got := sessionRunnable(tc.cmd); got != tc.want {
+			t.Errorf("%s: sessionRunnable = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+
+	for _, name := range []string{"help", "completion"} {
+		builtin := &cobra.Command{Use: name}
+		leaf := &cobra.Command{Use: "bash"}
+		builtin.AddCommand(leaf)
+		(&cobra.Command{Use: "rsk"}).AddCommand(builtin)
+		if sessionRunnable(leaf) {
+			t.Errorf("%s subcommands must not be offered", name)
+		}
 	}
 }
