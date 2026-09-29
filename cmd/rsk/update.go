@@ -65,14 +65,15 @@ Examples:
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
 			personal: inc.Personal,
 			official: inc.Official,
+			yes:      cmdx.Bool(cmd, cmdx.FlagYes),
 			forTool:  forTool,
 		}, args)
 	},
 }
 
 type updateOpts struct {
-	global, dryRun, personal, official bool
-	forTool                            tool.ID
+	global, dryRun, personal, official, yes bool
+	forTool                                 tool.ID
 }
 
 func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {
@@ -106,7 +107,7 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 		return nil
 	}
 
-	if !confirmProceed(cmd, out, "Proceed?") {
+	if !confirmDestructive(cmd, out, opts.yes) {
 		fmt.Fprintln(out, "Aborted.")
 		return nil
 	}
@@ -301,7 +302,7 @@ func refreshOfficialCache(cmd *cobra.Command, dir string) error {
 // pulls the anthropics/skills cache independently of the registry index
 // check below, respecting --dry-run and prompting for confirmation before
 // touching the filesystem.
-func runOfficialCacheRefresh(cmd *cobra.Command, cfg config.Config, dryRun bool) error {
+func runOfficialCacheRefresh(cmd *cobra.Command, cfg config.Config, dryRun, yes bool) error {
 	out := cmd.OutOrStdout()
 	dir := filepath.Join(cfg.OfficialCache, skill.SkillsFolderName)
 
@@ -317,7 +318,7 @@ func runOfficialCacheRefresh(cmd *cobra.Command, cfg config.Config, dryRun bool)
 		return nil
 	}
 
-	if !confirmProceed(cmd, out, "Refresh anthropics/skills cache?") {
+	if !confirmOrYes(cmd, out, yes, "Refresh anthropics/skills cache?") {
 		fmt.Fprintln(out, "Skipped official cache refresh.")
 		return nil
 	}
@@ -333,7 +334,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 	ctx := cmd.Context()
 
 	if opts.official {
-		if err := runOfficialCacheRefresh(cmd, cfg, opts.dryRun); err != nil {
+		if err := runOfficialCacheRefresh(cmd, cfg, opts.dryRun, opts.yes); err != nil {
 			return err
 		}
 	}
@@ -369,7 +370,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
 		return nil
 	}
-	if !confirmProceed(cmd, out, "Proceed?") {
+	if !confirmDestructive(cmd, out, opts.yes) {
 		fmt.Fprintln(out, "Aborted.")
 		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
 		return nil

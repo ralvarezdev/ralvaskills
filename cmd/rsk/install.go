@@ -60,6 +60,7 @@ Examples:
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
 			personal: inc.Personal,
 			pin:      cmdx.Bool(cmd, cmdx.FlagPin),
+			yes:      cmdx.Bool(cmd, cmdx.FlagYes),
 			forTool:  forTool,
 			version:  cmdx.String(cmd, cmdx.FlagVersion),
 		}, args)
@@ -67,9 +68,9 @@ Examples:
 }
 
 type installOpts struct {
-	global, dryRun, personal, pin bool
-	forTool                       tool.ID
-	version                       string
+	global, dryRun, personal, pin, yes bool
+	forTool                            tool.ID
+	version                            string
 }
 
 func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
@@ -197,7 +198,7 @@ func runInstallGlobal(
 	if opts.dryRun {
 		return nil
 	}
-	if !confirmProceed(cmd, out, "Proceed?") {
+	if !confirmDestructive(cmd, out, opts.yes) {
 		fmt.Fprintln(out, "Aborted.")
 		return nil
 	}
@@ -250,7 +251,7 @@ func runInstallProject(
 	}
 	targets := projectSkillsDirs(projectRoot, m)
 
-	if !previewAndConfirm(cmd, out, skills, targets, warnings, opts.dryRun) {
+	if !previewAndConfirm(cmd, out, skills, targets, warnings, opts.dryRun, opts.yes) {
 		return nil
 	}
 	if err = ensureTargetDirs(targets); err != nil {
@@ -316,13 +317,13 @@ func runInstallProject(
 // user to confirm. It returns false whenever the caller should stop (dry run
 // finished, or the user declined).
 func previewAndConfirm(
-	cmd *cobra.Command, out io.Writer, skills []skill.Skill, targets, warnings []string, dryRun bool,
+	cmd *cobra.Command, out io.Writer, skills []skill.Skill, targets, warnings []string, dryRun, yes bool,
 ) bool {
 	printInstallPreview(out, skills, targets, warnings, dryRun)
 	if dryRun {
 		return false
 	}
-	if !confirmProceed(cmd, out, "Proceed?") {
+	if !confirmDestructive(cmd, out, yes) {
 		fmt.Fprintln(out, "Aborted.")
 		return false
 	}
@@ -470,7 +471,7 @@ func runInstallFromMod(cmd *cobra.Command, opts installOpts) error {
 		skills = append(skills, s)
 	}
 
-	if !previewAndConfirm(cmd, out, skills, targets, warnings, opts.dryRun) {
+	if !previewAndConfirm(cmd, out, skills, targets, warnings, opts.dryRun, opts.yes) {
 		return nil
 	}
 	if err = ensureTargetDirs(targets); err != nil {

@@ -100,7 +100,7 @@ func TestShouldConfirm(t *testing.T) {
 }
 
 func TestDestructiveCommandsHaveYesFlag(t *testing.T) {
-	for _, cmd := range []*cobra.Command{destroyCmd, uninstallCmd} {
+	for _, cmd := range []*cobra.Command{destroyCmd, installCmd, uninstallCmd, updateCmd} {
 		f := cmd.Flags().Lookup(cmdx.FlagYes)
 		if f == nil || f.Shorthand != "y" {
 			t.Errorf("%s: missing --yes/-y", cmd.Name())

@@ -65,10 +65,16 @@ func shouldConfirm(cmd *cobra.Command, yes bool) bool {
 // confirmDestructive asks "Proceed?" when shouldConfirm says so and reports
 // whether the command may go ahead; every other case proceeds silently.
 func confirmDestructive(cmd *cobra.Command, out io.Writer, yes bool) bool {
+	return confirmOrYes(cmd, out, yes, "Proceed?")
+}
+
+// confirmOrYes is confirmDestructive with a caller-chosen prompt, for the
+// destructive commands whose confirmation is not the generic "Proceed?".
+func confirmOrYes(cmd *cobra.Command, out io.Writer, yes bool, prompt string) bool {
 	if !shouldConfirm(cmd, yes) {
 		return true
 	}
-	return ui.ConfirmYN(out, "Proceed?")
+	return ui.ConfirmYN(out, prompt)
 }
 
 // nameFromArgsOrPrompt returns args[0] if provided, otherwise prompts

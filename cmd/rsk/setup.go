@@ -62,6 +62,7 @@ func setupCommands() {
 	f.Bool(cmdx.FlagPin, false, "Also pin installed skills in the project (project scope only)")
 	f.String(cmdx.FlagVersion, "", "Pin to a specific repo tag (local skills only)")
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be installed without doing it")
+	f.BoolP(cmdx.FlagYes, "y", false, "Skip the confirmation prompt")
 	registerForCompletion(installCmd, false)
 
 	// list command
@@ -122,6 +123,7 @@ func setupCommands() {
 		cmdx.IncludeOfficial,
 	)
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be updated without doing it")
+	f.BoolP(cmdx.FlagYes, "y", false, "Skip the confirmation prompt")
 	registerForCompletion(updateCmd, false)
 
 	// row actions: install/uninstall directly from a catalog/list table row
