@@ -21,9 +21,9 @@ Skills are grouped by what they shape. Every folder with a `SKILL.md` is a skill
 
 ### `frameworks/` — framework-specific patterns
 
-- **`fastapi-architect`** — FastAPI 0.136 on Python 3.14: feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 7807 errors, OAuth2+JWT.
-- **`gin-architect`** — Gin 1.12 on Go 1.26: feature layout, struct-tag validation, RFC 7807 errors, JWT/IdP auth, route groups for versioning, OpenAPI.
-- **`nethttp-architect`** — Go stdlib `net/http` (1.22+ ServeMux, no router): feature layout, struct-tag validation, RFC 7807, JWT, graceful shutdown, OpenAPI via kin-openapi.
+- **`fastapi-architect`** — FastAPI 0.136 on Python 3.14: feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 9457 errors, OAuth2+JWT.
+- **`gin-architect`** — Gin 1.12 on Go 1.26: feature layout, struct-tag validation, RFC 9457 errors, JWT/IdP auth, route groups for versioning, OpenAPI.
+- **`nethttp-architect`** — Go stdlib `net/http` (1.22+ ServeMux, no router): feature layout, struct-tag validation, RFC 9457, JWT, graceful shutdown, OpenAPI via kin-openapi.
 - **`nextjs-architect`** — Next.js 16 with React 19, App Router only: server components by default with explicit `"use client"` boundaries, server actions, streaming Suspense, edge vs node runtime.
 - **`react-architect`** — React 19 + TypeScript strict: feature-based components, hooks-first composition, TanStack Query for server state, zustand for cross-tree client state, Suspense + ErrorBoundary, Radix for a11y.
 - **`hugo-architect`** — Hugo 0.161 Extended static sites: project layout, front matter conventions, template hierarchy, Hugo Modules over submodules, Page Bundles, Hugo Pipes asset pipeline, i18n, render hooks.
@@ -31,7 +31,7 @@ Skills are grouped by what they shape. Every folder with a `SKILL.md` is a skill
 
 ### `protocols/` — wire-level conventions
 
-- **`rest-api-architect`** — Cross-language REST conventions: resource URLs, method semantics, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 7807, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth.
+- **`rest-api-architect`** — Cross-language REST conventions: resource URLs, method semantics, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 9457, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth.
 - **`grpc-architect`** — Vanilla gRPC: `.proto` services, `status.Error` with standard codes, domain→code mapping, interceptor chain (auth/log/recovery/validation/metrics), client deadlines, context propagation, bufconn testing.
 - **`mcp-architect`** — MCP 2025-11-25 servers: tool/resource/prompt primitives, capability negotiation, Streamable HTTP + `Mcp-Session-Id`, OAuth 2.1 + RFC 8707, tool annotations, structured output, prompt-injection/SSRF defenses. Python (FastMCP) and Go SDK recipes.
 
@@ -161,7 +161,7 @@ rsk tools remove <rule>                   # drop a rule
 
 ### Interactive mode
 
-Running `rsk` with no arguments and a real terminal opens an interactive picker instead of printing help: a nested menu (`enter` descends into a group like `tools`, `esc`/`q` backs out), and any command that takes flags or positional arguments shows a short parameter form — fill it in, confirm, and it runs inline, returning to the picker afterward. Non-interactive contexts (pipes, CI) fall back to the plain `--help` output.
+Running `rsk` with no arguments and a real terminal opens the interactive session instead of printing help: a flat picker over the command tree (type `/` to filter, `↑`/`↓` to move, `?` for the help overlay), where any command that takes flags or positional arguments shows a typed form and the run's table, chart, or raw output opens as a paged result. Result rows offer their own actions (`i` install, `u` uninstall, `a`/`d`/`x` allow/deny/remove), so you can act on a row without leaving it. Recently used commands float to the top, and the theme, history, and last-used form values are remembered between runs. Non-interactive contexts (pipes, CI) fall back to the plain `--help` output.
 
 ---
 
