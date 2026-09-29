@@ -102,6 +102,16 @@ func init() {
 		version, commit, buildDate = buildInfoFallback(version, commit, buildDate)
 	}
 
+	rootCmd.PersistentFlags().Bool("no-color", false, "disable color output")
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
+		noColor, err := cmd.Flags().GetBool("no-color")
+		if err != nil {
+			return err
+		}
+		ui.SetNoColor(noColor)
+
+		return nil
+	}
 	rootCmd.Version = fmt.Sprintf(
 		"%s (rev %s, built %s, %s)",
 		version, commit, buildDate, runtime.Version(),

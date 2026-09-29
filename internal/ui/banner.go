@@ -33,10 +33,21 @@ func NewCapability() termkit.Capability {
 	return termkit.NewCapability(useColor())
 }
 
-// useColor reports whether ANSI styling should be emitted. NO_COLOR and a
-// dumb terminal both win over the TTY check; termkit resolves the dumb
-// terminal, and rsk owns the NO_COLOR and stdin+stdout TTY policy.
+// noColorOverride is set by the --no-color flag; it wins over the environment.
+var noColorOverride bool
+
+// SetNoColor forces color off, for the --no-color flag.
+func SetNoColor(v bool) {
+	noColorOverride = v
+}
+
+// useColor reports whether ANSI styling should be emitted. --no-color, NO_COLOR,
+// and a dumb terminal all win over the TTY check; termkit resolves the dumb
+// terminal, and rsk owns the flag, NO_COLOR, and stdin+stdout TTY policy.
 func useColor() bool {
+	if noColorOverride {
+		return false
+	}
 	if _, disabled := os.LookupEnv("NO_COLOR"); disabled {
 		return false
 	}
