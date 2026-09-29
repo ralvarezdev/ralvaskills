@@ -26,16 +26,10 @@ func TestVisibleTopLevelCommandsAreGrouped(t *testing.T) {
 	}
 }
 
-func TestLegacyClaudeToolsPathIsHiddenButReachable(t *testing.T) {
-	if !claudeCmd.Hidden {
-		t.Error("legacy claude command must be hidden")
-	}
+func TestToolsCommandIsVisible(t *testing.T) {
+	t.Parallel()
 	for _, sub := range []string{"list", "allow", "deny", "remove"} {
-		found, _, err := rootCmd.Find([]string{"claude", "tools", sub})
-		if err != nil || found.Name() != sub || !found.HasParent() || found.Parent().Name() != "tools" {
-			t.Errorf("rsk claude tools %s not reachable: %v", sub, err)
-		}
-		found, _, err = rootCmd.Find([]string{"tools", sub})
+		found, _, err := rootCmd.Find([]string{"tools", sub})
 		if err != nil || found.Name() != sub {
 			t.Errorf("rsk tools %s not reachable: %v", sub, err)
 		}
@@ -82,11 +76,8 @@ func TestDestructiveCommandsHaveYesFlag(t *testing.T) {
 	}
 }
 
-func TestLegacyUnpinIsHiddenButReachable(t *testing.T) {
-	found, _, err := rootCmd.Find([]string{"unpin"})
-	if err != nil || found != unpinCmd || !unpinCmd.Hidden {
-		t.Fatalf("unpin: found=%v hidden=%v err=%v, want hidden and reachable", found, unpinCmd.Hidden, err)
-	}
+func TestPinIsVisibleWithRemove(t *testing.T) {
+	t.Parallel()
 	if pinCmd.Hidden || pinCmd.GroupID != groupPinning {
 		t.Errorf("pin: hidden=%v group=%q, want visible in %q", pinCmd.Hidden, pinCmd.GroupID, groupPinning)
 	}
@@ -107,9 +98,6 @@ func TestSourceScopeFlagsRegistered(t *testing.T) {
 	if f := updateCmd.Flags().Lookup(cmdx.FlagOfficial); f == nil || !f.Hidden {
 		t.Error("update: --official must be a hidden alias")
 	}
-	if f := catalogCmd.Flags().Lookup(cmdx.FlagBundles); f == nil || !f.Hidden {
-		t.Error("catalog: --bundles must be a hidden alias")
-	}
 	if f := catalogCmd.Flags().Lookup(cmdx.FlagBundle); f == nil || f.NoOptDefVal != bundleListSentinel {
 		t.Error("catalog: --bundle must be an optional-value flag")
 	}
@@ -122,24 +110,21 @@ func TestResolveBundleFlag(t *testing.T) {
 	tests := []struct {
 		name      string
 		flag      string
-		alias     bool
 		args      []string
 		wantList  bool
 		wantName  string
 		wantError bool
 	}{
-		{"unset", "", false, nil, false, "", false},
-		{"bare --bundle lists bundles", bundleListSentinel, false, nil, true, "", false},
-		{"--bundle=NAME", "go-grpc", false, nil, false, "go-grpc", false},
-		{"--bundle NAME (positional)", bundleListSentinel, false, []string{"go-grpc"}, false, "go-grpc", false},
-		{"--bundles alias", "", true, nil, true, "", false},
-		{"--bundles with name keeps conflict", "go-grpc", true, nil, true, "go-grpc", false},
-		{"stray positional", "", false, []string{"x"}, false, "", true},
+		{"unset", "", nil, false, "", false},
+		{"bare --bundle lists bundles", bundleListSentinel, nil, true, "", false},
+		{"--bundle=NAME", "go-grpc", nil, false, "go-grpc", false},
+		{"--bundle NAME (positional)", bundleListSentinel, []string{"go-grpc"}, false, "go-grpc", false},
+		{"stray positional", "", []string{"x"}, false, "", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			list, name, err := resolveBundleFlag(tt.flag, tt.alias, tt.args)
+			list, name, err := resolveBundleFlag(tt.flag, tt.args)
 			if (err != nil) != tt.wantError || list != tt.wantList || name != tt.wantName {
 				t.Errorf(
 					"got (%v, %q, %v), want (%v, %q, err=%v)",

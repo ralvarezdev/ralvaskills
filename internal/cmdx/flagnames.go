@@ -10,7 +10,6 @@ const (
 	FlagSource   = "source"
 	FlagOutput   = "output"
 	FlagBundle   = "bundle"
-	FlagBundles  = "bundles"
 	FlagStack    = "stack"
 	FlagRefresh  = "refresh"
 	FlagOfficial = "official"

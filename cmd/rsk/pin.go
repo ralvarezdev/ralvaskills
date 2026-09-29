@@ -22,26 +22,12 @@ opencode.json for OpenCode) so it is auto-loaded by agents in this project.
 The skill must already be in rsk.mod — run 'rsk install <name>' first.
 
 Use --remove to unpin instead: the skill stays installed (still symlinked
-into .rsk/skills/) but is no longer auto-imported. The older 'rsk unpin' still
-works as a hidden alias of 'rsk pin --remove'.
+into .rsk/skills/) but is no longer auto-imported.
 
 Examples:
   rsk pin <name>
   rsk pin <name> --remove`,
 		RunE: runPin,
-	}
-
-	unpinCmd = &cobra.Command{
-		Use:    "unpin [name]",
-		Hidden: true,
-		Short:  "Remove a skill from the pinned list.",
-		Long: `Remove a skill from the pinned list. The skill stays installed (still
-symlinked into .rsk/skills/) but is no longer auto-imported into each tool's
-project config.
-
-Examples:
-  rsk unpin <name>`,
-		RunE: runUnpin,
 	}
 )
 

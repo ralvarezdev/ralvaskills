@@ -69,22 +69,8 @@ type (
 	}
 )
 
-var (
-	// claudeCmd is the legacy `rsk claude` parent, kept hidden so
-	// `rsk claude tools ...` keeps working; the canonical path is `rsk tools`.
-	claudeCmd = &cobra.Command{
-		Use:    "claude",
-		Short:  "Legacy alias: use 'rsk tools' instead.",
-		Hidden: true,
-		Long: `Legacy path kept for compatibility. 'rsk claude tools <sub>' behaves
-exactly like 'rsk tools <sub>' (with --for claude-code).`,
-	}
-
-	// canonicalTools is `rsk tools`; legacyTools is `rsk claude tools`. Both
-	// come from the same factory so their behavior cannot drift.
-	canonicalTools = newToolsCmds("rsk tools")
-	legacyTools    = newToolsCmds("rsk claude tools")
-)
+// canonicalTools is `rsk tools`.
+var canonicalTools = newToolsCmds("rsk tools")
 
 // newToolsCmds builds a tools command tree whose help examples are written
 // with prefix (e.g. "rsk tools"). Every subcommand carries its own --for flag
@@ -98,7 +84,7 @@ this project. For Claude Code, changes are written to .claude/settings.json
 and override global tool permissions.
 
 Use --for to pick the AI tool (default claude-code; other tools are not
-supported yet). The older path 'rsk claude tools ...' still works.
+supported yet).
 
 Examples:
   %[1]s list

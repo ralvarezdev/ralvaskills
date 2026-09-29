@@ -45,9 +45,7 @@ Examples:
 		if err != nil {
 			return err
 		}
-		bundles, bundle, err := resolveBundleFlag(
-			cmdx.String(cmd, cmdx.FlagBundle), cmdx.Bool(cmd, cmdx.FlagBundles), args,
-		)
+		bundles, bundle, err := resolveBundleFlag(cmdx.String(cmd, cmdx.FlagBundle), args)
 		if err != nil {
 			return err
 		}
@@ -69,11 +67,11 @@ Examples:
 // given with no explicit name, meaning "list the bundles themselves".
 const bundleListSentinel = "*"
 
-// resolveBundleFlag folds --bundle [name], the hidden --bundles alias and an
-// optional positional name into (list bundles?, bundle name). pflag only
-// binds a NoOptDefVal flag's value with --bundle=NAME, so a lone positional
-// argument after a bare --bundle is taken as the name (--bundle NAME).
-func resolveBundleFlag(flagValue string, bundlesAlias bool, args []string) (listBundles bool, name string, err error) {
+// resolveBundleFlag folds --bundle [name] and an optional positional name into
+// (list bundles?, bundle name). pflag only binds a NoOptDefVal flag's value
+// with --bundle=NAME, so a lone positional argument after a bare --bundle is
+// taken as the name (--bundle NAME).
+func resolveBundleFlag(flagValue string, args []string) (listBundles bool, name string, err error) {
 	if len(args) > 0 && flagValue != bundleListSentinel {
 		return false, "", fmt.Errorf("unexpected argument %q (a bundle name goes after --bundle)", args[0])
 	}
@@ -82,9 +80,6 @@ func resolveBundleFlag(flagValue string, bundlesAlias bool, args []string) (list
 	}
 	if flagValue == bundleListSentinel {
 		return true, "", nil
-	}
-	if bundlesAlias {
-		return true, flagValue, nil
 	}
 	return false, flagValue, nil
 }

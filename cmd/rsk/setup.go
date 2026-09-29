@@ -19,10 +19,8 @@ func setupCommands() {
 	termkit.MarkTableView(catalogCmd)
 	f := catalogCmd.Flags()
 	f.Bool(cmdx.FlagStack, false, "Fetch and display dependency metadata alongside skills")
-	f.Bool(cmdx.FlagBundles, false, "Alias for --bundle with no name")
 	f.String(cmdx.FlagBundle, "", "List bundles; with a name (--bundle NAME), list that bundle's skills")
 	f.Lookup(cmdx.FlagBundle).NoOptDefVal = bundleListSentinel
-	f.Lookup(cmdx.FlagBundles).Hidden = true
 	cmdx.RegisterInclude(catalogCmd, "Include extra skills in the output", cmdx.IncludePersonal)
 	f.String(cmdx.FlagSource, "", "Filter by source: local|official")
 	err := catalogCmd.RegisterFlagCompletionFunc(cmdx.FlagSource,
@@ -40,9 +38,6 @@ func setupCommands() {
 	// both built by the same factory.
 	rootCmd.AddCommand(canonicalTools.root)
 	termkit.MarkTableView(canonicalTools.list)
-	rootCmd.AddCommand(claudeCmd)
-	claudeCmd.AddCommand(legacyTools.root)
-	termkit.MarkTableView(legacyTools.list)
 
 	// destroy command
 	rootCmd.AddCommand(destroyCmd)
@@ -84,7 +79,6 @@ func setupCommands() {
 
 	// pin and unpin commands
 	rootCmd.AddCommand(pinCmd)
-	rootCmd.AddCommand(unpinCmd)
 	pinCmd.Flags().Bool(cmdx.FlagRemove, false, "Unpin the skill instead of pinning it")
 
 	// status command
@@ -133,7 +127,7 @@ func setupCommands() {
 
 	// row actions for the Claude tools view: allow, deny, or remove the tool
 	// under the cursor without leaving the table to type its rule.
-	for _, t := range []toolsCmds{canonicalTools, legacyTools} {
+	for _, t := range []toolsCmds{canonicalTools} {
 		registerOutputCompletion(t.list)
 		ui.MarkRowAction(t.list, "a", "allow", t.allow)
 		ui.MarkRowAction(t.list, "d", "deny", t.deny)
