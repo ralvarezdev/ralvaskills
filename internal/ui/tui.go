@@ -124,9 +124,6 @@ func RunCaptured(root *cobra.Command) session.RunFunc {
 			return nil, err
 		}
 
-		if raw := capture.Raw(); raw != "" {
-			capture.AddMessage(raw)
-		}
 		if text := strings.TrimSpace(out.String()); text != "" && !IsTableView(target) {
 			capture.AddMessage(text)
 		}

@@ -77,7 +77,9 @@ func TestRunCapturedTableViewRecordsTablesAndDropsText(t *testing.T) {
 	}
 }
 
-func TestRunCapturedTurnsRawPayloadIntoMessage(t *testing.T) {
+// TestRunCapturedKeepsRawPayload pins that a raw payload stays in the capture
+// for the session to render, instead of being converted to a message here.
+func TestRunCapturedKeepsRawPayload(t *testing.T) {
 	t.Parallel()
 
 	root, view, _, _ := newTestTree()
@@ -85,8 +87,11 @@ func TestRunCapturedTurnsRawPayloadIntoMessage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	if got := capture.Messages(); len(got) != 1 || got[0] != `{"a":1}` {
-		t.Fatalf("messages = %v, want the raw payload", got)
+	if got := capture.Raw(); got != `{"a":1}` {
+		t.Fatalf("raw = %q, want the payload", got)
+	}
+	if msgs := capture.Messages(); len(msgs) != 0 {
+		t.Fatalf("messages = %v, want none (the session shows Raw)", msgs)
 	}
 }
 

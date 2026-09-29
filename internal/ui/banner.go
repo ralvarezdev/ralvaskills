@@ -6,12 +6,6 @@ import (
 	"github.com/ralvarezdev/termkit"
 )
 
-// Capability describes what the current terminal can render: whether color is
-// wanted, whether ASCII art is appropriate, and the terminal width at
-// start-up. Re-exported from termkit so the banner and picker share one
-// capability type with every other consumer.
-type Capability = termkit.Capability
-
 // rskBannerSpec is rsk's BannerSpec: the wordmark art, its gradient, copy,
 // and layout thresholds, built from theme.go's constants. termkit owns the
 // mechanism (tier selection, centering, margins); this spec owns everything
@@ -35,7 +29,7 @@ var rskBannerSpec = termkit.BannerSpec{
 // current process. Color honors NO_COLOR and TERM=dumb; art additionally
 // requires stdout to be a real terminal (IsTTY), since a wide pipe should
 // still get plain text.
-func NewCapability() Capability {
+func NewCapability() termkit.Capability {
 	return termkit.NewCapability(useColor())
 }
 

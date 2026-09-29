@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
+
+	"github.com/ralvarezdev/termkit/huhform"
 )
 
 // stdinReader is shared across all plain-text prompt calls so that buffered
@@ -55,7 +57,7 @@ func askHuh(label, defaultVal string) (string, error) {
 		huh.NewInput().
 			Title(label).
 			Value(&result),
-	)).WithTheme(huh.ThemeCharm())
+	)).WithTheme(huhform.Theme(Theme))
 	if err := f.Run(); err != nil {
 		return "", huhErr(err)
 	}
@@ -73,7 +75,7 @@ func selectHuh(label string, choices []string, defaultIdx int) (int, error) {
 			Title(label).
 			Options(options...).
 			Value(&result),
-	)).WithTheme(huh.ThemeCharm())
+	)).WithTheme(huhform.Theme(Theme))
 	if err := f.Run(); err != nil {
 		return 0, huhErr(err)
 	}
@@ -92,7 +94,7 @@ func multiSelectHuh(label string, choices []string, defaultIndices []int) ([]int
 			Title(label).
 			Options(options...).
 			Value(&result),
-	)).WithTheme(huh.ThemeCharm())
+	)).WithTheme(huhform.Theme(Theme))
 	if err := f.Run(); err != nil {
 		return nil, huhErr(err)
 	}

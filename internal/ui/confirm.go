@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
+
+	"github.com/ralvarezdev/termkit/huhform"
 )
 
 // ConfirmYN prints a styled [y/N] prompt and returns true for "y" or "yes".
@@ -23,7 +25,7 @@ func confirmHuh(prompt string) bool {
 		huh.NewConfirm().
 			Title(prompt).
 			Value(&result),
-	)).WithTheme(huh.ThemeCharm())
+	)).WithTheme(huhform.Theme(Theme))
 	if err := f.Run(); err != nil {
 		return false
 	}
