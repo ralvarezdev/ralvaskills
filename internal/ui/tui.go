@@ -105,10 +105,7 @@ func RunCaptured(root *cobra.Command) session.RunFunc {
 		var out bytes.Buffer
 
 		ctx = termkit.WithCapture(ctx, capture)
-		termkit.ResetFlags(target)
-		// cobra hands a command the run's context only while it has none, and
-		// ResetFlags leaves it with a stale one.
-		target.SetContext(ctx)
+		termkit.ResetFlagsFor(ctx, target)
 		root.SetOut(&out)
 		root.SetErr(&out)
 		root.SetArgs(argv[1:])

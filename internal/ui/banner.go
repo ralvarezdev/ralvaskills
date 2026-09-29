@@ -34,14 +34,13 @@ func NewCapability() termkit.Capability {
 }
 
 // useColor reports whether ANSI styling should be emitted. NO_COLOR and a
-// dumb terminal both win over the TTY check. termkit has no direct
-// equivalent of this decision (it takes color as an already-resolved
-// input), so rsk keeps it locally.
+// dumb terminal both win over the TTY check; termkit resolves the dumb
+// terminal, and rsk owns the NO_COLOR and stdin+stdout TTY policy.
 func useColor() bool {
 	if _, disabled := os.LookupEnv("NO_COLOR"); disabled {
 		return false
 	}
-	if os.Getenv("TERM") == "dumb" {
+	if termkit.IsDumbTerminal() {
 		return false
 	}
 	return IsTTY()
