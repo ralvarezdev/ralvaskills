@@ -44,6 +44,17 @@ func MarkRowActionScoped(
 	rowActions.Inherit(source, key, defaultScopeFlags...)
 }
 
+// MarkRowActionArgs records a row action whose argv is built from the row (see
+// session.ArgsFunc), so the target's form opens prefilled from the row's
+// values rather than only the row's ID. Like MarkRowAction, it carries over
+// the default scope flags.
+func MarkRowActionArgs(
+	source *cobra.Command, key, label string, target *cobra.Command, fn session.ArgsFunc,
+) {
+	rowActions.MarkArgs(source, key, label, target, fn)
+	rowActions.Inherit(source, key, defaultScopeFlags...)
+}
+
 // InheritRowActionFlags makes source's row action key carry the named flags
 // over to its target whenever the run that produced the result had them set.
 // Both commands must define the flags.

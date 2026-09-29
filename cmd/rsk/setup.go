@@ -124,6 +124,10 @@ func setupCommands() {
 	// in the TUI, instead of leaving the view to type the name.
 	ui.MarkRowAction(catalogCmd, "i", "install", installCmd)
 	ui.MarkRowAction(listCmd, "u", "uninstall", uninstallCmd)
+	ui.MarkRowAction(listCmd, "p", "pin", pinCmd)
+	ui.MarkRowActionArgs(listCmd, "n", "unpin", pinCmd, func(id string, _ termkit.Data) []string {
+		return []string{id, "--" + cmdx.FlagRemove}
+	})
 
 	// row actions for the Claude tools view: allow, deny, or remove the tool
 	// under the cursor without leaving the table to type its rule.
