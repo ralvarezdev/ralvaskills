@@ -122,6 +122,8 @@ github.com/ralvarezdev/termkit v0.48.1 h1:7MP6QUi6Jc3pAB/XZLVtdjhgpR7DQO5pjO2N0o
 github.com/ralvarezdev/termkit v0.48.1/go.mod h1:GFJMSPlCcIfe0W0vnP6p3G+WDfhtpdCHdcoSqZb7qT8=
 github.com/ralvarezdev/termkit v0.49.0 h1:Bmg/aqq7ZJ1JhdGB4wgiO3iBv1Lhmx0AeJJynGVxQfM=
 github.com/ralvarezdev/termkit v0.49.0/go.mod h1:GFJMSPlCcIfe0W0vnP6p3G+WDfhtpdCHdcoSqZb7qT8=
+github.com/ralvarezdev/termkit v0.50.0 h1:B4FOpWf67N32FtIKYkTbG4TWnOxTXZdXE+gxu3TMl/k=
+github.com/ralvarezdev/termkit v0.50.0/go.mod h1:GFJMSPlCcIfe0W0vnP6p3G+WDfhtpdCHdcoSqZb7qT8=
 github.com/rivo/uniseg v0.1.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
