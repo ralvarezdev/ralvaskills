@@ -10,8 +10,9 @@ require (
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/lucasb-eyer/go-colorful v1.4.1
 	github.com/mattn/go-isatty v0.0.24
-	github.com/ralvarezdev/termkit v0.51.0
+	github.com/ralvarezdev/termkit v0.52.0
 	github.com/spf13/cobra v1.10.2
+	github.com/spf13/pflag v1.0.10
 )
 
 require (
@@ -52,7 +53,6 @@ require (
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sahilm/fuzzy v0.1.3 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/xo/terminfo v1.2.0 // indirect
 	github.com/yuin/goldmark v1.7.13 // indirect
 	github.com/yuin/goldmark-emoji v1.0.6 // indirect
