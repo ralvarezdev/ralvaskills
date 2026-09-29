@@ -258,7 +258,7 @@ func printStatusSectionRows(
 		})
 		return
 	}
-	termkit.WriteTableStyled(out, header, rows, false, nil, true, false)
+	termkit.WriteTableStyled(out, header, rows, false, nil, termkit.TableBorderless, ui.Theme)
 }
 
 // linkedSkillNames extracts each linked skill's name, parallel to

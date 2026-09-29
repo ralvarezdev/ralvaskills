@@ -157,7 +157,7 @@ func printProjectListTable(out io.Writer, capture *termkit.Capture, cmd *cobra.C
 		})
 		return
 	}
-	termkit.WriteTableStyled(out, header, tableRows, false, nil, true, false)
+	termkit.WriteTableStyled(out, header, tableRows, false, nil, termkit.TableBorderless, ui.Theme)
 }
 
 // listedSkillNames extracts each row's skill name, parallel to
@@ -271,7 +271,7 @@ func printGlobalListTable(out io.Writer, capture *termkit.Capture, cmd *cobra.Co
 		})
 		return
 	}
-	termkit.WriteTableStyled(out, header, tableRows, false, nil, true, false)
+	termkit.WriteTableStyled(out, header, tableRows, false, nil, termkit.TableBorderless, ui.Theme)
 }
 
 // listGlobalTable projects one global-install row.

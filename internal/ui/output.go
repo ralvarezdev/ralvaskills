@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ralvarezdev/termkit"
-
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 )
 
@@ -25,7 +23,7 @@ func Brand(w io.Writer, version string) {
 // TitleStyle is termkit's own TitleStyle re-exported (see style.go), so this
 // delegates straight to termkit.WriteHeader rather than duplicating its body.
 func Header(w io.Writer, msg string) {
-	termkit.WriteHeader(w, msg)
+	Theme.WriteHeader(w, msg)
 }
 
 // SectionHeader prints a bold title, an optional muted subtitle, and a
@@ -33,7 +31,7 @@ func Header(w io.Writer, msg string) {
 // termkit.WriteSectionHeader's rendering exactly, so this delegates straight
 // to it rather than duplicating its body.
 func SectionHeader(w io.Writer, title, subtitle string) {
-	termkit.WriteSectionHeader(w, title, subtitle)
+	Theme.WriteSectionHeader(w, title, subtitle)
 }
 
 // SourceLabel returns a styled source badge for table rows. All labels are

@@ -243,7 +243,7 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 
 	fmt.Fprintln(out)
 	ui.Header(out, "Claude Code tools available:")
-	termkit.WriteTableStyled(out, header, tableRows, false, nil, true, false)
+	termkit.WriteTableStyled(out, header, tableRows, false, nil, termkit.TableBorderless, ui.Theme)
 	fmt.Fprintln(out)
 
 	return nil

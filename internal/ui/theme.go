@@ -7,21 +7,24 @@ import (
 	"github.com/ralvarezdev/termkit"
 )
 
-// Adaptive palette, re-exported from termkit so the banner and picker share
+// Theme is the termkit theme every rsk style, mark and view renders with.
+var Theme = termkit.TokyoNight
+
+// Adaptive palette, re-exported from the Theme so the banner and picker share
 // one palette with every other consumer.
 var (
 	// ColorAccent is the brand accent: the wordmark, the picker's selection,
 	// and picker titles.
-	ColorAccent = termkit.ColorAccent
+	ColorAccent = Theme.Accent
 
 	// ColorDanger marks errors and destructive actions.
-	ColorDanger = termkit.ColorDanger
+	ColorDanger = Theme.Danger
 
 	// ColorWarning marks warnings and caution messages.
-	ColorWarning = termkit.ColorWarning
+	ColorWarning = Theme.Warning
 
 	// ColorMuted is for secondary text: hints, descriptions, key help.
-	ColorMuted = termkit.ColorMuted
+	ColorMuted = Theme.Muted
 )
 
 // wordmarkGradientSteps is how far each successive wordmark row darkens
@@ -39,8 +42,8 @@ func buildWordmarkGradient() []lipgloss.AdaptiveColor {
 	out := make([]lipgloss.AdaptiveColor, len(wordmarkGradientSteps))
 	for i, t := range wordmarkGradientSteps {
 		out[i] = lipgloss.AdaptiveColor{
-			Light: darken(termkit.ColorAccent.Light, t),
-			Dark:  darken(termkit.ColorAccent.Dark, t),
+			Light: darken(Theme.Accent.Light, t),
+			Dark:  darken(Theme.Accent.Dark, t),
 		}
 	}
 	return out

@@ -244,7 +244,7 @@ func printCatalogSkillTable(out io.Writer, capture *termkit.Capture, cmd *cobra.
 		return nil
 	}
 	fmt.Fprintln(out)
-	termkit.WriteTableStyled(out, header, rows, false, nil, true, false)
+	termkit.WriteTableStyled(out, header, rows, false, nil, termkit.TableBorderless, ui.Theme)
 	fmt.Fprintln(out)
 	return nil
 }
@@ -337,7 +337,7 @@ func printCatalogBundleTable(out io.Writer, capture *termkit.Capture, cmd *cobra
 		return nil
 	}
 	fmt.Fprintln(out)
-	termkit.WriteTableStyled(out, header, tableRows, false, nil, true, false)
+	termkit.WriteTableStyled(out, header, tableRows, false, nil, termkit.TableBorderless, ui.Theme)
 	fmt.Fprintln(out)
 	return nil
 }
