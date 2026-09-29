@@ -31,6 +31,10 @@ jobs:
           go-version: "1.27"
           cache: false
 
+      - uses: ./.github/actions/private-go-modules
+        with:
+          token: ${{ secrets.GH_PRIVATE_MODULES_TOKEN }}
+
       # registry/index.json lives in the repo — no need to fetch from R2.
       - name: Generate registry
         run: |
