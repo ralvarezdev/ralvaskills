@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -150,11 +153,87 @@ func TestNewSessionConfigNoticeAndRunnable(t *testing.T) {
 	t.Parallel()
 
 	root, _, _, _ := newTestTree() //nolint:dogsled // only the root matters here
-	cfg := newSessionConfig(SessionOptions{Root: root, Notice: "2 updates available"})
+	cfg := newSessionConfig(SessionOptions{Root: root, Notice: "2 updates available"}, "", "")
 	if cfg.Root != root || cfg.Run == nil || cfg.Title != "rsk" {
 		t.Fatalf("config = %+v, want root, run and title set", cfg)
 	}
 	if want := "rsk — pick a command · 2 updates available"; cfg.PickerTitle != want {
 		t.Errorf("picker title = %q, want %q", cfg.PickerTitle, want)
+	}
+}
+
+func TestNewSessionConfigWithoutStoresLeavesThemOff(t *testing.T) {
+	t.Parallel()
+
+	root, _, _, _ := newTestTree() //nolint:dogsled // only the root matters here
+	cfg := newSessionConfig(SessionOptions{Root: root}, "", "")
+	if cfg.History != nil || cfg.Prefill != nil || cfg.Theme != nil {
+		t.Fatalf("history/prefill/theme = %v/%v/%v, want all off", cfg.History, cfg.Prefill, cfg.Theme)
+	}
+}
+
+func TestNewSessionConfigPersistsHistoryAndPrefs(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	historyPath := filepath.Join(dir, "history.json")
+	prefsPath := filepath.Join(dir, "prefs.json")
+	root, _, _, _ := newTestTree() //nolint:dogsled // only the root matters here
+
+	cfg := newSessionConfig(SessionOptions{Root: root}, historyPath, prefsPath)
+	if cfg.History == nil || cfg.Prefill == nil || cfg.Theme == nil {
+		t.Fatalf("history/prefill/theme = %v/%v/%v, want all on", cfg.History, cfg.Prefill, cfg.Theme)
+	}
+	cfg.History.Record("say")
+	cfg.Prefill.SetValue("say", "loud", "true")
+	cfg.Theme.SetTheme("catppuccin")
+
+	again := newSessionConfig(SessionOptions{Root: root}, historyPath, prefsPath)
+	if got := again.History.Recent(); len(got) != 1 || got[0] != "say" {
+		t.Errorf("recent = %v, want [say]", got)
+	}
+	if got := again.Prefill.Values("say")["loud"]; got != "true" {
+		t.Errorf("prefilled loud = %q, want true", got)
+	}
+	if got := again.Theme.Theme(); got != "catppuccin" {
+		t.Errorf("theme = %q, want catppuccin", got)
+	}
+}
+
+func TestNewSessionConfigIgnoresUnreadableStores(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	bad := filepath.Join(dir, "bad.json")
+	if err := os.WriteFile(bad, []byte("{not json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	root, _, _, _ := newTestTree() //nolint:dogsled // only the root matters here
+
+	cfg := newSessionConfig(SessionOptions{Root: root}, bad, bad)
+	if cfg.History != nil || cfg.Prefill != nil || cfg.Theme != nil {
+		t.Fatal("a malformed store must leave its feature off, not fail the session")
+	}
+}
+
+func TestHelpMarkdownListsVisibleCommandsByGroup(t *testing.T) {
+	t.Parallel()
+
+	root, _, _, _ := newTestTree() //nolint:dogsled // only the root matters here
+	root.Long = "About rsk."
+	root.AddGroup(&cobra.Group{ID: "g", Title: "Things:"})
+	noop := func(*cobra.Command, []string) {}
+	visible := &cobra.Command{Use: "shown", Short: "does a thing", GroupID: "g", Run: noop}
+	hidden := &cobra.Command{Use: "secret", Short: "nope", GroupID: "g", Hidden: true, Run: noop}
+	root.AddCommand(visible, hidden)
+
+	got := helpMarkdown(root, "1 update available")
+	for _, want := range []string{"About rsk.", "**1 update available**", "### Things", "- `shown` — does a thing"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("help markdown is missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "secret") {
+		t.Errorf("help markdown lists a hidden command:\n%s", got)
 	}
 }

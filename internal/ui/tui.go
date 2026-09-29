@@ -31,16 +31,21 @@ type SessionOptions struct {
 
 // RunSession opens the interactive termkit session over opts.Root: a picker,
 // a typed parameter form (flags and positional arguments), an in-process
-// captured run, and the paged result.
+// captured run, and the paged result. Recently used commands float to the top
+// and form values are remembered between runs when the stores under the user
+// config dir can be opened.
 func RunSession(ctx context.Context, opts SessionOptions) error {
-	if err := session.New(newSessionConfig(opts)).Run(ctx, false); err != nil {
+	historyPath, prefsPath := defaultStorePaths()
+	if err := session.New(newSessionConfig(opts, historyPath, prefsPath)).Run(ctx, false); err != nil {
 		return fmt.Errorf("run session: %w", err)
 	}
 	return nil
 }
 
-// newSessionConfig builds the session configuration for opts.
-func newSessionConfig(opts SessionOptions) session.Config {
+// newSessionConfig builds the session configuration for opts. Empty store
+// paths (or stores that fail to open) simply leave history and prefs off; the
+// session never depends on them.
+func newSessionConfig(opts SessionOptions, historyPath, prefsPath string) session.Config {
 	title := appName + " — pick a command"
 	if opts.Notice != "" {
 		title += " · " + opts.Notice
@@ -52,10 +57,38 @@ func newSessionConfig(opts SessionOptions) session.Config {
 		Runnable:    opts.Runnable,
 		Title:       appName,
 		PickerTitle: title,
+		Help:        helpMarkdown(opts.Root, opts.Notice),
 		Colors:      Theme,
 		Fields:      form.Options{}.WithMultiNames("include"),
 	}
+	attachStores(&cfg, historyPath, prefsPath)
 	return cfg
+}
+
+// helpMarkdown is the `?` overlay's Markdown: a short about section, the
+// notice, and one bullet per visible command under its cobra group heading.
+func helpMarkdown(root *cobra.Command, notice string) string {
+	var b strings.Builder
+	b.WriteString("## " + appName + "\n\n")
+	b.WriteString(root.Long + "\n\n")
+	if notice != "" {
+		b.WriteString("**" + notice + "**\n\n")
+	}
+
+	for _, group := range root.Groups() {
+		var lines []string
+		for _, cmd := range root.Commands() {
+			if cmd.GroupID == group.ID && !cmd.Hidden {
+				lines = append(lines, fmt.Sprintf("- %#q — %s", cmd.Name(), cmd.Short))
+			}
+		}
+		if len(lines) == 0 {
+			continue
+		}
+		b.WriteString("### " + strings.TrimSuffix(group.Title, ":") + "\n\n")
+		b.WriteString(strings.Join(lines, "\n") + "\n\n")
+	}
+	return b.String()
 }
 
 // RunCaptured returns the session's RunFunc: it executes the selected command
