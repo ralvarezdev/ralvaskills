@@ -1,7 +1,7 @@
 ---
 name: gin-architect
 version: 1.0.1
-description: Framework-specific delta on rest-api-architect — Gin 1.12 on Go 1.26. Feature layout, struct-tag validation, RFC 7807 errors, in-house JWT or external IdP, route groups for URL-prefix versioning, OpenAPI. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a Gin service.
+description: Framework-specific delta on rest-api-architect — Gin 1.12 on Go 1.26. Feature layout, struct-tag validation, RFC 9457 errors, in-house JWT or external IdP, route groups for URL-prefix versioning, OpenAPI. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a Gin service.
 ---
 
 # Gin Architecture
@@ -65,9 +65,9 @@ Open shared resources in `main.go`, never per-request. Close them on shutdown si
 - **Pattern B — external IdP**: `jwt.ParseWithClaims` with a `Keyfunc` that resolves keys via a JWKS client. Cache JWKS in-process with TTL.
 - **Authorization per route, never global** — `RequireScope(...)` composed alongside `AuthRequired(secret)` on the route declaration (see [RECIPES.md](RECIPES.md)).
 
-## 8. Error handling — RFC 7807 middleware
+## 8. Error handling — RFC 9457 middleware
 
-A central `problem` package emits `application/problem+json` (per [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-7807-problem-details)). Handlers either call `problem.Render(c, p)` directly or `c.Error(err)` and let the recovery middleware convert. Renderer in [RECIPES.md](RECIPES.md).
+A central `problem` package emits `application/problem+json` (per [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-9457-problem-details)). Handlers either call `problem.Render(c, p)` directly or `c.Error(err)` and let the recovery middleware convert. Renderer in [RECIPES.md](RECIPES.md).
 
 - **One handler per domain-error family** — map known sentinel errors to `Problem` types in a single switch.
 - **`gin.Recovery`** with a custom `RecoveryHandler` that emits a 500 `Problem` with `correlation_id` — never a stack trace.

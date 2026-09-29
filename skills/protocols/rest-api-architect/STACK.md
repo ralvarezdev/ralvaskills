@@ -8,8 +8,8 @@ This skill pins **specifications**, not libraries. Library choices live in the f
 | OpenAPI | 3.1 | API contract format |
 | JSON | RFC 8259 | Body encoding |
 | JSON Merge Patch | RFC 7396 | `PATCH` body format |
-| Problem Details for HTTP APIs | RFC 7807 | Error response shape |
-| Idempotency-Key Header Field | RFC 9457 (draft) | `Idempotency-Key` semantics |
+| Problem Details for HTTP APIs | RFC 9457 (obsoletes RFC 7807) | Error response shape |
+| Idempotency-Key HTTP Header Field | IETF draft (draft-ietf-httpapi-idempotency-key-header) | `Idempotency-Key` semantics |
 | Conditional Requests (ETag, If-Match) | RFC 9110 §13 | Optimistic concurrency |
 | Deprecation HTTP Header | RFC 9745 | Deprecation signaling |
 | Sunset HTTP Header | RFC 8594 | Removal date signaling |
@@ -26,11 +26,11 @@ This skill pins **specifications**, not libraries. Library choices live in the f
   - IDs: UUID v7 canonical hex with dashes
   - Versioning: **URL prefix** (`/v1/...`)
   - Pagination: **cursor**, not offset
-  - Errors: **RFC 7807** problem-details
+  - Errors: **RFC 9457** problem-details
   - Idempotency: **`Idempotency-Key` mandatory** on POST/PATCH
   - Concurrency: **`ETag` + `If-Match` mandatory** on PUT/PATCH
 - **No library pinning here.** For Python implementations see [fastapi-architect/STACK.md](../../frameworks/fastapi-architect/STACK.md); for Go see (planned) `gin-architect/STACK.md`.
 - **OpenAPI tooling (CI, not library):** [Redocly CLI](https://redocly.com/docs/cli/) for `lint`/`bundle` on every PR. Rendered docs UI is project-dependent — [Scalar](https://github.com/scalar/scalar) is a solid modern default, but not mandatory.
 
-_Last reviewed: 2026-07-18_
+_Last reviewed: 2026-09-29_
 _Skill version at last review: 1.1.0_

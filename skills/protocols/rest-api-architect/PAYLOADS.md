@@ -20,7 +20,7 @@ GET /v1/orders?limit=20&cursor=eyJpZCI6IjAxOTI...
 - **No total count by default.** Total counts on large tables are expensive — expose a separate `/count` endpoint only if a real consumer needs it.
 - **Stable sort key is mandatory** — usually `(created_at DESC, id DESC)` so equal timestamps don't oscillate.
 
-## 2. RFC 7807 problem details
+## 2. RFC 9457 problem details
 
 Standard error shape (`application/problem+json`):
 
@@ -39,7 +39,10 @@ Standard error shape (`application/problem+json`):
 - **`title` is short, human-readable, fixed per type.** `detail` is the specific message for this instance.
 - **`instance`** is the request URI that produced the error.
 - **`correlation_id`** ties this response to server logs. Required on `5xx`.
-- **One shape for every error.** Don't mix RFC 7807 with framework-default `{"detail": "..."}` shapes.
+- **One shape for every error.** Don't mix RFC 9457 with framework-default `{"detail": "..."}` shapes.
+- **RFC 9457 obsoletes RFC 7807.** The core members are unchanged, so a 7807 implementation stays compliant. `type` defaults to `about:blank` when omitted (then `title` should be the HTTP status text). `status`, if present, must match the HTTP status.
+- **Extension members are allowed** (`correlation_id` above, `errors` in §3); clients must ignore extensions they do not recognise, so adding one is not a breaking change.
+- **Multiple problems:** report the most relevant one as the top-level problem, and carry the rest in an extension member (§3's `errors`) rather than inventing a second envelope.
 
 ## 3. Validation errors (422)
 

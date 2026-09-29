@@ -25,7 +25,7 @@ Same shape as [security-reviewer §2](../security-reviewer/SKILL.md#2-output-for
 | Critical | Breaking change to v1 | `proto/orders/v1/order.proto:23` | Field `status` type changed `string` → `int32` | Revert; introduce `status_v2` as a new field in v1, deprecate `status`, or bump to v2 |
 | High | Versioning mismatch | `openapi.yaml` | Endpoint `/orders` lacks `/v1/` prefix | Add `/v1/` prefix per rest-api-architect §4 |
 | Medium | Missing OpenAPI example | `openapi.yaml:42` | `CreateOrderRequest` has no `example:` | Add a realistic example — drives SDK gen + docs |
-| Low | Inconsistent error shape | `openapi.yaml` | 404 returns `{detail: ...}` while 422 returns RFC 7807 | Standardize on RFC 7807 per rest-api-architect §7 |
+| Low | Inconsistent error shape | `openapi.yaml` | 404 returns `{detail: ...}` while 422 returns RFC 9457 | Standardize on RFC 9457 per rest-api-architect §7 |
 ```
 
 Severity guide:
@@ -65,9 +65,9 @@ Per [protobuf-architect §3](../../encoding/protobuf-architect/SKILL.md#3-field-
 
 ### Error contracts
 
-Per [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-7807-problem-details) for REST and [grpc-architect §2](../../protocols/grpc-architect/SKILL.md#2-error-handling--statuserror-with-codes) for gRPC:
+Per [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-9457-problem-details) for REST and [grpc-architect §2](../../protocols/grpc-architect/SKILL.md#2-error-handling--statuserror-with-codes) for gRPC:
 
-- **REST: every error returns `application/problem+json`** (RFC 7807) — `type`, `title`, `status`, `detail`, `instance`, `correlation_id`. Never `{"detail": "..."}` and `{"errors": [...]}` mixed in one API.
+- **REST: every error returns `application/problem+json`** (RFC 9457) — `type`, `title`, `status`, `detail`, `instance`, `correlation_id`. Never `{"detail": "..."}` and `{"errors": [...]}` mixed in one API.
 - **gRPC: `status.Error` with a standard code.** Domain-error → code mapping is centralized; no handler invents its own.
 - **`type` URLs are stable** once published — clients switch on them.
 - **422 validation errors include the structured field list** per rest-api-architect §7.

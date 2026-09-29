@@ -41,7 +41,7 @@ Use gRPC standard codes, return errors via `status.Error(code, msg)`. Map domain
 
 **Don't reach for `INTERNAL` as a default.** Map every known domain error to a specific code.
 
-- **`status.WithDetails`** attaches structured detail (`google.rpc.ErrorInfo`, `google.rpc.BadRequest`) when clients need machine-readable error context — equivalent to REST's RFC 7807 (see [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-7807-problem-details)). Always include a correlation id.
+- **`status.WithDetails`** attaches structured detail (`google.rpc.ErrorInfo`, `google.rpc.BadRequest`) when clients need machine-readable error context — equivalent to REST's RFC 9457 (see [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-9457-problem-details)). Always include a correlation id.
 - **Never leak stack traces or DB errors** to clients. Log server-side; return a generic `INTERNAL` with the correlation id.
 
 ## 3. Request / response shape

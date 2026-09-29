@@ -131,7 +131,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   ├── databases/
 │   │   └── sql-architect/            # ✅ exists (v1.0.0 — PG 18 primary, MySQL/SQLite notes)
 │   ├── frameworks/
-│   │   ├── fastapi-architect/        # ✅ exists (v1.0.0 — FastAPI 0.136, feature-based, RFC 7807)
+│   │   ├── fastapi-architect/        # ✅ exists (v1.0.0 — FastAPI 0.136, feature-based, RFC 9457)
 │   │   ├── gin-architect/            # ✅ exists (v1.0.0 — Gin 1.12 on Go 1.26)
 │   │   ├── nethttp-architect/        # ✅ exists (v1.0.0 — stdlib net/http + Go 1.22+ enhanced ServeMux)
 │   │   ├── react-architect/          # ✅ exists (v1.0.0 — React 19, TS strict, TanStack Query for server state, zustand when justified)
@@ -139,7 +139,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── hugo-architect/           # ✅ exists (v1.0.0 — Hugo Extended 0.161, Hugo Modules over submodules, Page Bundles, TOML front matter, Hugo Pipes, static-host CDN deploys)
 │   │   └── reveal-js-architect/      # ✅ exists (v1.0.0 — reveal.js 6.0.1 vanilla + @revealjs/react 0.2.1 extension, section/fragment structure, HTML vs Markdown-mode, plugin config)
 │   ├── protocols/
-│   │   ├── rest-api-architect/       # ✅ exists (v1.0.0 — snake_case JSON, ISO 8601, RFC 7807 errors, mandatory Idempotency-Key & ETag)
+│   │   ├── rest-api-architect/       # ✅ exists (v1.0.0 — snake_case JSON, ISO 8601, RFC 9457 errors, mandatory Idempotency-Key & ETag)
 │   │   ├── grpc-architect/           # ✅ exists (v1.0.0 — vanilla gRPC, status codes, interceptor chain, deadlines, bufconn testing)
 │   │   └── mcp-architect/            # ✅ exists (v1.0.0 — MCP spec 2025-11-25; tools/resources/prompts, Streamable HTTP + stdio, OAuth 2.1 + RFC 8707, tool annotations, structured output, MCP Inspector; Python (FastMCP) + Go SDK recipes)
 │   ├── encoding/
@@ -1134,9 +1134,9 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 #### Frameworks
 | Skill | Status | Notes |
 |---|---|---|
-| `fastapi-architect` | ✅ | v1.0.0 — FastAPI 0.136 on Python 3.14. Feature-based structure, Pydantic v2 request/response separation, URL-prefix versioning (`/v1/...`), async DI with lifespan, RFC 7807 problem-details errors, in-house OAuth2+JWT (pyjwt+argon2-cffi) or external IdP with switching criterion |
-| `gin-architect` | ✅ | v1.0.0 — Gin 1.12 on Go 1.26. Feature-based structure, struct-tag validation, RFC 7807 middleware, in-house JWT (golang-jwt+argon2) or external IdP, route groups for URL versioning, OpenAPI via swaggo/swag or kin-openapi |
-| `nethttp-architect` | ✅ | v1.0.0 — stdlib `net/http` on Go 1.26 (no router framework). Enhanced ServeMux method patterns, middleware function-wrap chain, RFC 7807, mandatory production timeouts, kin-openapi for spec |
+| `fastapi-architect` | ✅ | v1.0.0 — FastAPI 0.136 on Python 3.14. Feature-based structure, Pydantic v2 request/response separation, URL-prefix versioning (`/v1/...`), async DI with lifespan, RFC 9457 problem-details errors, in-house OAuth2+JWT (pyjwt+argon2-cffi) or external IdP with switching criterion |
+| `gin-architect` | ✅ | v1.0.0 — Gin 1.12 on Go 1.26. Feature-based structure, struct-tag validation, RFC 9457 middleware, in-house JWT (golang-jwt+argon2) or external IdP, route groups for URL versioning, OpenAPI via swaggo/swag or kin-openapi |
+| `nethttp-architect` | ✅ | v1.0.0 — stdlib `net/http` on Go 1.26 (no router framework). Enhanced ServeMux method patterns, middleware function-wrap chain, RFC 9457, mandatory production timeouts, kin-openapi for spec |
 | `react-architect` | ✅ | v1.0.0 — React 19 with TS strict. Feature-based folders, hooks-first composition, TanStack Query for server state, local state + Context default + zustand when justified, Suspense + ErrorBoundary at every async boundary, Vitest + RTL + Playwright + axe-core. Pairs with `nextjs-architect` for server-side concerns |
 | `nextjs-architect` | ✅ | v1.0.0 — Next.js 16, App Router only. Server components default + explicit `"use client"` boundaries, server actions for mutations, hybrid data access (RSC direct for reads, API routes for writes), streaming Suspense, edge vs node runtime, `next/image`/`next/font`/Metadata APIs, `output: "standalone"` Docker deploys |
 | `hugo-architect` | ✅ | v1.0.0 — Hugo Extended 0.161 (Go-templated SSG). Standard project layout, TOML front matter, template hierarchy (`baseof` → `single`/`list` → partials → shortcodes), **Hugo Modules over git submodules** for themes, **Page Bundles** over flat content, Hugo Pipes asset chain with mandatory fingerprinting, i18n strategies, Goldmark render hooks, static-host CDN deploys (Cloudflare Pages / GitHub Pages / S3+CloudFront). Standalone — not bundled |
@@ -1145,7 +1145,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 #### Protocols
 | Skill | Status | Notes |
 |---|---|---|
-| `rest-api-architect` | ✅ | v1.0.0 — framework-agnostic REST conventions. Plural-noun URLs, URL-prefix versioning (`/v1/`), cursor pagination, `snake_case` JSON + ISO 8601 timestamps, RFC 7807 problem-details errors, **mandatory `Idempotency-Key`** on POST/PATCH, **mandatory `ETag` + `If-Match`** on PUT/PATCH, OpenAPI 3.1 generated from code |
+| `rest-api-architect` | ✅ | v1.0.0 — framework-agnostic REST conventions. Plural-noun URLs, URL-prefix versioning (`/v1/`), cursor pagination, `snake_case` JSON + ISO 8601 timestamps, RFC 9457 problem-details errors, **mandatory `Idempotency-Key`** on POST/PATCH, **mandatory `ETag` + `If-Match`** on PUT/PATCH, OpenAPI 3.1 generated from code |
 | `grpc-architect` | ✅ | v1.0.0 — vanilla gRPC over HTTP/2. Service definitions, `status.Error` + standard codes, domain→code mapping, mandatory interceptor chain (recovery, request-id, slog, auth, protovalidate, metrics), client-side deadlines, context propagation, reflection off in prod, `bufconn` testing. Language-agnostic protocol; Go-specific examples |
 | `mcp-architect` | ✅ | v1.0.0 — MCP spec 2025-11-25 (with 2026-07-28 RC callouts). Server primitives (tools/resources/prompts), tool annotations + structured output, Streamable HTTP transport with `Mcp-Session-Id` lifecycle, stdio for local servers, OAuth 2.1 + RFC 8707 audience binding, JSON-RPC vs tool-level error split, prompt-injection / SSRF / tool-poisoning defenses, MCP Inspector testing (pin ≥0.10 for CVE-2025-49596). Recipes for Python (official `mcp` + FastMCP) and Go (official `modelcontextprotocol/go-sdk`); brief client section. Pairs with `security-reviewer` and `rest-api-architect`/`grpc-architect` |
 
@@ -1195,7 +1195,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | Skill | Status | Notes |
 |---|---|---|
 | `security-reviewer` | ✅ | v1.0.0 — cross-language code-level security review. Critical/High/Medium/Low findings on injection, auth, secrets, insecure defaults, deserialization, CSRF/SSRF/IDOR, rate limiting, dependency hygiene. Tool pass (gitleaks, semgrep, gosec, bandit, Trivy) + read pass. Penetration testing & threat modeling explicitly out of scope |
-| `api-contract-reviewer` | ✅ | v1.0.0 — REST + gRPC contract stability. Versioning (URL prefix, package path), field/method hygiene (no reuse, no type changes), error shape (RFC 7807, gRPC codes), idempotency, ETag, OpenAPI completeness. Mechanical pass via `buf breaking` + `openapi-diff`, then conventions vs `rest-api-architect` / `protobuf-architect` / `grpc-architect` |
+| `api-contract-reviewer` | ✅ | v1.0.0 — REST + gRPC contract stability. Versioning (URL prefix, package path), field/method hygiene (no reuse, no type changes), error shape (RFC 9457, gRPC codes), idempotency, ETag, OpenAPI completeness. Mechanical pass via `buf breaking` + `openapi-diff`, then conventions vs `rest-api-architect` / `protobuf-architect` / `grpc-architect` |
 | `performance-reviewer` | ✅ | v1.0.0 — measurement-grounded perf review. N+1, missing indexes, blocking I/O in async, allocation hot paths, unbounded memory, missing timeouts, high-cardinality labels. Every finding cites `EXPLAIN ANALYZE` / `pprof` / `py-spy` / `hyperfine` / dashboard signal. Load testing & capacity planning out of scope |
 
 #### Frontend

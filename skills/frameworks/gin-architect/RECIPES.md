@@ -10,7 +10,7 @@ cmd/api/
 internal/
 ├── config/                      # viper-loaded settings (validator-validated struct)
 ├── server/                      # gin.Engine setup, middleware, lifecycle
-├── errors/                      # RFC 7807 problem-details + handler middleware
+├── errors/                      # RFC 9457 problem-details + handler middleware
 ├── auth/                        # JWT issue/verify, current-user middleware
 ├── users/
 │   ├── handlers.go              # gin.HandlerFunc per route
@@ -116,7 +116,7 @@ func RequireScope(scope string) gin.HandlerFunc {
 usersGroup.DELETE("/:id", AuthRequired(secret), RequireScope("users:delete"), h.delete)
 ```
 
-## Problem-details renderer (RFC 7807)
+## Problem-details renderer (RFC 9457)
 
 ```go
 type Problem struct {

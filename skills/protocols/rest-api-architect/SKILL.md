@@ -1,7 +1,7 @@
 ---
 name: rest-api-architect
 version: 1.1.0
-description: Cross-language REST conventions — resource URLs, method semantics, status codes, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 7807 errors, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth. Framework-agnostic. Use when designing or auditing REST endpoints.
+description: Cross-language REST conventions — resource URLs, method semantics, status codes, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 9457 errors, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth. Framework-agnostic. Use when designing or auditing REST endpoints.
 ---
 
 # REST API Architecture
@@ -54,14 +54,14 @@ Cursor pagination is stable under concurrent writes and O(1) per page; offset is
 - **Searching:** `?q=alice` for free-text search across documented columns. Don't expose raw SQL `LIKE` patterns from clients.
 - **Sparse fieldsets:** `?fields=id,email,created_at` to limit response payload — useful for list endpoints. Validate against the schema.
 
-## 7. Error contracts — RFC 7807 Problem Details
+## 7. Error contracts — RFC 9457 Problem Details
 
-Every error response uses `application/problem+json`. Canonical shape + rules in [PAYLOADS § 2](PAYLOADS.md#2-rfc-7807-problem-details); structured `422` validation shape in [PAYLOADS § 3](PAYLOADS.md#3-validation-errors-422).
+Every error response uses `application/problem+json`. Canonical shape + rules in [PAYLOADS § 2](PAYLOADS.md#2-rfc-9457-problem-details); structured `422` validation shape in [PAYLOADS § 3](PAYLOADS.md#3-validation-errors-422).
 
 Key rules:
 
 - **`type` is a stable URL** — clients switch on it. Never change once published.
-- **One shape for every error.** Don't mix RFC 7807 with framework defaults.
+- **One shape for every error.** Don't mix RFC 9457 with framework defaults.
 - **`correlation_id` required on `5xx`** so support can match server logs.
 
 ## 8. Idempotency — `Idempotency-Key` mandatory

@@ -13,7 +13,7 @@ myworkspace/
 │       └── money.go
 │
 ├── pkg/                                  # cross-cutting, shared by 2+ services — each its own module
-│   ├── problem/                          # RFC 7807 mapper
+│   ├── problem/                          # RFC 9457 mapper
 │   ├── validation/
 │   └── obs/
 │
@@ -201,7 +201,7 @@ func (r *OrderRepo) FindByID(ctx context.Context, id domain.ID) (domain.Order, e
 
 ## `internal/order/adapters/primary/http/handler.go` — driving adapter
 
-RFC 7807 is applied exactly at this boundary — the domain and app layers never format a wire response.
+RFC 9457 is applied exactly at this boundary — the domain and app layers never format a wire response.
 
 ```go
 package http
@@ -216,7 +216,7 @@ func (h *Handler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
     }
     id, err := h.svc.PlaceOrder(r.Context(), cmd)
     if err != nil {
-        problem.WriteFromError(w, err) // maps domain/app errors → RFC 7807
+        problem.WriteFromError(w, err) // maps domain/app errors → RFC 9457
         return
     }
     json.NewEncoder(w).Encode(struct {
@@ -292,7 +292,7 @@ func (c *Client) CreateOrder(ctx context.Context, customer string, total money.M
     }
     defer resp.Body.Close()
     if resp.StatusCode >= 400 {
-        return "", problem.DecodeAsError(resp.Body) // decodes the RFC 7807 body back into a Go error
+        return "", problem.DecodeAsError(resp.Body) // decodes the RFC 9457 body back into a Go error
     }
     return decodeID(resp.Body)
 }

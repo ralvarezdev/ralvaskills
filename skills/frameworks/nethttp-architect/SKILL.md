@@ -1,7 +1,7 @@
 ---
 name: nethttp-architect
 version: 1.0.1
-description: Framework-specific delta on rest-api-architect — Go stdlib net/http (Go 1.22+ ServeMux, no router) on Go 1.26. Feature layout, struct-tag validation, RFC 7807 errors, JWT or IdP auth, graceful shutdown, OpenAPI via kin-openapi. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a stdlib net/http service.
+description: Framework-specific delta on rest-api-architect — Go stdlib net/http (Go 1.22+ ServeMux, no router) on Go 1.26. Feature layout, struct-tag validation, RFC 9457 errors, JWT or IdP auth, graceful shutdown, OpenAPI via kin-openapi. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a stdlib net/http service.
 ---
 
 # net/http Architecture
@@ -83,7 +83,7 @@ stdlib has no middleware abstraction. The standard pattern: a function that take
 - **Pattern B — external IdP**: `jwt.ParseWithClaims` with a `Keyfunc` that resolves keys via cached JWKS. Verify `aud` and `iss` explicitly.
 - **Authorization per route, never global** — `RequireScope` middleware composed with `AuthRequired` (see [RECIPES.md](RECIPES.md)). When the wrap chain gets ugly, build a small helper that takes multiple `Middleware`s and the final handler.
 
-## 9. Error handling — RFC 7807
+## 9. Error handling — RFC 9457
 
 Same `problem` package shape as `gin-architect`. Helpers take `http.ResponseWriter` + `*http.Request` instead of `*gin.Context`. Writer skeleton in [RECIPES.md](RECIPES.md). The `Recover` middleware catches panics and emits a 500 problem with the correlation id — never a stack trace.
 

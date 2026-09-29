@@ -116,7 +116,7 @@ Where a project sits informs how much investment is justified. Five levels from 
 
 - [react-architect](../../frameworks/react-architect/SKILL.md) — client component patterns, hooks, state. This skill is what they render.
 - [nextjs-architect](../../frameworks/nextjs-architect/SKILL.md) — server-component shells, server actions, image / font / metadata APIs.
-- [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-7807-problem-details) — error contracts the UI consumes; correlation IDs surfaced in error states.
+- [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-9457-problem-details) — error contracts the UI consumes; correlation IDs surfaced in error states.
 - [security-reviewer](../../quality/security-reviewer/SKILL.md) — security headers (CSP), no stack traces in error UI, no PII in URLs.
 - [observability-architect §5](../../infra/observability-architect/SKILL.md#5-correlation) — correlation IDs visible in the UI so support can match logs.
 - [logic-cleaner](../../refactoring/logic-cleaner/SKILL.md) / [code-design-refactor](../../refactoring/code-design-refactor/SKILL.md) — same rules apply to component code as any other code.

@@ -70,7 +70,7 @@ Server actions are the canonical mutation pattern. No client-side fetch, no manu
 
 - **`"use server"`** at the top of a file marks every export as a server action — accessible from client components via `import`.
 - **Always re-authenticate inside the action.** Don't trust the calling context; verify the session.
-- **Validate with Zod** at the boundary — same discipline as REST handlers per [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-7807-problem-details).
+- **Validate with Zod** at the boundary — same discipline as REST handlers per [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-9457-problem-details).
 - **`revalidatePath` / `revalidateTag`** to refresh server-rendered data after a mutation. Without this, the user sees stale state.
 - **Return discriminated unions** (`{ok: true, ...} | {ok: false, ...}`) so the client renders success vs. errors based on the field.
 
@@ -135,7 +135,7 @@ Server actions cover most mutations. API routes (`app/api/.../route.ts`) earn th
 - **Streaming responses** — server-sent events, NDJSON streams.
 - **Non-React consumers** — anything that isn't a form submission from your own UI.
 
-Inside API routes, follow [rest-api-architect](../../protocols/rest-api-architect/SKILL.md) — same conventions for status codes, errors (RFC 7807), versioning, idempotency.
+Inside API routes, follow [rest-api-architect](../../protocols/rest-api-architect/SKILL.md) — same conventions for status codes, errors (RFC 9457), versioning, idempotency.
 
 ## 8. Auth
 

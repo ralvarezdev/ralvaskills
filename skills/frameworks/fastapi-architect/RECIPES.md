@@ -9,7 +9,7 @@ src/myapp/
 ├── main.py                  # FastAPI instance, router includes, lifespan
 ├── config.py                # Settings via pydantic-settings
 ├── deps.py                  # shared dependencies (DB pool, auth, etc.)
-├── errors.py                # RFC 7807 problem-details exception handlers
+├── errors.py                # RFC 9457 problem-details exception handlers
 ├── users/
 │   ├── __init__.py
 │   ├── router.py            # APIRouter, endpoints, response models
@@ -113,7 +113,7 @@ def require_scope(scope: str):
 async def delete_user(...): ...
 ```
 
-## RFC 7807 problem-details handler
+## RFC 9457 problem-details handler
 
 ```python
 class Problem(BaseModel):

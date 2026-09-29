@@ -1,7 +1,7 @@
 ---
 name: fastapi-architect
 version: 1.0.1
-description: Framework-specific delta on rest-api-architect — FastAPI 0.136 on Python 3.14. Feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 7807 errors, in-house OAuth2+JWT or external IdP. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a FastAPI service.
+description: Framework-specific delta on rest-api-architect — FastAPI 0.136 on Python 3.14. Feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 9457 errors, in-house OAuth2+JWT or external IdP. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a FastAPI service.
 ---
 
 # FastAPI Architecture
@@ -54,9 +54,9 @@ Lifespan context is the only place to open/close shared resources (DB pool, HTTP
 - **Pattern B — external IdP** uses `pyjwt`'s `PyJWKClient` for JWKS verification; cache via `@lru_cache`. Verify `aud` and `iss` explicitly.
 - **Authorization is route-level via dependencies, not middleware** — `dependencies=[Depends(require_scope("users:delete"))]` on the route. Skeleton in [RECIPES.md](RECIPES.md).
 
-## 7. Error handling — RFC 7807 Problem Details
+## 7. Error handling — RFC 9457 Problem Details
 
-Every error returns `application/problem+json` with a standardised shape (per [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-7807-problem-details)). Handler skeleton in [RECIPES.md](RECIPES.md).
+Every error returns `application/problem+json` with a standardised shape (per [rest-api-architect §7](../../protocols/rest-api-architect/SKILL.md#7-error-contracts--rfc-9457-problem-details)). Handler skeleton in [RECIPES.md](RECIPES.md).
 
 - **One handler per domain-exception family.** Never let `HTTPException` and your custom exceptions return different shapes.
 - **Validation errors** (`RequestValidationError`) get their own handler that maps Pydantic's error list into `Problem.detail`.

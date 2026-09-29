@@ -10,7 +10,7 @@ cmd/api/
 internal/
 ├── config/                      # viper-loaded settings
 ├── server/                      # mux assembly, middleware chain, lifecycle
-├── errors/                      # RFC 7807 problem-details + error writer
+├── errors/                      # RFC 9457 problem-details + error writer
 ├── auth/                        # JWT verify, current-user middleware
 ├── users/
 │   ├── handlers.go              # http.Handler / HandlerFunc per route
@@ -146,7 +146,7 @@ mux.Handle("DELETE /v1/users/{id}",
     AuthRequired(secret)(RequireScope("users:delete")(http.HandlerFunc(h.delete))))
 ```
 
-## Problem-details writer (RFC 7807)
+## Problem-details writer (RFC 9457)
 
 ```go
 type Problem struct {
