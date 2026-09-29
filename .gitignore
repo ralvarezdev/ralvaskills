@@ -42,3 +42,6 @@ docs/internal/
 
 # Task checksums
 .task
+
+# GitHub token for private Go modules (local Docker builds)
+.github_token
