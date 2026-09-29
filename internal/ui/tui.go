@@ -58,6 +58,7 @@ func newSessionConfig(opts SessionOptions, historyPath, prefsPath string) sessio
 		Title:       appName,
 		PickerTitle: title,
 		Help:        helpMarkdown(opts.Root, opts.Notice),
+		RowAction:   SessionRowAction,
 		Colors:      Theme,
 		Fields:      form.Options{}.WithMultiNames("include"),
 	}

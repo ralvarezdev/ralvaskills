@@ -115,6 +115,23 @@ func setupCommands() {
 	)
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be updated without doing it")
 
+	// row actions: install/uninstall directly from a catalog/list table row
+	// in the TUI, instead of leaving the view to type the name.
+	ui.MarkRowAction(catalogCmd, "i", "install", installCmd)
+	ui.MarkRowAction(listCmd, "u", "uninstall", uninstallCmd)
+
+	// row actions for the Claude tools view: allow, deny, or remove the tool
+	// under the cursor without leaving the table to type its rule.
+	for _, t := range []toolsCmds{canonicalTools, legacyTools} {
+		ui.MarkRowAction(t.list, "a", "allow", t.allow)
+		ui.MarkRowAction(t.list, "d", "deny", t.deny)
+		ui.MarkRowAction(t.list, "x", "remove", t.remove)
+	}
+
+	// status renders one table per scanned directory, so its uninstall action
+	// resolves --global/--for from the table the row came from.
+	ui.MarkRowActionScoped(statusCmd, "u", "uninstall", uninstallCmd, statusRowActionScope)
+
 	markDestructive()
 	assignGroups()
 }
