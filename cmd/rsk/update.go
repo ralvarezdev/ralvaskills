@@ -17,6 +17,7 @@ import (
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/source"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 	updatecheck "github.com/ralvarezdev/ralvaskills/v2/internal/update"
 )
@@ -55,19 +56,23 @@ Examples:
 		if err != nil {
 			return err
 		}
+		forTool, err := forToolFlag(cmd)
+		if err != nil {
+			return err
+		}
 		return runUpdate(cmd, updateOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
 			personal: inc.Personal,
 			official: inc.Official,
-			forTool:  cmdx.String(cmd, cmdx.FlagFor),
+			forTool:  forTool,
 		}, args)
 	},
 }
 
 type updateOpts struct {
 	global, dryRun, personal, official bool
-	forTool                            string
+	forTool                            tool.ID
 }
 
 func runUpdate(cmd *cobra.Command, opts updateOpts, args []string) error {

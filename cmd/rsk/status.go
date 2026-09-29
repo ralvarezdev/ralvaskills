@@ -16,6 +16,7 @@ import (
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
@@ -42,14 +43,22 @@ Examples:
 		if err != nil {
 			return err
 		}
+		forTool, err := forToolFlag(cmd)
+		if err != nil {
+			return err
+		}
+		output, err := parseOutputFormat(cmdx.String(cmd, cmdx.FlagOutput))
+		if err != nil {
+			return err
+		}
 		return runStatus(cmd, statusOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			project:  cmdx.Bool(cmd, "project"),
 			stack:    cmdx.Bool(cmd, cmdx.FlagStack),
 			refresh:  cmdx.Bool(cmd, cmdx.FlagRefresh),
 			personal: inc.Personal,
-			forTool:  cmdx.String(cmd, cmdx.FlagFor),
-			output:   outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
+			forTool:  forTool,
+			output:   output,
 		})
 	},
 }
@@ -58,7 +67,7 @@ type (
 	// statusOpts holds the options for the status command.
 	statusOpts struct {
 		global, project, stack, refresh, personal bool
-		forTool                                   string
+		forTool                                   tool.ID
 		output                                    outputFormat
 	}
 
@@ -278,8 +287,8 @@ func linkedSkillNames(skills []linkedEntry) []string {
 // uninstall's project default. This is what lets a bare `rsk status`, which
 // renders one table per scanned directory, uninstall from the right one.
 func statusRowActionScope(table termkit.Data) map[string]string {
-	if tool, ok := strings.CutPrefix(table.Title, "Global — "); ok {
-		return map[string]string{cmdx.FlagGlobal: "true", cmdx.FlagFor: tool}
+	if toolID, ok := strings.CutPrefix(table.Title, "Global — "); ok {
+		return map[string]string{cmdx.FlagGlobal: "true", cmdx.FlagFor: toolID}
 	}
 	return nil
 }
@@ -346,16 +355,16 @@ func statusSectionsToEntries(sections []statusSection, pinnedSet map[string]bool
 func buildStatusSections(
 	cfg config.Config,
 	globalOnly, projectOnly bool,
-	forTool string,
+	forTool tool.ID,
 	projectDirs []string,
 ) []statusSection {
 	var sections []statusSection
 
 	if !projectOnly {
 		if forTool != "" {
-			if dir, ok := cfg.GlobalTargets[forTool]; ok {
+			if dir, ok := cfg.GlobalTargets[string(forTool)]; ok {
 				sections = append(sections, statusSection{
-					title:    "Global — " + forTool,
+					title:    "Global — " + forTool.String(),
 					subtitle: dir,
 					dir:      dir,
 				})

@@ -16,6 +16,7 @@ import (
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
@@ -46,12 +47,16 @@ Examples:
 		if err != nil {
 			return err
 		}
+		forTool, err := forToolFlag(cmd)
+		if err != nil {
+			return err
+		}
 		return runUninstall(cmd, uninstallOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
 			personal: inc.Personal,
 			yes:      cmdx.Bool(cmd, cmdx.FlagYes),
-			forTool:  cmdx.String(cmd, cmdx.FlagFor),
+			forTool:  forTool,
 		}, args)
 	},
 }
@@ -64,7 +69,7 @@ type (
 
 	uninstallOpts struct {
 		global, dryRun, personal, yes bool
-		forTool                       string
+		forTool                       tool.ID
 	}
 )
 

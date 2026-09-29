@@ -36,15 +36,19 @@ Examples:
 }
 
 func toolsFromFlag(flag string) ([]tool.ID, error) {
-	switch flag {
-	case string(tool.ClaudeID):
+	scope, err := cmdx.ParseTargetScope(flag)
+	if err != nil {
+		return nil, fieldError(cmdx.FlagFor, "%v", err)
+	}
+	switch scope {
+	case cmdx.TargetScope(tool.ClaudeID):
 		return []tool.ID{tool.ClaudeID}, nil
-	case string(tool.OpenCodeID):
+	case cmdx.TargetScope(tool.OpenCodeID):
 		return []tool.ID{tool.OpenCodeID}, nil
-	case cmdx.ForAll:
+	case cmdx.ScopeAll:
 		return []tool.ID{tool.ClaudeID, tool.OpenCodeID}, nil
 	default:
-		return nil, fmt.Errorf("--for must be %s, %s, or %s; got %q",
+		return nil, fieldError(cmdx.FlagFor, "--for must be %s, %s, or %s; got %q",
 			tool.ClaudeID, tool.OpenCodeID, cmdx.ForAll, flag)
 	}
 }

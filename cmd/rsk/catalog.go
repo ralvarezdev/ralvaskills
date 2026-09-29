@@ -18,11 +18,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
-const (
-	outputText outputFormat = "text"
-	outputJSON outputFormat = "json"
-)
-
 var catalogCmd = &cobra.Command{
 	Use:   "catalog [flags]",
 	Short: "Browse the catalog of available skills and bundles.",
@@ -46,9 +41,17 @@ Examples:
 		if err != nil {
 			return err
 		}
+		sourceFilter, err := parseSourceFilter(cmdx.String(cmd, cmdx.FlagSource))
+		if err != nil {
+			return err
+		}
 		bundles, bundle, err := resolveBundleFlag(
 			cmdx.String(cmd, cmdx.FlagBundle), cmdx.Bool(cmd, cmdx.FlagBundles), args,
 		)
+		if err != nil {
+			return err
+		}
+		output, err := parseOutputFormat(cmdx.String(cmd, cmdx.FlagOutput))
 		if err != nil {
 			return err
 		}
@@ -56,8 +59,8 @@ Examples:
 			bundles:  bundles,
 			personal: inc.Personal,
 			bundle:   bundle,
-			source:   cmdx.String(cmd, cmdx.FlagSource),
-			output:   outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
+			source:   sourceFilter,
+			output:   output,
 		})
 	},
 }
@@ -87,11 +90,10 @@ func resolveBundleFlag(flagValue string, bundlesAlias bool, args []string) (list
 }
 
 type (
-	outputFormat string
-
 	catalogOpts struct {
 		bundles, personal bool
-		bundle, source    string
+		bundle            string
+		source            skill.Source
 		output            outputFormat
 	}
 
@@ -117,10 +119,6 @@ type (
 	}
 )
 
-func (o outputFormat) valid() bool {
-	return o == outputText || o == outputJSON
-}
-
 func runCatalog(cmd *cobra.Command, opts catalogOpts) error {
 	if !opts.output.valid() {
 		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
@@ -138,10 +136,6 @@ func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 	out := cmd.OutOrStdout()
 	ctx := cmd.Context()
 	capture := termkit.CaptureFromContext(ctx)
-
-	if opts.source != "" && opts.source != skill.SourceLocal.String() && opts.source != skill.SourceOfficial.String() {
-		return fmt.Errorf("--source must be '%s' or '%s'", skill.SourceLocal, skill.SourceOfficial)
-	}
 
 	cfg, err := config.Load()
 	if err != nil {
@@ -187,11 +181,11 @@ func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 // ("" means both), warning on (rather than failing for) a source that can't
 // be walked.
 func loadSkillsBySource(
-	ctx context.Context, out io.Writer, capture *termkit.Capture, cfg config.Config, sourceFilter string,
+	ctx context.Context, out io.Writer, capture *termkit.Capture, cfg config.Config, sourceFilter skill.Source,
 ) []skill.Skill {
 	var all []skill.Skill
 
-	if sourceFilter == "" || sourceFilter == skill.SourceLocal.String() {
+	if sourceFilter == "" || sourceFilter == skill.SourceLocal {
 		local, walkErr := newLocalSource(cfg).All(ctx)
 		if walkErr != nil {
 			warnOrCapture(out, capture, fmt.Sprintf("walk local skills: %v", walkErr))
@@ -200,7 +194,7 @@ func loadSkillsBySource(
 		}
 	}
 
-	if sourceFilter == "" || sourceFilter == skill.SourceOfficial.String() {
+	if sourceFilter == "" || sourceFilter == skill.SourceOfficial {
 		official, walkErr := source.NewOfficial(cfg.OfficialCache).All(ctx)
 		if walkErr != nil {
 			warnOrCapture(out, capture, walkErr.Error())

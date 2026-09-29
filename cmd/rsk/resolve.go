@@ -50,7 +50,7 @@ func projectSkillsDirs(projectRoot string, m manifest.Mod) []string {
 
 // resolveTargetDirs determines which skill directories an operation should act on.
 // Without --global it returns the per-tool project-local skills directories.
-func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string, error) {
+func resolveTargetDirs(cfg config.Config, global bool, forTool tool.ID) ([]string, error) {
 	if !global {
 		rskDir, err := manifest.ProjectFolderPath()
 		if err != nil {
@@ -64,7 +64,7 @@ func resolveTargetDirs(cfg config.Config, global bool, forTool string) ([]string
 	}
 
 	if forTool != "" {
-		dir, ok := cfg.GlobalTargets[forTool]
+		dir, ok := cfg.GlobalTargets[string(forTool)]
 		if !ok {
 			return nil, fieldError(
 				cmdx.FlagFor,

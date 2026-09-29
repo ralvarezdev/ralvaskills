@@ -33,7 +33,8 @@ func setupCommands() {
 	if err != nil {
 		panic("register --source completion: " + err.Error())
 	}
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
+	f.StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
+	registerOutputCompletion(catalogCmd)
 
 	// tools command (canonical) and the hidden legacy `claude tools` path,
 	// both built by the same factory.
@@ -61,6 +62,7 @@ func setupCommands() {
 	f.Bool(cmdx.FlagPin, false, "Also pin installed skills in the project (project scope only)")
 	f.String(cmdx.FlagVersion, "", "Pin to a specific repo tag (local skills only)")
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be installed without doing it")
+	registerForCompletion(installCmd, false)
 
 	// list command
 	rootCmd.AddCommand(listCmd)
@@ -69,12 +71,15 @@ func setupCommands() {
 	f.Bool(cmdx.FlagGlobal, false, "List global skills")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
 	cmdx.RegisterInclude(listCmd, "Include extra skills in the output", cmdx.IncludePersonal)
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
+	f.StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
+	registerOutputCompletion(listCmd)
+	registerForCompletion(listCmd, false)
 
 	// new command
 	rootCmd.AddCommand(newCmd)
 	f = newCmd.Flags()
 	f.String(cmdx.FlagFor, "", "Tools to configure: claude-code|opencode|all")
+	registerForCompletion(newCmd, true)
 
 	// pin and unpin commands
 	rootCmd.AddCommand(pinCmd)
@@ -91,7 +96,9 @@ func setupCommands() {
 	f.Bool(cmdx.FlagStack, false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
 	f.Bool(cmdx.FlagRefresh, false, "With --stack: bypass the 24h cache and force a re-fetch")
 	cmdx.RegisterInclude(statusCmd, "Include extra skills in the output", cmdx.IncludePersonal)
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
+	f.StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
+	registerOutputCompletion(statusCmd)
+	registerForCompletion(statusCmd, false)
 
 	// uninstall command
 	rootCmd.AddCommand(uninstallCmd)
@@ -101,6 +108,7 @@ func setupCommands() {
 	cmdx.RegisterInclude(uninstallCmd, "Allow uninstalling extra skills", cmdx.IncludePersonal)
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be uninstalled without doing it")
 	f.BoolP(cmdx.FlagYes, "y", false, "Skip the confirmation prompt")
+	registerForCompletion(uninstallCmd, false)
 
 	// update command
 	rootCmd.AddCommand(updateCmd)
@@ -114,6 +122,7 @@ func setupCommands() {
 		cmdx.IncludeOfficial,
 	)
 	f.Bool(cmdx.FlagDryRun, false, "Show what would be updated without doing it")
+	registerForCompletion(updateCmd, false)
 
 	// row actions: install/uninstall directly from a catalog/list table row
 	// in the TUI, instead of leaving the view to type the name.
@@ -123,6 +132,7 @@ func setupCommands() {
 	// row actions for the Claude tools view: allow, deny, or remove the tool
 	// under the cursor without leaving the table to type its rule.
 	for _, t := range []toolsCmds{canonicalTools, legacyTools} {
+		registerOutputCompletion(t.list)
 		ui.MarkRowAction(t.list, "a", "allow", t.allow)
 		ui.MarkRowAction(t.list, "d", "deny", t.deny)
 		ui.MarkRowAction(t.list, "x", "remove", t.remove)

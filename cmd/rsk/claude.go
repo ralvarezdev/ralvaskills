@@ -148,7 +148,7 @@ The rule format is Tool(specifier), for example:
 	for _, c := range []*cobra.Command{list, allow, deny, remove} {
 		c.Flags().String(cmdx.FlagFor, string(tool.ClaudeID), toolsForHint)
 	}
-	list.Flags().StringP(cmdx.FlagOutput, "o", string(outputText), "Output format: text|json")
+	list.Flags().StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
 	return toolsCmds{root: root, list: list, allow: allow, deny: deny, remove: remove}
 }
 
@@ -157,13 +157,17 @@ The rule format is Tool(specifier), for example:
 // supported yet" error, anything else an unknown-tool error.
 func requireClaudeTarget(cmd *cobra.Command) error {
 	target := cmdx.String(cmd, cmdx.FlagFor)
-	if target == "" || target == string(tool.ClaudeID) {
+	if target == "" {
 		return nil
 	}
-	if _, known := tool.Get(tool.ID(target)); known || target == cmdx.ForAll {
+	scope, err := cmdx.ParseTargetScope(target)
+	if err != nil {
+		return fmt.Errorf("unknown tool %q for --for (supported: %s)", target, tool.ClaudeID)
+	}
+	if scope != cmdx.TargetScope(tool.ClaudeID) {
 		return fmt.Errorf("--for %s is not supported yet: tools subcommands only support %s", target, tool.ClaudeID)
 	}
-	return fmt.Errorf("unknown tool %q for --for (supported: %s)", target, tool.ClaudeID)
+	return nil
 }
 
 func claudeToolGet() (*tool.ClaudeTool, error) {

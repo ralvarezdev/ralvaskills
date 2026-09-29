@@ -16,6 +16,7 @@ import (
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
@@ -41,10 +42,18 @@ Examples:
 		if _, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal); err != nil {
 			return err
 		}
+		forTool, err := forToolFlag(cmd)
+		if err != nil {
+			return err
+		}
+		output, err := parseOutputFormat(cmdx.String(cmd, cmdx.FlagOutput))
+		if err != nil {
+			return err
+		}
 		return runList(cmd, listOpts{
 			global:  cmdx.Bool(cmd, cmdx.FlagGlobal),
-			forTool: cmdx.String(cmd, cmdx.FlagFor),
-			output:  outputFormat(cmdx.String(cmd, cmdx.FlagOutput)),
+			forTool: forTool,
+			output:  output,
 		})
 	},
 }
@@ -52,7 +61,7 @@ Examples:
 type (
 	listOpts struct {
 		global  bool
-		forTool string
+		forTool tool.ID
 		output  outputFormat
 	}
 

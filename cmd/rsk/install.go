@@ -19,6 +19,7 @@ import (
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/source"
+	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
@@ -50,12 +51,16 @@ Examples:
 		if err != nil {
 			return err
 		}
+		forTool, err := forToolFlag(cmd)
+		if err != nil {
+			return err
+		}
 		return runInstall(cmd, installOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			dryRun:   cmdx.Bool(cmd, cmdx.FlagDryRun),
 			personal: inc.Personal,
 			pin:      cmdx.Bool(cmd, cmdx.FlagPin),
-			forTool:  cmdx.String(cmd, cmdx.FlagFor),
+			forTool:  forTool,
 			version:  cmdx.String(cmd, cmdx.FlagVersion),
 		}, args)
 	},
@@ -63,7 +68,8 @@ Examples:
 
 type installOpts struct {
 	global, dryRun, personal, pin bool
-	forTool, version              string
+	forTool                       tool.ID
+	version                       string
 }
 
 func runInstall(cmd *cobra.Command, opts installOpts, args []string) error {
