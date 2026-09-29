@@ -14,8 +14,6 @@ import (
 )
 
 func TestVisibleTopLevelCommandsAreGrouped(t *testing.T) {
-	t.Parallel()
-
 	declared := make([]string, 0, len(rootGroups))
 	for _, group := range rootCmd.Groups() {
 		declared = append(declared, group.ID)
@@ -32,8 +30,6 @@ func TestVisibleTopLevelCommandsAreGrouped(t *testing.T) {
 }
 
 func TestLegacyClaudeToolsPathIsHiddenButReachable(t *testing.T) {
-	t.Parallel()
-
 	if !claudeCmd.Hidden {
 		t.Error("legacy claude command must be hidden")
 	}
@@ -58,8 +54,6 @@ func TestLegacyClaudeToolsPathIsHiddenButReachable(t *testing.T) {
 }
 
 func TestRequireClaudeTarget(t *testing.T) {
-	t.Parallel()
-
 	cases := map[string]string{
 		"":            "",
 		"claude-code": "",
@@ -83,8 +77,6 @@ func TestRequireClaudeTarget(t *testing.T) {
 }
 
 func TestShouldConfirm(t *testing.T) {
-	t.Parallel()
-
 	plain := &cobra.Command{Use: "x"}
 	plain.SetContext(context.Background())
 	captured := &cobra.Command{Use: "x"}
@@ -108,8 +100,6 @@ func TestShouldConfirm(t *testing.T) {
 }
 
 func TestDestructiveCommandsHaveYesFlag(t *testing.T) {
-	t.Parallel()
-
 	for _, cmd := range []*cobra.Command{destroyCmd, uninstallCmd} {
 		f := cmd.Flags().Lookup(cmdx.FlagYes)
 		if f == nil || f.Shorthand != "y" {
@@ -119,8 +109,6 @@ func TestDestructiveCommandsHaveYesFlag(t *testing.T) {
 }
 
 func TestLegacyUnpinIsHiddenButReachable(t *testing.T) {
-	t.Parallel()
-
 	found, _, err := rootCmd.Find([]string{"unpin"})
 	if err != nil || found != unpinCmd || !unpinCmd.Hidden {
 		t.Fatalf("unpin: found=%v hidden=%v err=%v, want hidden and reachable", found, unpinCmd.Hidden, err)
@@ -134,8 +122,6 @@ func TestLegacyUnpinIsHiddenButReachable(t *testing.T) {
 }
 
 func TestSourceScopeFlagsRegistered(t *testing.T) {
-	t.Parallel()
-
 	for _, cmd := range []*cobra.Command{installCmd, uninstallCmd, updateCmd, listCmd, statusCmd, catalogCmd} {
 		if f := cmd.Flags().Lookup(cmdx.FlagInclude); f == nil || f.Hidden {
 			t.Errorf("%s: --include missing or hidden", cmd.Name())
@@ -159,8 +145,6 @@ func TestSourceScopeFlagsRegistered(t *testing.T) {
 }
 
 func TestResolveBundleFlag(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		name      string
 		flag      string
@@ -198,8 +182,6 @@ func TestResolveBundleFlag(t *testing.T) {
 }
 
 func TestSessionRunnable(t *testing.T) {
-	t.Parallel()
-
 	cases := []struct {
 		cmd  *cobra.Command
 		name string

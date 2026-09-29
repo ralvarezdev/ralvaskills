@@ -2,6 +2,7 @@ package ui
 
 import (
 	"sort"
+	"sync"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -31,8 +32,12 @@ type rowActionEntry struct {
 type RowActionScope func(table termkit.Data) map[string]string
 
 // rowActions maps a table-view command to the row actions available while
-// its captured result is showing, keyed by the key pressed.
-var rowActions = map[*cobra.Command]map[string]rowActionEntry{}
+// its captured result is showing, keyed by the key pressed. Registration
+// happens during setup and reads during a run, so the map is guarded.
+var (
+	rowActionsMu sync.RWMutex
+	rowActions   = map[*cobra.Command]map[string]rowActionEntry{}
+)
 
 // MarkRowAction records that, while source's captured result view is
 // showing, pressing key runs target with the selected row's ID as its sole
@@ -49,6 +54,8 @@ func MarkRowAction(source *cobra.Command, key, label string, target *cobra.Comma
 func MarkRowActionScoped(
 	source *cobra.Command, key, label string, target *cobra.Command, scope RowActionScope,
 ) {
+	rowActionsMu.Lock()
+	defer rowActionsMu.Unlock()
 	if rowActions[source] == nil {
 		rowActions[source] = map[string]rowActionEntry{}
 	}
@@ -59,6 +66,8 @@ func MarkRowActionScoped(
 // via MarkRowAction, sorted by key, for building a captured termkit.Data's
 // Actions.
 func RowActionsFor(source *cobra.Command) []termkit.RowAction {
+	rowActionsMu.RLock()
+	defer rowActionsMu.RUnlock()
 	entries := rowActions[source]
 	if len(entries) == 0 {
 		return nil
@@ -80,6 +89,8 @@ func RowActionsFor(source *cobra.Command) []termkit.RowAction {
 // source's key, along with its scope resolver, or ok=false if none is
 // registered.
 func rowActionFor(source *cobra.Command, key string) (target *cobra.Command, scope RowActionScope, ok bool) {
+	rowActionsMu.RLock()
+	defer rowActionsMu.RUnlock()
 	e, found := rowActions[source][key]
 	return e.cmd, e.scope, found
 }
