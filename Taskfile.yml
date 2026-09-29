@@ -178,6 +178,19 @@ tasks:
       - go get -u ./...
       - go mod tidy
 
+  # Downloads into a throwaway module cache so a missing GOPRIVATE or git auth
+  # fails here instead of on a clean machine or CI. -modcacherw keeps the
+  # cache deletable; `go clean -modcache` empties it before and after.
+  deps:check:
+    desc: Verify every Go module resolves from an empty module cache
+    env:
+      GOMODCACHE: '{{.ROOT_DIR}}/.task/modcheck'
+      GOFLAGS: -modcacherw
+    cmds:
+      - defer: go clean -modcache
+      - go clean -modcache
+      - go mod download
+
   test:
     desc: Run all tests
     cmds:
