@@ -28,3 +28,17 @@ func TestDefaultConfigFolderPathNoEnvOverride(t *testing.T) {
 		t.Errorf("DefaultConfigFolderPath() = %q, want a path ending in %q", got, ConfigFolderName)
 	}
 }
+
+//nolint:paralleltest // mutates package-level state
+func TestDefaultConfigFolderPathFlagOverride(t *testing.T) {
+	want := filepath.Join(t.TempDir(), "from-flag")
+	SetConfigHome(want)
+	t.Cleanup(func() { SetConfigHome("") })
+
+	if got := DefaultConfigFolderPath(); got != want {
+		t.Errorf("DefaultConfigFolderPath() = %q, want %q", got, want)
+	}
+	if got, want2 := DefaultConfigFilePath(), filepath.Join(want, ConfigFileName); got != want2 {
+		t.Errorf("DefaultConfigFilePath() = %q, want %q", got, want2)
+	}
+}

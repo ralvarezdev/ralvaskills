@@ -36,9 +36,22 @@ const (
 	DefaultRegistryURL = "https://skills.ralvarez.dev"
 )
 
+// configHomeOverride is set by the --config flag; it wins over the environment.
+var configHomeOverride string
+
+// SetConfigHome overrides the config folder for this process (the --config
+// flag). An empty dir clears the override.
+func SetConfigHome(dir string) {
+	configHomeOverride = dir
+}
+
 // DefaultConfigFolderPath returns the canonical path of the rsk config folder
-// (~/.config/rsk), or $RSK_CONFIG_HOME if set.
+// (~/.config/rsk), the --config override, or the RSK_CONFIG_HOME environment
+// override, in that order.
 func DefaultConfigFolderPath() string {
+	if configHomeOverride != "" {
+		return configHomeOverride
+	}
 	if dir := os.Getenv(EnvConfigHome); dir != "" {
 		return dir
 	}

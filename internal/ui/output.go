@@ -11,6 +11,31 @@ import (
 // Padding is the standard left/right padding for UI output.
 const Padding = "  "
 
+// quiet suppresses informational lines (Info, Indent, Dim); warnings, results,
+// and errors always print. It is set by the --quiet flag.
+var quiet bool
+
+// verbose enables Debug diagnostics. It is set by the --verbose flag.
+var verbose bool
+
+// SetQuiet silences informational output.
+func SetQuiet(v bool) {
+	quiet = v
+}
+
+// SetVerbose enables debug diagnostics.
+func SetVerbose(v bool) {
+	verbose = v
+}
+
+// Debug prints a muted diagnostic line to w when --verbose is set.
+func Debug(w io.Writer, msg string) {
+	if !verbose {
+		return
+	}
+	fmt.Fprintln(w, MutedStyle.Render("debug: "+msg))
+}
+
 // Brand prints the rsk name and version header.
 func Brand(w io.Writer, version string) {
 	_, _ = fmt.Fprintf(w, "\n"+Padding+"%s"+Padding+"%s\n\n",
@@ -72,17 +97,26 @@ func Failf(w io.Writer, format string, args ...any) {
 	Fail(w, fmt.Sprintf(format, args...))
 }
 
-// Info prints a plain line.
+// Info prints a plain line, unless --quiet is set.
 func Info(w io.Writer, msg string) {
+	if quiet {
+		return
+	}
 	fmt.Fprintln(w, msg)
 }
 
-// Indent prints a muted indented line.
+// Indent prints a muted indented line, unless --quiet is set.
 func Indent(w io.Writer, msg string) {
+	if quiet {
+		return
+	}
 	fmt.Fprintln(w, Padding+MutedStyle.Render(msg))
 }
 
-// Dim prints a muted line with no indentation.
+// Dim prints a muted line with no indentation, unless --quiet is set.
 func Dim(w io.Writer, msg string) {
+	if quiet {
+		return
+	}
 	fmt.Fprintln(w, MutedStyle.Render(msg))
 }

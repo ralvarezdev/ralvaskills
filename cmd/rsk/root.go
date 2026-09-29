@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
@@ -102,13 +103,37 @@ func init() {
 		version, commit, buildDate = buildInfoFallback(version, commit, buildDate)
 	}
 
-	rootCmd.PersistentFlags().Bool("no-color", false, "disable color output")
+	pf := rootCmd.PersistentFlags()
+	pf.Bool("no-color", false, "disable color output")
+	pf.String("config", "", "rsk config directory (default: $RSK_CONFIG_HOME or ~/.config/rsk)")
+	pf.BoolP("verbose", "v", false, "print diagnostic detail")
+	pf.BoolP("quiet", "q", false, "suppress informational output")
+
 	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, _ []string) error {
 		noColor, err := cmd.Flags().GetBool("no-color")
 		if err != nil {
 			return err
 		}
 		ui.SetNoColor(noColor)
+
+		if dir, dirErr := cmd.Flags().GetString("config"); dirErr != nil {
+			return dirErr
+		} else if dir != "" {
+			config.SetConfigHome(dir)
+		}
+
+		quiet, err := cmd.Flags().GetBool("quiet")
+		if err != nil {
+			return err
+		}
+		ui.SetQuiet(quiet)
+
+		verbose, err := cmd.Flags().GetBool("verbose")
+		if err != nil {
+			return err
+		}
+		ui.SetVerbose(verbose)
+		ui.Debug(cmd.ErrOrStderr(), "config dir "+config.DefaultConfigFolderPath())
 
 		return nil
 	}
