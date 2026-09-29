@@ -44,11 +44,13 @@ func TestDestructiveCommandsAskForConfirmationInTheSession(t *testing.T) {
 	}
 }
 
-func TestConfirmProceedSkipsThePromptInTheSession(t *testing.T) {
+func TestConfirmSkipsThePromptInTheSession(t *testing.T) {
 	t.Parallel()
 
 	var out strings.Builder
-	if !confirmProceed(sessionCmd(), &out, "Proceed?") {
+	cmd := sessionCmd()
+	cmd.SetErr(&out)
+	if !termkit.Confirm(cmd, false, termkit.StdioIsTerminal(), "Proceed?") {
 		t.Fatal("the session already confirmed; the command must go ahead")
 	}
 	if out.Len() != 0 {

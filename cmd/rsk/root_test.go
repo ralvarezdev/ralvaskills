@@ -1,14 +1,11 @@
 package main
 
 import (
-	"context"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
-
-	"github.com/ralvarezdev/termkit"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 )
@@ -72,29 +69,6 @@ func TestRequireClaudeTarget(t *testing.T) {
 			t.Errorf("--for %q: unexpected error %v", value, err)
 		case wantErr != "" && (err == nil || !strings.Contains(err.Error(), wantErr)):
 			t.Errorf("--for %q: error %v, want containing %q", value, err, wantErr)
-		}
-	}
-}
-
-func TestShouldConfirm(t *testing.T) {
-	plain := &cobra.Command{Use: "x"}
-	plain.SetContext(context.Background())
-	captured := &cobra.Command{Use: "x"}
-	captured.SetContext(termkit.WithCapture(context.Background(), &termkit.Capture{}))
-
-	cases := []struct {
-		name string
-		cmd  *cobra.Command
-		yes  bool
-		want bool
-	}{
-		{"prompts by default", plain, false, true},
-		{"--yes skips", plain, true, false},
-		{"captured session skips", captured, false, false},
-	}
-	for _, tc := range cases {
-		if got := shouldConfirm(tc.cmd, tc.yes); got != tc.want {
-			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
 		}
 	}
 }

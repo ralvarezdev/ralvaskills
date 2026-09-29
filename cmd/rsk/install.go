@@ -198,7 +198,7 @@ func runInstallGlobal(
 	if opts.dryRun {
 		return nil
 	}
-	if !confirmDestructive(cmd, out, opts.yes) {
+	if !termkit.Confirm(cmd, opts.yes, termkit.StdioIsTerminal(), "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		return nil
 	}
@@ -323,7 +323,7 @@ func previewAndConfirm(
 	if dryRun {
 		return false
 	}
-	if !confirmDestructive(cmd, out, yes) {
+	if !termkit.Confirm(cmd, yes, termkit.StdioIsTerminal(), "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		return false
 	}

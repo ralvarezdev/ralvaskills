@@ -46,37 +46,6 @@ func fieldError(field, message string, args ...any) error {
 	return termkit.NewFieldError(field, fmt.Errorf(message, args...))
 }
 
-// confirmProceed asks prompt on the terminal and reports whether to go ahead.
-// Inside the interactive session it always does: a destructive command was
-// already confirmed there (termkit.MarkDestructive), and the session owns the
-// terminal, so there is nothing to ask on.
-func confirmProceed(cmd *cobra.Command, out io.Writer, prompt string) bool {
-	return ui.InSession(cmd.Context()) || ui.ConfirmYN(out, prompt)
-}
-
-// shouldConfirm reports whether a destructive command must ask "Proceed?":
-// always, except with --yes, or inside the TUI session, whose confirm screen
-// already asked. Piped runs still ask (a plain-text prompt that aborts on
-// EOF), as before.
-func shouldConfirm(cmd *cobra.Command, yes bool) bool {
-	return !yes && !ui.InSession(cmd.Context())
-}
-
-// confirmDestructive asks "Proceed?" when shouldConfirm says so and reports
-// whether the command may go ahead; every other case proceeds silently.
-func confirmDestructive(cmd *cobra.Command, out io.Writer, yes bool) bool {
-	return confirmOrYes(cmd, out, yes, "Proceed?")
-}
-
-// confirmOrYes is confirmDestructive with a caller-chosen prompt, for the
-// destructive commands whose confirmation is not the generic "Proceed?".
-func confirmOrYes(cmd *cobra.Command, out io.Writer, yes bool, prompt string) bool {
-	if !shouldConfirm(cmd, yes) {
-		return true
-	}
-	return ui.ConfirmYN(out, prompt)
-}
-
 // nameFromArgsOrPrompt returns args[0] if provided, otherwise prompts
 // interactively. Inside the session, which cannot prompt, the missing value is
 // reported against the form field named field.

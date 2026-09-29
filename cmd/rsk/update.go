@@ -107,7 +107,7 @@ func runUpdateLocal(cmd *cobra.Command, args []string, cfg config.Config, opts u
 		return nil
 	}
 
-	if !confirmDestructive(cmd, out, opts.yes) {
+	if !termkit.Confirm(cmd, opts.yes, termkit.StdioIsTerminal(), "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		return nil
 	}
@@ -318,7 +318,7 @@ func runOfficialCacheRefresh(cmd *cobra.Command, cfg config.Config, dryRun, yes 
 		return nil
 	}
 
-	if !confirmOrYes(cmd, out, yes, "Refresh anthropics/skills cache?") {
+	if !termkit.Confirm(cmd, yes, termkit.StdioIsTerminal(), "Refresh anthropics/skills cache?") {
 		fmt.Fprintln(out, "Skipped official cache refresh.")
 		return nil
 	}
@@ -370,7 +370,7 @@ func runUpdateRegistry(cmd *cobra.Command, args []string, cfg config.Config, opt
 		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
 		return nil
 	}
-	if !confirmDestructive(cmd, out, opts.yes) {
+	if !termkit.Confirm(cmd, opts.yes, termkit.StdioIsTerminal(), "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		saveUpdateCache(out, cfg, updatePairNames(toUpdate))
 		return nil

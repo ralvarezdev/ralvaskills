@@ -118,7 +118,7 @@ func runUninstall(cmd *cobra.Command, opts uninstallOpts, args []string) error {
 	if opts.dryRun {
 		return nil
 	}
-	if !confirmDestructive(cmd, out, opts.yes) {
+	if !termkit.Confirm(cmd, opts.yes, termkit.StdioIsTerminal(), "Proceed?") {
 		fmt.Fprintln(out, "Aborted.")
 		return nil
 	}
