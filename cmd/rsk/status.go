@@ -100,7 +100,7 @@ type (
 
 func runStatus(cmd *cobra.Command, opts statusOpts) error {
 	out := cmd.OutOrStdout()
-	capture := ui.CaptureFromContext(cmd.Context())
+	capture := termkit.CaptureFromContext(cmd.Context())
 
 	if err := validateStatusOpts(opts); err != nil {
 		return err

@@ -11,7 +11,6 @@ import (
 	"github.com/ralvarezdev/termkit"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 func TestVisibleTopLevelCommandsAreGrouped(t *testing.T) {
@@ -89,7 +88,7 @@ func TestShouldConfirm(t *testing.T) {
 	plain := &cobra.Command{Use: "x"}
 	plain.SetContext(context.Background())
 	captured := &cobra.Command{Use: "x"}
-	captured.SetContext(ui.WithCapture(context.Background(), &termkit.Capture{}))
+	captured.SetContext(termkit.WithCapture(context.Background(), &termkit.Capture{}))
 
 	cases := []struct {
 		name string

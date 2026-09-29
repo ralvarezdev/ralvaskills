@@ -12,11 +12,10 @@ import (
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 // TestRunCatalogSkillsCapture guards the picker's captured/scrollable path
-// for `rsk catalog`: under a ui.WithCapture-wrapped context, the skill table
+// for `rsk catalog`: under a termkit.WithCapture-wrapped context, the skill table
 // must land in the capture and nothing must be written to the command's own
 // writer.
 func TestRunCatalogSkillsCapture(t *testing.T) {
@@ -46,13 +45,13 @@ func TestRunCatalogSkillsCapture(t *testing.T) {
 
 	var buf bytes.Buffer
 	catalogCmd.SetOut(&buf)
-	catalogCmd.SetContext(ui.WithCapture(t.Context(), &termkit.Capture{}))
+	catalogCmd.SetContext(termkit.WithCapture(t.Context(), &termkit.Capture{}))
 	t.Cleanup(func() {
 		catalogCmd.SetOut(nil)
 		catalogCmd.SetContext(context.Background())
 	})
 
-	capture := ui.CaptureFromContext(catalogCmd.Context())
+	capture := termkit.CaptureFromContext(catalogCmd.Context())
 	if capture == nil {
 		t.Fatal("expected a capture on the command's context")
 	}
@@ -105,13 +104,13 @@ func TestRunCatalogSkillsCaptureJSON(t *testing.T) {
 
 	var buf bytes.Buffer
 	catalogCmd.SetOut(&buf)
-	catalogCmd.SetContext(ui.WithCapture(t.Context(), &termkit.Capture{}))
+	catalogCmd.SetContext(termkit.WithCapture(t.Context(), &termkit.Capture{}))
 	t.Cleanup(func() {
 		catalogCmd.SetOut(nil)
 		catalogCmd.SetContext(context.Background())
 	})
 
-	capture := ui.CaptureFromContext(catalogCmd.Context())
+	capture := termkit.CaptureFromContext(catalogCmd.Context())
 	if capture == nil {
 		t.Fatal("expected a capture on the command's context")
 	}

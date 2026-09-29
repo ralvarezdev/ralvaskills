@@ -84,7 +84,7 @@ func runList(cmd *cobra.Command, opts listOpts) error {
 
 func runListProject(cmd *cobra.Command, opts listOpts) error {
 	out := cmd.OutOrStdout()
-	capture := ui.CaptureFromContext(cmd.Context())
+	capture := termkit.CaptureFromContext(cmd.Context())
 
 	rskDir, err := manifest.ProjectFolderPath()
 	if err != nil {
@@ -188,7 +188,7 @@ var listProjectTable = termkit.Table[listedSkill]{
 
 func runListGlobal(cmd *cobra.Command, opts listOpts) error {
 	out := cmd.OutOrStdout()
-	capture := ui.CaptureFromContext(cmd.Context())
+	capture := termkit.CaptureFromContext(cmd.Context())
 
 	cfg, err := config.Load()
 	if err != nil {

@@ -11,7 +11,6 @@ import (
 	"github.com/ralvarezdev/termkit"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 // TestRunStatusGlobalDoesNotRequireProject guards against the regression where
@@ -99,7 +98,7 @@ func TestRunStatusJSONOutput(t *testing.T) {
 }
 
 // TestRunStatusCapture guards the picker's captured/scrollable path for
-// `rsk status --global`: under a ui.WithCapture-wrapped context, the section
+// `rsk status --global`: under a termkit.WithCapture-wrapped context, the section
 // table must land in the capture and nothing must be written to the
 // command's own writer.
 func TestRunStatusCapture(t *testing.T) {
@@ -139,13 +138,13 @@ func TestRunStatusCapture(t *testing.T) {
 
 	var buf bytes.Buffer
 	statusCmd.SetOut(&buf)
-	statusCmd.SetContext(ui.WithCapture(t.Context(), &termkit.Capture{}))
+	statusCmd.SetContext(termkit.WithCapture(t.Context(), &termkit.Capture{}))
 	t.Cleanup(func() {
 		statusCmd.SetOut(nil)
 		statusCmd.SetContext(context.Background())
 	})
 
-	capture := ui.CaptureFromContext(statusCmd.Context())
+	capture := termkit.CaptureFromContext(statusCmd.Context())
 	if capture == nil {
 		t.Fatal("expected a capture on the command's context")
 	}

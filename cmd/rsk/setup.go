@@ -16,7 +16,7 @@ func setupCommands() {
 
 	// catalog command
 	rootCmd.AddCommand(catalogCmd)
-	ui.MarkTableView(catalogCmd)
+	termkit.MarkTableView(catalogCmd)
 	f := catalogCmd.Flags()
 	f.Bool(cmdx.FlagStack, false, "Fetch and display dependency metadata alongside skills")
 	f.Bool(cmdx.FlagBundles, false, "Alias for --bundle with no name")
@@ -38,10 +38,10 @@ func setupCommands() {
 	// tools command (canonical) and the hidden legacy `claude tools` path,
 	// both built by the same factory.
 	rootCmd.AddCommand(canonicalTools.root)
-	ui.MarkTableView(canonicalTools.list)
+	termkit.MarkTableView(canonicalTools.list)
 	rootCmd.AddCommand(claudeCmd)
 	claudeCmd.AddCommand(legacyTools.root)
-	ui.MarkTableView(legacyTools.list)
+	termkit.MarkTableView(legacyTools.list)
 
 	// destroy command
 	rootCmd.AddCommand(destroyCmd)
@@ -64,7 +64,7 @@ func setupCommands() {
 
 	// list command
 	rootCmd.AddCommand(listCmd)
-	ui.MarkTableView(listCmd)
+	termkit.MarkTableView(listCmd)
 	f = listCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "List global skills")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
@@ -83,7 +83,7 @@ func setupCommands() {
 
 	// status command
 	rootCmd.AddCommand(statusCmd)
-	ui.MarkTableView(statusCmd)
+	termkit.MarkTableView(statusCmd)
 	f = statusCmd.Flags()
 	f.Bool(cmdx.FlagGlobal, false, "Show global skills only")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")

@@ -23,7 +23,7 @@ func newTestTree() (root, view, say, fail *cobra.Command) {
 		Use: "view",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			fmt.Fprintln(cmd.OutOrStdout(), "ignored: the table replaces text output")
-			capture := CaptureFromContext(cmd.Context())
+			capture := termkit.CaptureFromContext(cmd.Context())
 			if capture == nil {
 				return errors.New("no capture on the context")
 			}
@@ -35,7 +35,7 @@ func newTestTree() (root, view, say, fail *cobra.Command) {
 		},
 	}
 	view.Flags().Bool("json", false, "raw output")
-	MarkTableView(view)
+	termkit.MarkTableView(view)
 
 	say = &cobra.Command{
 		Use:  "say [word...]",
@@ -138,7 +138,7 @@ func TestRunCapturedDoesNotPinContext(t *testing.T) {
 	if _, err := RunCaptured(root)(context.Background(), view, []string{"rsk", "view"}); err != nil {
 		t.Fatalf("run: %v", err)
 	}
-	if CaptureFromContext(view.Context()) != nil {
+	if termkit.CaptureFromContext(view.Context()) != nil {
 		t.Fatal("the command kept the run's capture; the next run would record into it")
 	}
 }
@@ -149,7 +149,7 @@ func TestInSession(t *testing.T) {
 	if InSession(nil) || InSession(context.Background()) { //nolint:staticcheck // nil context is the case under test
 		t.Error("a plain context is not a session")
 	}
-	if !InSession(WithCapture(context.Background(), &termkit.Capture{})) {
+	if !InSession(termkit.WithCapture(context.Background(), &termkit.Capture{})) {
 		t.Error("a captured context is a session")
 	}
 }

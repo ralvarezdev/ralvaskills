@@ -137,7 +137,7 @@ func runCatalog(cmd *cobra.Command, opts catalogOpts) error {
 func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 	out := cmd.OutOrStdout()
 	ctx := cmd.Context()
-	capture := ui.CaptureFromContext(ctx)
+	capture := termkit.CaptureFromContext(ctx)
 
 	if opts.source != "" && opts.source != skill.SourceLocal.String() && opts.source != skill.SourceOfficial.String() {
 		return fmt.Errorf("--source must be '%s' or '%s'", skill.SourceLocal, skill.SourceOfficial)
@@ -283,7 +283,7 @@ func skillsToEntries(skills []skill.Skill) []skillEntry {
 
 func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 	out := cmd.OutOrStdout()
-	capture := ui.CaptureFromContext(cmd.Context())
+	capture := termkit.CaptureFromContext(cmd.Context())
 
 	cfg, err := config.Load()
 	if err != nil {

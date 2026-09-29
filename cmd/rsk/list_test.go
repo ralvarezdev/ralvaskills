@@ -11,7 +11,6 @@ import (
 	"github.com/ralvarezdev/termkit"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 // TestRunListGlobalLabelsRowsByTool guards against the regression where a
@@ -83,7 +82,7 @@ func TestRunListGlobalLabelsRowsByTool(t *testing.T) {
 }
 
 // TestRunListGlobalCapture guards the picker's captured/scrollable path for
-// `rsk list --global`: under a ui.WithCapture-wrapped context, the table must
+// `rsk list --global`: under a termkit.WithCapture-wrapped context, the table must
 // land in the capture (for the TUI's result screen to render) and nothing
 // must be written to the command's own writer, since a captured run's output
 // would otherwise print behind the TUI.
@@ -121,13 +120,13 @@ func TestRunListGlobalCapture(t *testing.T) {
 
 	var buf bytes.Buffer
 	listCmd.SetOut(&buf)
-	listCmd.SetContext(ui.WithCapture(t.Context(), &termkit.Capture{}))
+	listCmd.SetContext(termkit.WithCapture(t.Context(), &termkit.Capture{}))
 	t.Cleanup(func() {
 		listCmd.SetOut(nil)
 		listCmd.SetContext(context.Background())
 	})
 
-	capture := ui.CaptureFromContext(listCmd.Context())
+	capture := termkit.CaptureFromContext(listCmd.Context())
 	if capture == nil {
 		t.Fatal("expected a capture on the command's context")
 	}

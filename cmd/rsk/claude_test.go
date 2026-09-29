@@ -12,7 +12,6 @@ import (
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 // TestRunClaudeToolsListJSONOutput checks that -o json on `rsk claude tools
@@ -77,7 +76,7 @@ func TestRunClaudeToolsListJSONOutput(t *testing.T) {
 }
 
 // TestRunClaudeToolsListCapture guards the picker's captured/scrollable path
-// for `rsk claude tools list`: under a ui.WithCapture-wrapped context, the
+// for `rsk claude tools list`: under a termkit.WithCapture-wrapped context, the
 // table must land in the capture and nothing must be written to the
 // command's own writer.
 //
@@ -100,13 +99,13 @@ func TestRunClaudeToolsListCapture(t *testing.T) {
 
 	var buf bytes.Buffer
 	canonicalTools.list.SetOut(&buf)
-	canonicalTools.list.SetContext(ui.WithCapture(t.Context(), &termkit.Capture{}))
+	canonicalTools.list.SetContext(termkit.WithCapture(t.Context(), &termkit.Capture{}))
 	t.Cleanup(func() {
 		canonicalTools.list.SetOut(nil)
 		canonicalTools.list.SetContext(context.Background())
 	})
 
-	capture := ui.CaptureFromContext(canonicalTools.list.Context())
+	capture := termkit.CaptureFromContext(canonicalTools.list.Context())
 	if capture == nil {
 		t.Fatal("expected a capture on the command's context")
 	}

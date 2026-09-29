@@ -10,7 +10,6 @@ import (
 	"github.com/ralvarezdev/termkit"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
 // sessionCmd returns a command whose context marks it as running inside the
@@ -18,7 +17,7 @@ import (
 func sessionCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "x"}
 	cmd.Flags().String(cmdx.FlagFor, "", "")
-	cmd.SetContext(ui.WithCapture(context.Background(), &termkit.Capture{}))
+	cmd.SetContext(termkit.WithCapture(context.Background(), &termkit.Capture{}))
 	return cmd
 }
 

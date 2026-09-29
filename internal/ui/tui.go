@@ -104,7 +104,7 @@ func RunCaptured(root *cobra.Command) session.RunFunc {
 		capture := &termkit.Capture{}
 		var out bytes.Buffer
 
-		ctx = WithCapture(ctx, capture)
+		ctx = termkit.WithCapture(ctx, capture)
 		termkit.ResetFlags(target)
 		// cobra hands a command the run's context only while it has none, and
 		// ResetFlags leaves it with a stale one.
@@ -124,7 +124,7 @@ func RunCaptured(root *cobra.Command) session.RunFunc {
 			return nil, err
 		}
 
-		if text := strings.TrimSpace(out.String()); text != "" && !IsTableView(target) {
+		if text := strings.TrimSpace(out.String()); text != "" && !termkit.IsTableView(target) {
 			capture.AddMessage(text)
 		}
 		return capture, nil

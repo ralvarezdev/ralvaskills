@@ -190,7 +190,7 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	out := cmd.OutOrStdout()
-	capture := ui.CaptureFromContext(cmd.Context())
+	capture := termkit.CaptureFromContext(cmd.Context())
 
 	output := outputFormat(cmdx.String(cmd, cmdx.FlagOutput))
 	if !output.valid() {
