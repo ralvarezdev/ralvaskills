@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-09-27T21:10:27Z",
+  "generated_at": "2026-09-30T03:04:50Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -304,6 +304,19 @@
           "version": "1.1.0",
           "published_at": "2026-07-08T23:50:23Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/hexagonal-arch@v1.1.0/hexagonal-arch-v1.1.0.tar.gz"
+        }
+      }
+    },
+    "house-kits": {
+      "name": "house-kits",
+      "description": "Maps a need to the ralvarezdev shared Go modules — restkit, ginkit, pgkit, mcpkit (REST envelope and problem details, gin, Postgres, MCP), identity and identitygin (accounts, auth, PATs), ratelimit, email, webpush, termkit (CLI UI). Use when building or extending a Go API, MCP server, CLI or Postgres store, before hand-writing envelopes, cursors, pgtype conversions, auth, rate limiting, mail or push.",
+      "personal": true,
+      "latest": "0.2.0",
+      "versions": {
+        "0.2.0": {
+          "version": "0.2.0",
+          "published_at": "2026-09-30T03:04:50Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/house-kits@v0.2.0/house-kits-v0.2.0.tar.gz"
         }
       }
     },
