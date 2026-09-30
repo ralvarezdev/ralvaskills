@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ralvarezdev/termkit"
+	"github.com/ralvarezdev/termkit/output"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
@@ -134,7 +135,7 @@ The rule format is Tool(specifier), for example:
 	for _, c := range []*cobra.Command{list, allow, deny, remove} {
 		c.Flags().String(cmdx.FlagFor, string(tool.ClaudeID), toolsForHint)
 	}
-	list.Flags().StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
+	addOutputFlag(list)
 	return toolsCmds{root: root, list: list, allow: allow, deny: deny, remove: remove}
 }
 
@@ -176,16 +177,13 @@ type claudeToolsPermissions struct {
 }
 
 func runClaudeToolsList(cmd *cobra.Command, args []string) error {
+	if err := checkOutput(cmd); err != nil {
+		return err
+	}
 	if err := requireClaudeTarget(cmd); err != nil {
 		return err
 	}
-	out := cmd.OutOrStdout()
-	capture := termkit.CaptureFromContext(cmd.Context())
-
-	output := outputFormat(cmdx.String(cmd, cmdx.FlagOutput))
-	if !output.valid() {
-		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
-	}
+	format := printer.Format(cmd)
 
 	cwd, err := manifest.ProjectFolderPath()
 	if err != nil {
@@ -202,8 +200,8 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if output == outputJSON {
-		return writeOrCaptureJSON(out, capture, claudeToolsPermissions{Allow: allow, Deny: deny})
+	if format == output.FormatJSON {
+		return newFormatter(cmd, format).JSON(claudeToolsPermissions{Allow: allow, Deny: deny})
 	}
 
 	rows := make([]claudeToolRow, 0, len(availableClaudeTools))
@@ -220,23 +218,8 @@ func runClaudeToolsList(cmd *cobra.Command, args []string) error {
 
 	header := []string{headerName, "Status"}
 	tableRows := termkit.Rows(rows, claudeToolsTable)
-	if capture != nil {
-		capture.AddTable(termkit.Data{
-			Headers: header,
 
-			Rows:    tableRows,
-			IDs:     claudeToolNames(),
-			Actions: ui.RowActionsFor(cmd),
-		})
-		return nil
-	}
-
-	fmt.Fprintln(out)
-	ui.Header(out, "Claude Code tools available:")
-	termkit.WriteTableStyled(out, header, tableRows, false, nil, termkit.TableBorderless, ui.Theme)
-	fmt.Fprintln(out)
-
-	return nil
+	return renderList(cmd, format, "Claude Code tools available:", rows, header, tableRows, claudeToolNames())
 }
 
 // claudeToolStatus is a Claude tool's permission state relative to the

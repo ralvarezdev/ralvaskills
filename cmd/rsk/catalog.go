@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ralvarezdev/termkit"
+	"github.com/ralvarezdev/termkit/output"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
@@ -49,11 +50,7 @@ var catalogBundlesCmd = &cobra.Command{
 	Short: "List the catalog's bundles and how many of their skills are installed.",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		output, err := parseOutputFormat(cmdx.String(cmd, cmdx.FlagOutput))
-		if err != nil {
-			return err
-		}
-		return runCatalogBundles(cmd, catalogOpts{output: output})
+		return runCatalogBundles(cmd, catalogOpts{format: printer.Format(cmd)})
 	},
 }
 
@@ -83,11 +80,7 @@ func catalogSkillsOpts(cmd *cobra.Command) (catalogOpts, error) {
 	if err != nil {
 		return catalogOpts{}, err
 	}
-	output, err := parseOutputFormat(cmdx.String(cmd, cmdx.FlagOutput))
-	if err != nil {
-		return catalogOpts{}, err
-	}
-	return catalogOpts{personal: inc.Personal, source: sourceFilter, output: output}, nil
+	return catalogOpts{personal: inc.Personal, source: sourceFilter, format: printer.Format(cmd)}, nil
 }
 
 type (
@@ -95,7 +88,7 @@ type (
 		personal bool
 		bundle   string
 		source   skill.Source
-		output   outputFormat
+		format   output.OutputFormat
 	}
 
 	skillEntry struct {
@@ -121,6 +114,9 @@ type (
 )
 
 func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
+	if err := checkOutput(cmd); err != nil {
+		return err
+	}
 	out := cmd.OutOrStdout()
 	ctx := cmd.Context()
 	capture := termkit.CaptureFromContext(ctx)
@@ -159,10 +155,10 @@ func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 		return nil
 	}
 
-	if opts.output == outputJSON {
-		return writeOrCaptureJSON(out, capture, skillsToEntries(all))
-	}
-	return printCatalogSkillTable(out, capture, cmd, all)
+	header := []string{headerSource, headerName, headerVersion}
+	tableRows := termkit.Rows(all, catalogSkillTable)
+
+	return renderList(cmd, opts.format, "", skillsToEntries(all), header, tableRows, skillNames(all))
 }
 
 // loadSkillsBySource walks the local and/or official sources per sourceFilter
@@ -213,24 +209,6 @@ func filterByBundle(
 	return filterSkills(all, func(s skill.Skill) bool { return want[s.Name] }), nil
 }
 
-func printCatalogSkillTable(out io.Writer, capture *termkit.Capture, cmd *cobra.Command, skills []skill.Skill) error {
-	header := []string{headerSource, headerName, headerVersion}
-	rows := termkit.Rows(skills, catalogSkillTable)
-	if capture != nil {
-		capture.AddTable(termkit.Data{
-			Headers: header,
-			Rows:    rows,
-			IDs:     skillNames(skills),
-			Actions: ui.RowActionsFor(cmd),
-		})
-		return nil
-	}
-	fmt.Fprintln(out)
-	termkit.WriteTableStyled(out, header, rows, false, nil, termkit.TableBorderless, ui.Theme)
-	fmt.Fprintln(out)
-	return nil
-}
-
 // skillNames extracts each skill's name, parallel to catalogSkillTable's
 // rows, so a captured table can identify the row a RowAction fires on
 // independently of how it's displayed.
@@ -264,6 +242,9 @@ func skillsToEntries(skills []skill.Skill) []skillEntry {
 }
 
 func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
+	if err := checkOutput(cmd); err != nil {
+		return err
+	}
 	out := cmd.OutOrStdout()
 	capture := termkit.CaptureFromContext(cmd.Context())
 
@@ -300,28 +281,10 @@ func runCatalogBundles(cmd *cobra.Command, opts catalogOpts) error {
 		return nil
 	}
 
-	if opts.output == outputJSON {
-		return writeOrCaptureJSON(out, capture, bundleRowsToEntries(rows))
-	}
-	return printCatalogBundleTable(out, capture, cmd, rows)
-}
-
-func printCatalogBundleTable(out io.Writer, capture *termkit.Capture, cmd *cobra.Command, rows []bundleRow) error {
 	header := []string{"", "Bundle", "Linked", "Description"}
 	tableRows := termkit.Rows(rows, catalogBundleTable)
-	if capture != nil {
-		capture.AddTable(termkit.Data{
-			Headers: header,
-			Rows:    tableRows,
-			IDs:     bundleNames(rows),
-			Actions: ui.RowActionsFor(cmd),
-		})
-		return nil
-	}
-	fmt.Fprintln(out)
-	termkit.WriteTableStyled(out, header, tableRows, false, nil, termkit.TableBorderless, ui.Theme)
-	fmt.Fprintln(out)
-	return nil
+
+	return renderList(cmd, opts.format, "", bundleRowsToEntries(rows), header, tableRows, bundleNames(rows))
 }
 
 // bundleNames extracts each bundle's name, parallel to catalogBundleTable's

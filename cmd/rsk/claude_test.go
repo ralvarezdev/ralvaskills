@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ralvarezdev/termkit"
+	"github.com/ralvarezdev/termkit/output"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
@@ -42,8 +43,8 @@ func TestRunClaudeToolsListJSONOutput(t *testing.T) {
 	// --output on canonicalTools.list, so just flip its value and restore the
 	// default afterward rather than re-declaring the flag.
 	f := canonicalTools.list.Flags()
-	t.Cleanup(func() { _ = f.Set(cmdx.FlagOutput, string(outputText)) })
-	if err = f.Set(cmdx.FlagOutput, string(outputJSON)); err != nil {
+	t.Cleanup(func() { _ = f.Set(cmdx.FlagOutput, string(output.FormatText)) })
+	if err = f.Set(cmdx.FlagOutput, string(output.FormatJSON)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -92,8 +93,8 @@ func TestRunClaudeToolsListCapture(t *testing.T) {
 	}
 
 	f := canonicalTools.list.Flags()
-	t.Cleanup(func() { _ = f.Set(cmdx.FlagOutput, string(outputText)) })
-	if err := f.Set(cmdx.FlagOutput, string(outputText)); err != nil {
+	t.Cleanup(func() { _ = f.Set(cmdx.FlagOutput, string(output.FormatText)) })
+	if err := f.Set(cmdx.FlagOutput, string(output.FormatText)); err != nil {
 		t.Fatal(err)
 	}
 

@@ -27,13 +27,11 @@ func setupCommands() {
 	cmdx.RegisterInclude(catalogCmd, "Include extra skills in the output", cmdx.IncludePersonal)
 	f.String(cmdx.FlagSource, "", "Filter by source: local|official")
 	registerSourceCompletion(catalogCmd)
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
-	registerOutputCompletion(catalogCmd)
+	addOutputFlag(catalogCmd)
 
 	catalogCmd.AddCommand(catalogBundlesCmd)
 	termkit.MarkTableView(catalogBundlesCmd)
-	catalogBundlesCmd.Flags().StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
-	registerOutputCompletion(catalogBundlesCmd)
+	addOutputFlag(catalogBundlesCmd)
 
 	catalogCmd.AddCommand(catalogBundleCmd)
 	termkit.MarkTableView(catalogBundleCmd)
@@ -41,8 +39,7 @@ func setupCommands() {
 	cmdx.RegisterInclude(catalogBundleCmd, "Include extra skills in the output", cmdx.IncludePersonal)
 	f.String(cmdx.FlagSource, "", "Filter by source: local|official")
 	registerSourceCompletion(catalogBundleCmd)
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
-	registerOutputCompletion(catalogBundleCmd)
+	addOutputFlag(catalogBundleCmd)
 
 	// tools command (canonical) and the hidden legacy `claude tools` path,
 	// both built by the same factory.
@@ -77,8 +74,7 @@ func setupCommands() {
 	f.Bool(cmdx.FlagGlobal, false, "List global skills")
 	f.String(cmdx.FlagFor, "", "Scope --global to a single tool (claude-code|opencode)")
 	cmdx.RegisterInclude(listCmd, "Include extra skills in the output", cmdx.IncludePersonal)
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
-	registerOutputCompletion(listCmd)
+	addOutputFlag(listCmd)
 	registerForCompletion(listCmd, false)
 
 	// new command
@@ -101,8 +97,7 @@ func setupCommands() {
 	f.Bool(cmdx.FlagStack, false, "Fetch latest versions and show STACK.md drift (network, opt-in)")
 	f.Bool(cmdx.FlagRefresh, false, "With --stack: bypass the 24h cache and force a re-fetch")
 	cmdx.RegisterInclude(statusCmd, "Include extra skills in the output", cmdx.IncludePersonal)
-	f.StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
-	registerOutputCompletion(statusCmd)
+	addOutputFlag(statusCmd)
 	registerForCompletion(statusCmd, false)
 
 	// uninstall command
@@ -144,7 +139,6 @@ func setupCommands() {
 	// row actions for the Claude tools view: allow, deny, or remove the tool
 	// under the cursor without leaving the table to type its rule.
 	for _, t := range []toolsCmds{canonicalTools} {
-		registerOutputCompletion(t.list)
 		ui.MarkRowAction(t.list, "a", "allow", t.allow)
 		ui.MarkRowAction(t.list, "d", "deny", t.deny)
 		ui.MarkRowAction(t.list, "x", "remove", t.remove)

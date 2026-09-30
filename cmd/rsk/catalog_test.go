@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ralvarezdev/termkit"
+	"github.com/ralvarezdev/termkit/output"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
@@ -56,7 +57,7 @@ func TestRunCatalogSkillsCapture(t *testing.T) {
 		t.Fatal("expected a capture on the command's context")
 	}
 
-	if err := runCatalogSkills(catalogCmd, catalogOpts{output: outputText}); err != nil {
+	if err := runCatalogSkills(catalogCmd, catalogOpts{format: output.FormatText}); err != nil {
 		t.Fatalf("runCatalogSkills: unexpected error: %v", err)
 	}
 
@@ -115,7 +116,7 @@ func TestRunCatalogSkillsCaptureJSON(t *testing.T) {
 		t.Fatal("expected a capture on the command's context")
 	}
 
-	if err := runCatalogSkills(catalogCmd, catalogOpts{output: outputJSON}); err != nil {
+	if err := runCatalogSkills(catalogCmd, catalogOpts{format: output.FormatJSON}); err != nil {
 		t.Fatalf("runCatalogSkills: unexpected error: %v", err)
 	}
 

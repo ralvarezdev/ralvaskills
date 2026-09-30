@@ -7,42 +7,6 @@ import (
 	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
 )
 
-func TestParseOutputFormat(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name    string
-		input   string
-		want    outputFormat
-		wantErr bool
-	}{
-		{name: "text", input: "text", want: outputText},
-		{name: "json", input: "json", want: outputJSON},
-		{name: "empty is rejected", input: "", wantErr: true},
-		{name: "unknown is rejected", input: "yaml", wantErr: true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			got, err := parseOutputFormat(tt.input)
-			if tt.wantErr {
-				if err == nil {
-					t.Fatalf("parseOutputFormat(%q): expected error, got %q", tt.input, got)
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("parseOutputFormat(%q): unexpected error: %v", tt.input, err)
-			}
-			if got != tt.want {
-				t.Fatalf("parseOutputFormat(%q) = %q, want %q", tt.input, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestParseSourceFilter(t *testing.T) {
 	t.Parallel()
 

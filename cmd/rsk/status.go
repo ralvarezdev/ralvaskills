@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ralvarezdev/termkit"
+	"github.com/ralvarezdev/termkit/output"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
@@ -47,10 +48,6 @@ Examples:
 		if err != nil {
 			return err
 		}
-		output, err := parseOutputFormat(cmdx.String(cmd, cmdx.FlagOutput))
-		if err != nil {
-			return err
-		}
 		return runStatus(cmd, statusOpts{
 			global:   cmdx.Bool(cmd, cmdx.FlagGlobal),
 			project:  cmdx.Bool(cmd, "project"),
@@ -58,7 +55,7 @@ Examples:
 			refresh:  cmdx.Bool(cmd, cmdx.FlagRefresh),
 			personal: inc.Personal,
 			forTool:  forTool,
-			output:   output,
+			format:   printer.Format(cmd),
 		})
 	},
 }
@@ -68,7 +65,7 @@ type (
 	statusOpts struct {
 		global, project, stack, refresh, personal bool
 		forTool                                   tool.ID
-		output                                    outputFormat
+		format                                    output.OutputFormat
 	}
 
 	// statusSection groups linked skills under a single target directory.
@@ -108,6 +105,9 @@ type (
 )
 
 func runStatus(cmd *cobra.Command, opts statusOpts) error {
+	if err := checkOutput(cmd); err != nil {
+		return err
+	}
 	out := cmd.OutOrStdout()
 	capture := termkit.CaptureFromContext(cmd.Context())
 
@@ -153,10 +153,10 @@ func runStatus(cmd *cobra.Command, opts statusOpts) error {
 
 	scanStatusSections(out, capture, sections, cfg, membership, opts.personal)
 
-	if opts.output == outputJSON {
-		return writeOrCaptureJSON(out, capture, statusSectionsToEntries(sections, pinnedSet))
+	if opts.format == output.FormatJSON {
+		return newFormatter(cmd, opts.format).JSON(statusSectionsToEntries(sections, pinnedSet))
 	}
-	return printStatusText(out, capture, cmd, sections, pinnedSet)
+	return printStatusText(out, capture, cmd, opts.format, sections, pinnedSet)
 }
 
 // warnOrCapture reports msg on the capture (when a captured in-process run is
@@ -173,9 +173,6 @@ func warnOrCapture(out io.Writer, capture *termkit.Capture, msg string) {
 // validateStatusOpts checks runStatus's flag combinations before doing any
 // scanning work.
 func validateStatusOpts(opts statusOpts) error {
-	if !opts.output.valid() {
-		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
-	}
 	if opts.stack {
 		return errors.New("--stack is not yet implemented")
 	}
@@ -214,7 +211,8 @@ func scanStatusSections(
 // printStatusText renders every non-empty section as a table, or a "no
 // skills installed" notice when all sections are empty.
 func printStatusText(
-	out io.Writer, capture *termkit.Capture, cmd *cobra.Command, sections []statusSection, pinnedSet map[string]bool,
+	out io.Writer, capture *termkit.Capture, cmd *cobra.Command,
+	format output.OutputFormat, sections []statusSection, pinnedSet map[string]bool,
 ) error {
 	hasAny := false
 	for _, sec := range sections {
@@ -226,7 +224,9 @@ func printStatusText(
 			fmt.Fprintln(out)
 			ui.SectionHeader(out, sec.title, sec.subtitle)
 		}
-		printStatusSectionRows(out, capture, cmd, sec.title, sec.skills, pinnedSet)
+		if err := printStatusSectionRows(cmd, format, sec.title, sec.skills, pinnedSet); err != nil {
+			return err
+		}
 	}
 
 	if capture != nil {
@@ -249,25 +249,13 @@ func printStatusText(
 // Title, so the result view's tab line identifies which section is active
 // when a captured status run has more than one.
 func printStatusSectionRows(
-	out io.Writer, capture *termkit.Capture, cmd *cobra.Command, title string,
-
+	cmd *cobra.Command, format output.OutputFormat, title string,
 	skills []linkedEntry, pinnedSet map[string]bool,
-) {
+) error {
 	header := []string{headerSource, headerName, headerVersion, "", ""}
 	rows := termkit.Rows(skills, statusRowTable(pinnedSet))
-	if capture != nil {
-		capture.AddTable(termkit.Data{
-			Title: title,
 
-			Headers: header,
-
-			Rows:    rows,
-			IDs:     linkedSkillNames(skills),
-			Actions: ui.RowActionsFor(cmd),
-		})
-		return
-	}
-	termkit.WriteTableStyled(out, header, rows, false, nil, termkit.TableBorderless, ui.Theme)
+	return renderTitledTable(cmd, format, title, rows, header, rows, linkedSkillNames(skills))
 }
 
 // linkedSkillNames extracts each row's skill name, parallel to statusRowTable's

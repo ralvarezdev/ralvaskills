@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/ralvarezdev/termkit"
+	"github.com/ralvarezdev/termkit/output"
 
+	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 )
 
@@ -44,7 +46,7 @@ func TestRunStatusGlobalDoesNotRequireProject(t *testing.T) {
 	statusCmd.SetOut(&buf)
 	t.Cleanup(func() { statusCmd.SetOut(nil) })
 
-	if err := runStatus(statusCmd, statusOpts{global: true, output: outputText}); err != nil {
+	if err := runStatus(statusCmd, statusOpts{global: true, format: output.FormatText}); err != nil {
 		t.Fatalf("runStatus with --global outside a project: unexpected error: %v", err)
 	}
 }
@@ -79,7 +81,7 @@ func TestRunStatusJSONOutput(t *testing.T) {
 	statusCmd.SetOut(&buf)
 	t.Cleanup(func() { statusCmd.SetOut(nil) })
 
-	if err := runStatus(statusCmd, statusOpts{global: true, output: outputJSON}); err != nil {
+	if err := runStatus(statusCmd, statusOpts{global: true, format: output.FormatJSON}); err != nil {
 		t.Fatalf("runStatus with -o json: unexpected error: %v", err)
 	}
 
@@ -92,7 +94,11 @@ func TestRunStatusJSONOutput(t *testing.T) {
 	}
 
 	buf.Reset()
-	if err := runStatus(statusCmd, statusOpts{global: true, output: outputFormat("bogus")}); err == nil {
+	if err := statusCmd.Flags().Set(cmdx.FlagOutput, "bogus"); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = statusCmd.Flags().Set(cmdx.FlagOutput, string(output.FormatText)) })
+	if err := runStatus(statusCmd, statusOpts{global: true}); err == nil {
 		t.Fatal("expected error for invalid --output value, got nil")
 	}
 }
@@ -149,7 +155,7 @@ func TestRunStatusCapture(t *testing.T) {
 		t.Fatal("expected a capture on the command's context")
 	}
 
-	if err := runStatus(statusCmd, statusOpts{global: true, output: outputText}); err != nil {
+	if err := runStatus(statusCmd, statusOpts{global: true, format: output.FormatText}); err != nil {
 		t.Fatalf("runStatus: unexpected error: %v", err)
 	}
 

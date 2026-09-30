@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ralvarezdev/termkit"
+	"github.com/ralvarezdev/termkit/output"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
 )
@@ -58,7 +59,7 @@ func TestRunListGlobalLabelsRowsByTool(t *testing.T) {
 	listCmd.SetOut(&buf)
 	t.Cleanup(func() { listCmd.SetOut(nil) })
 
-	if err := runListGlobal(listCmd, listOpts{global: true, output: outputText}); err != nil {
+	if err := runListGlobal(listCmd, listOpts{global: true, format: output.FormatText}); err != nil {
 		t.Fatalf("runListGlobal: unexpected error: %v", err)
 	}
 
@@ -131,7 +132,7 @@ func TestRunListGlobalCapture(t *testing.T) {
 		t.Fatal("expected a capture on the command's context")
 	}
 
-	if err := runListGlobal(listCmd, listOpts{global: true, output: outputText}); err != nil {
+	if err := runListGlobal(listCmd, listOpts{global: true, format: output.FormatText}); err != nil {
 		t.Fatalf("runListGlobal: unexpected error: %v", err)
 	}
 
