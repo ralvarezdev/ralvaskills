@@ -1,6 +1,6 @@
 # Go Library Builder — Skeletons & Reference
 
-Load on demand when scaffolding. Tooling files (`Taskfile.yml`, `mise.toml`, `.editorconfig`, `renovate.json`, `.golangci.doccheck.yml`, `.gitignore`) are ready to copy from [assets/](assets). This file holds the Go-source skeletons and the two folder trees.
+Load on demand when scaffolding. Tooling files (`Taskfile.yml`, `mise.toml`, `.editorconfig`, `renovate.json`, `.golangci.doccheck.yml`, `.gitignore`, `.github/workflows/ci.yml`) are ready to copy from [assets/](assets). This file holds the Go-source skeletons and the four folder trees (flat, vertical-slice, toolkit, framework-adapter).
 
 ## 1. Folder trees
 
@@ -55,6 +55,32 @@ Load on demand when scaffolding. Tooling files (`Taskfile.yml`, `mise.toml`, `.e
 ├── sqlc.yaml / tools.go / generate.go
 └── (same root tooling set as the flat tree)
 ```
+
+### Toolkit library (`restkit`, `pgkit` scale)
+
+No domain and no port, so no `memory/` adapter: the tests are plain unit tests, or a real container through a shared harness.
+
+```
+<name>/
+├── <name>.go              # framework-free core: helpers on stdlib plus the smallest dependency that works
+├── <feature>/             # one subpackage per heavy dependency (pgkit: migrate → goose,
+│   ├── <feature>.go       #   pgmetrics → prometheus, pgtest → testcontainers), so a consumer
+│   └── <feature>_test.go  #   that skips the subpackage never compiles the dependency
+├── docs/YYYY-MM-DD-spec.md
+└── (same root tooling set as the flat tree, including .github/workflows/ci.yml)
+```
+
+### Framework-adapter module (`ginkit`, `identitygin` scale)
+
+```
+<core>gin/  or  <framework>kit/
+├── go.mod                 # requires the core and the framework; the core never requires this module
+├── <adapter>.go           # middleware and responders in the framework's own idiom (gin.HandlerFunc)
+├── testkit/               # optional: helpers for testing handlers built on it
+└── (same root tooling set)
+```
+
+Pin the core at the version you built against; a consumer's `go.mod` resolves the highest version any module asks for, so tag the core first and the adapter after. A different framework is a new adapter module, not a branch in the core.
 
 ## 2. Config & constructors
 
@@ -229,6 +255,31 @@ func TestMain(m *testing.M) {
 ```
 
 Gate integration tests behind `testing.Short()` or a build tag so `go test -short ./...` skips containers.
+
+**Postgres already has a harness**, `pgkit/pgtest`. Do not write a container helper; supply only the migration:
+
+```go
+// main_test.go
+var dsn string
+
+func TestMain(m *testing.M) {
+	ctx := context.Background()
+	d, stop, err := pgtest.Start(ctx, pgtest.Config{
+		Image:   "postgres:18-alpine",
+		Migrate: runMigrations, // func(ctx, dsn) error: open a *sql.DB on dsn and call the library's migrate.Up
+	})
+	if err != nil { /* log; Start never skips, so decide here (exit 0 when Docker is missing) */ }
+	dsn = d
+	code := m.Run()
+	_ = stop(ctx)
+	os.Exit(code)
+}
+
+// or, one container per test that skips itself in -short or without Docker:
+// pool := pgtest.NewPool(t, pgtest.Config{Image: "postgres:18-alpine", Migrate: ...})
+```
+
+`identity` and `webpush` use it in `internal/testhelper`. For Valkey use `ratelimit/valkeytest` (`Start`, `StartClient`).
 
 ## 8. Spec-first doc
 

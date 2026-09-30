@@ -1,12 +1,12 @@
 ---
 name: go-library-builder
-version: 1.0.0
-description: Scaffolds reusable Go 1.26 library modules in the ralvarezdev DDD + hexagonal house style — domain-pure root package, ports as narrow interfaces, technology-named adapter subpackages (prod/dev/test), config structs over options, testcontainers over mocks, mise + Task + golangci tooling. Module namespace is a parameter (default github.com/ralvarezdev). Use when bootstrapping a new Go library, adding an adapter, or auditing one against the house style.
+version: 1.1.0
+description: Scaffolds reusable Go 1.26 library modules in the ralvarezdev house style — flat, vertical-slice, toolkit or framework-adapter shapes; domain-pure root package, ports as narrow interfaces, technology-named adapter subpackages (prod/dev/test), config structs over options, testcontainers over mocks, mise + Task + golangci tooling. Module namespace is a parameter (default github.com/ralvarezdev). Use when bootstrapping a new Go library, adding an adapter, or auditing one against the house style.
 ---
 
 # Go Library Builder
 
-Scaffolds a new **reusable Go library module** in the ralvarezdev house style, distilled from the `identity`, `ratelimit`, and `email` libraries. This skill is the *composition root* for three others — it does not restate them:
+Scaffolds a new **reusable Go library module** in the ralvarezdev house style, distilled from the `identity`, `ratelimit`, and `email` libraries, and extended for the toolkit and framework-adapter modules (`restkit`, `pgkit`, `ginkit`). **Check [go-house-libs](../go-house-libs/SKILL.md) first:** if a module already covers the need, use it; scaffold a new one only when none fits and a second consumer exists. This skill is the *composition root* for three others — it does not restate them:
 
 - **[go-architect](../../languages/go-architect/SKILL.md)** — every Go idiom (memory alignment, errors, iterators, linters, `//go:embed` SQL). This skill assumes it.
 - **[hexagonal-arch](../../design/hexagonal-arch/SKILL.md)** — ports & adapters, dependency direction. This skill applies it *at library scale*.
@@ -20,10 +20,12 @@ A standalone Go module publishable as `<namespace>/<name>` where **hexagonal lay
 
 **`<namespace>` is a parameter** — ask for it at bootstrap (§13.1); default `github.com/ralvarezdev`. It sets the module prefix, every intra-repo import path, `goimports -local`, and `sqlc` type-override package paths. Nothing else in the house style changes with it.
 
-Two scales, same rules (§9 decides which):
+Four shapes, same rules (§9 decides between the first two; the last two are for libraries with no domain):
 
 - **Flat single-port library** (`ratelimit`, `email`) — root package = domain + one port; one subpackage per adapter.
 - **Vertical-slice library** (`identity`) — one package per bounded context, each internally hexagonal, plus an `app/` application layer and `internal/acl/` seams.
+- **Toolkit library** (`restkit`, `pgkit`, `termkit`, `mcpkit`) — helpers with no domain port. The root holds the framework-free core, and each heavy dependency lives in exactly one subpackage (`pgkit/migrate` owns goose, `pgkit/pgtest` owns testcontainers), so a consumer that skips a subpackage never compiles its dependency.
+- **Framework-adapter module** (`ginkit` over `restkit`, `identitygin` over `identity`) — its own module wrapping one framework around a framework-free core, so the core never imports the framework. Named for what it adapts (`<core>gin`, `<framework>kit`); depends on the core, never the reverse.
 
 ## 2. Module & naming convention
 
@@ -34,7 +36,7 @@ Two scales, same rules (§9 decides which):
 
 ## 3. Domain purity — the load-bearing invariant
 
-The root/domain package imports **stdlib + `google/uuid` only**. Zero third-party. This is the invariant everything else protects: only adapters may import a driver, an HTTP client, or a crypto library. Static check: grep the domain package's imports — a single third-party line is a bug. See [hexagonal-arch §2](../../design/hexagonal-arch/SKILL.md#2-dependency-direction--always-inward).
+The root/domain package imports **stdlib + `google/uuid` only**. Zero third-party. This is the invariant everything else protects: only adapters may import a driver, an HTTP client, or a crypto library. A toolkit's root core (`restkit`) is held to the same stdlib-only rule, and a heavy dependency in a toolkit sits in its own subpackage. Static check: grep the domain package's imports — a single third-party line is a bug. See [hexagonal-arch §2](../../design/hexagonal-arch/SKILL.md#2-dependency-direction--always-inward).
 
 ## 4. Ports — narrow, composed, domain-owned
 
@@ -67,7 +69,7 @@ Per [ddd-architect §3](../../design/ddd-architect/SKILL.md#3-tactical-ddd--buil
 
 - **Value objects self-validate at construction**, unexported fields, zero value invalid, built via `New…` (`NewEmail`, `NewAddress`). Reach for them aggressively — a validated `Email` beats a bare `string` everywhere.
 - **Entities carry behavior**, not just data — `User.Activate(now)`, with private transition maps enforcing legal state changes. No anemic bags of getters.
-- **No generics.** Reuse comes from interface composition, not type parameters. Add a generic only when a data-structure genuinely needs it (rare in these libraries).
+- **Generics for data structures and utility functions only**, as in [go-architect §13](../../languages/go-architect/SKILL.md#13-generics): `restkit.Response[T]`, `client.Do[T]`, `Callers[V]`. Reuse across ports still comes from interface composition, never from a type parameter that hides which adapter you wrote; if an interface would serve, use it.
 
 ## 8. Adapters — one per technology, N per port
 
@@ -92,14 +94,14 @@ Default to the **flat** shape. Split into vertical slices only when a genuine se
 Per [go-architect §9](../../languages/go-architect/SKILL.md#9-testing), sharpened:
 
 - **No mock library, no generated mocks.** Unit isolation comes from the narrow ports — a fake is a plain struct, and the in-memory adapter (§8) is the reusable one.
-- **Integration via `testcontainers-go`** — one container per package started in `TestMain` (`main_test.go`); each test gets isolation via a rolled-back transaction (`BeginTx` + `t.Cleanup`) or per-test uuid keys. Table/keyspace named `<name>_test`.
+- **Integration via `testcontainers-go`** — one container per package started in `TestMain` (`main_test.go`); each test gets isolation via a rolled-back transaction (`BeginTx` + `t.Cleanup`) or per-test uuid keys. Table/keyspace named `<name>_test`. **Postgres and Valkey already have the harness:** use `pgkit/pgtest` (`Start` in `TestMain`, or `NewPool`/`NewDB` per test) and `ratelimit/valkeytest` (`Start`/`StartClient`) instead of a hand-written `internal/testhelper`; write one only for another technology ([RECIPES §7](RECIPES.md#7-test-harness-testcontainers-one-container-per-package)).
 - **`t.Parallel()` at parent and subtest**, table-driven, black-box `package x_test` for the public API plus white-box `package x` (`*_internal_test.go`) only to reach unexported helpers. Gate container tests so `go test -short ./...` stays fast.
 
 ## 11. Persistence & codegen (when a DB adapter exists)
 
-- **Small/static queries** — raw SQL in `.sql` files via `//go:embed` + `sqlx`, per [go-architect §12](../../languages/go-architect/SKILL.md#12-database-access--sql-files--goembed).
-- **Larger typed access** — `sqlc` (pgx/v5) with hand-written `queries/*.sql`; DB enums overridden to domain types in `sqlc.yaml` so generated code maps to your VOs. Schema is derived from migrations by a `cmd/gen` step, never hand-maintained.
-- **Migrations** — `goose` SQL with `//go:embed`, run through a public `migrate.Up/Down/Status` API and a **library-owned version table** (`<name>_schema_version`) so the lib's history is independent of the host app. See [sql-architect](../../databases/sql-architect/SKILL.md).
+- **Typed access** — `sqlc` (pgx/v5) is the default, per [go-architect §12](../../languages/go-architect/SKILL.md#12-database-access--sqlc-default-sqlx--goembed-alternative): hand-written `queries/*.sql`; DB enums overridden to domain types in `sqlc.yaml` so generated code maps to your VOs. Schema is derived from migrations by a `cmd/gen` step, never hand-maintained. `sqlx` + `//go:embed` is the alternative for a handful of static queries.
+- **Migrations** — `goose` SQL with `//go:embed`, run through `pgkit/migrate` (`Config{FS, TableName}`) behind a thin public `migrate.Up(ctx, db)` and a **library-owned version table** (`<name>_schema_version`) so the lib's history is independent of the host app. Follow `identity/migrate` and `webpush/migrate`: a wrapper of a few lines that binds the embedded FS and table name and forwards to `pgkit/migrate`. Do not re-implement goose provider handling. See [sql-architect](../../databases/sql-architect/SKILL.md).
+- **Value conversion** — `pgkit` (`OptText`, `UUIDString`, `MapNoRows`, `RunInTx`, …), not per-library copies. A library that uses Postgres depends on `pgkit` from its adapter subpackage only; its domain root stays clean.
 
 ## 12. Tooling (every repo gets the same set)
 
@@ -108,19 +110,21 @@ Copy from [assets/](assets); details in [repo-tooling-architect](../../tooling/r
 - **`mise.toml`** pins the toolchain (go, task, golangci-lint, goimports, betteralign, trivy, and sqlc/goose when used).
 - **`Taskfile.yml`** — `build`, `test` (`-race -count=1`), `test:short`, `fmt` (goimports `-local`), `lint`, `lint:fix`, `lint:doccheck`, `modernize` (`go fix`), `align:check/fix` (betteralign), `scan` (trivy), `tag` (semver-validated), and `check` = the pre-commit gate.
 - **`.golangci.yml`** (v2) — copy [go-architect's `assets/golangci.yml`](../../languages/go-architect/assets/golangci.yml), set `goimports.local-prefixes` to the module path, scope `exhaustruct` to the `Config` structs. Ship the separate **`.golangci.doccheck.yml`** for on-demand doc coverage.
+- **`.github/workflows/ci.yml`** — copy the asset. It is **manual-dispatch only, deliberately**: CI runs locally through `act`, so a push or tag never starts a billed runner. Dependencies under `github.com/ralvarezdev/*` are private for now, so each job takes the optional `GH_PRIVATE_MODULES_TOKEN` and sets `GOPRIVATE`; drop both once they are public.
 - **`.editorconfig`**, **`.gitignore`**, **`renovate.json`**, and a **spec-first `docs/YYYY-MM-DD-spec.md`** written so an agent can rebuild the module from it alone (list the invariants explicitly).
 - **`.rsk/`** — pin the architecture skills this repo was built with (`go-architect`, `hexagonal-arch`, `ddd-architect`, plus `sql-architect`/`repo-tooling-architect` as used) so the conventions travel with the repo.
 
 ## 13. Bootstrap procedure
 
-1. Ask for `<name>`, `<namespace>` (default `github.com/ralvarezdev`), and scale (§9) plus the port(s) the library exposes.
+1. Check [go-house-libs](../go-house-libs/SKILL.md): stop if an existing module covers the need. Then ask for `<name>`, `<namespace>` (default `github.com/ralvarezdev`), the shape (§1; §9 for flat vs slice) and the port(s) the library exposes.
 2. `git init`; write `go.mod` (`module <namespace>/<name>`, `go 1.26`).
-3. Copy the [assets/](assets) tooling set; `mise install`; set `Taskfile.yml`'s `MODULE` var and `goimports` `local-prefixes` to `<namespace>/<name>`.
-4. Write the domain: value objects, entities, sentinel errors, the port interface(s) — stdlib + uuid only (§3–§7).
+3. Copy the [assets/](assets) tooling set, including `.github/workflows/ci.yml`; `mise install`; set `Taskfile.yml`'s `MODULE` var and `goimports` `local-prefixes` to `<namespace>/<name>`. Add `.rsk/` and `CLAUDE.md` (§12).
+4. Write the domain: value objects, entities, sentinel errors, the port interface(s) — stdlib + uuid only (§3–§7). For a toolkit or framework adapter, write the framework-free core first and give each heavy dependency its own subpackage or module (§1).
 5. Write the in-memory adapter first (it doubles as the test double), then the production adapter(s) (§8).
-6. Add persistence/codegen only if a DB adapter exists (§11).
+6. Add persistence/codegen only if a DB adapter exists, on `pgkit` (§11).
 7. Write the spec-first doc and the README (Packages table → Quick start → Testing).
 8. `task check` must pass green before the first `task tag VERSION=0.1.0`.
+9. When the module is tagged, add it to [go-house-libs](../go-house-libs/SKILL.md): a row in its table, a `references/<NAME>.md`, and its `STACK.md` entry.
 
 ## 14. Out of scope
 

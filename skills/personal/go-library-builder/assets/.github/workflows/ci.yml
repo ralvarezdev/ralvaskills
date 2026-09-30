@@ -1,0 +1,66 @@
+# Manual-dispatch only, deliberately: CI runs locally via `act` (same policy as
+# finance-platform) so a push or tag never starts a billed GitHub-hosted runner.
+# Dependencies under github.com/ralvarezdev/* are private for now, so each job
+# takes the optional GH_PRIVATE_MODULES_TOKEN secret (read access to those
+# repos). Without it the fetch is anonymous, which keeps working once they
+# are public.
+name: CI
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GOPRIVATE: github.com/ralvarezdev/*
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Private Go modules
+        env:
+          GH_PRIVATE_MODULES_TOKEN: ${{ secrets.GH_PRIVATE_MODULES_TOKEN }}
+        run: |
+          if [ -n "$GH_PRIVATE_MODULES_TOKEN" ]; then
+            git config --global url."https://x-access-token:${GH_PRIVATE_MODULES_TOKEN}@github.com/".insteadOf "https://github.com/"
+          fi
+
+      - uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.12.2
+          args: --config .golangci.yml
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Private Go modules
+        env:
+          GH_PRIVATE_MODULES_TOKEN: ${{ secrets.GH_PRIVATE_MODULES_TOKEN }}
+        run: |
+          if [ -n "$GH_PRIVATE_MODULES_TOKEN" ]; then
+            git config --global url."https://x-access-token:${GH_PRIVATE_MODULES_TOKEN}@github.com/".insteadOf "https://github.com/"
+          fi
+
+      - run: go build ./...
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+
+      - name: Module hygiene
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum

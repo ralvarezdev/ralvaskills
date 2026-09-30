@@ -21,17 +21,19 @@ Inherits the full Go stack from [go-architect/STACK.md](../../languages/go-archi
 |---|---|---|
 | google/uuid | 1.6 | Only third-party import allowed in the domain package |
 | stretchr/testify | 1.11 | Assertions/require in tests (optional; stdlib-only is also fine) |
-| testcontainers/testcontainers-go | 0.42 | Container-backed integration tests (one per package) |
+| testcontainers/testcontainers-go | 0.42 | Container-backed integration tests (one per package); Postgres and Valkey go through `pgkit/pgtest` and `ratelimit/valkeytest` |
 | jackc/pgx | v5 | Postgres driver for `postgres` adapters |
+| ralvarezdev/pgkit | see [go-house-libs STACK](../go-house-libs/STACK.md) | pgx value helpers, `migrate` (goose), `pgtest`; Postgres adapters depend on it, domain roots never do |
 | golang-jwt/jwt | v5 | Token adapters |
 | gopkg.in/gomail.v2 | 2 | SMTP adapter (email-style libraries) |
 | valkey-io/valkey-go | 1.x | Valkey adapters |
 
 ## Notes
 
+- **CI is manual-dispatch only** (`assets/.github/workflows/ci.yml`): it runs locally through `act`, and `golangci-lint` there matches the version above.
 - **No functional-options, no ORM, no in-library config resolution** — architectural opinions enforced by this skill, not just the linters (see SKILL §5, §11).
 - **`exhaustruct` scoped to `Config` structs** and `interfacebloat` capped at 3 are the two golangci settings this skill tunes beyond go-architect's template.
 - **`.golangci.yml`** is copied from [go-architect/assets/golangci.yml](../../languages/go-architect/assets/golangci.yml); only `goimports.local-prefixes` and the `exhaustruct` scope change per repo. The doc-coverage config ships separately as `.golangci.doccheck.yml`.
 
-_Last reviewed: 2026-07-17_
-_Skill version at last review: 1.0.0_
+_Last reviewed: 2026-09-29_
+_Skill version at last review: 1.1.0_
