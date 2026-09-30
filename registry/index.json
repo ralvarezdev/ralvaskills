@@ -1,16 +1,21 @@
 {
   "version": 1,
-  "generated_at": "2026-09-30T03:28:24Z",
+  "generated_at": "2026-09-30T13:09:12Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
       "description": "Reviews REST + gRPC contracts for stability, versioning, completeness, backwards compatibility. References rest-api-architect / protobuf-architect / grpc-architect for rules; runs `buf breaking` / `openapi-diff`. Severity-keyed findings. Use when reviewing a new endpoint, proto change, or before a breaking-change release.",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/api-contract-reviewer@v1.0.0/api-contract-reviewer-v1.0.0.tar.gz"
+        },
+        "1.0.1": {
+          "version": "1.0.1",
+          "published_at": "2026-09-30T13:09:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/api-contract-reviewer@v1.0.1/api-contract-reviewer-v1.0.1.tar.gz"
         }
       }
     },
@@ -160,13 +165,18 @@
     },
     "fastapi-architect": {
       "name": "fastapi-architect",
-      "description": "Framework-specific delta on rest-api-architect — FastAPI 0.136 on Python 3.14. Feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 7807 errors, in-house OAuth2+JWT or external IdP. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a FastAPI service.",
-      "latest": "1.0.1",
+      "description": "Framework-specific delta on rest-api-architect — FastAPI 0.136 on Python 3.14. Feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 9457 errors, in-house OAuth2+JWT or external IdP. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a FastAPI service.",
+      "latest": "1.0.2",
       "versions": {
         "1.0.1": {
           "version": "1.0.1",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/fastapi-architect@v1.0.1/fastapi-architect-v1.0.1.tar.gz"
+        },
+        "1.0.2": {
+          "version": "1.0.2",
+          "published_at": "2026-09-30T13:09:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/fastapi-architect@v1.0.2/fastapi-architect-v1.0.2.tar.gz"
         }
       }
     },
@@ -184,20 +194,25 @@
     },
     "gin-architect": {
       "name": "gin-architect",
-      "description": "Framework-specific delta on rest-api-architect — Gin 1.12 on Go 1.26. Feature layout, struct-tag validation, RFC 7807 errors, in-house JWT or external IdP, route groups for URL-prefix versioning, OpenAPI. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a Gin service.",
-      "latest": "1.0.1",
+      "description": "Framework-specific delta on rest-api-architect — Gin 1.12 on Go 1.26. Feature layout, struct-tag validation, RFC 9457 errors, in-house JWT or external IdP, route groups for URL-prefix versioning, OpenAPI. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a Gin service.",
+      "latest": "1.0.2",
       "versions": {
         "1.0.1": {
           "version": "1.0.1",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/gin-architect@v1.0.1/gin-architect-v1.0.1.tar.gz"
+        },
+        "1.0.2": {
+          "version": "1.0.2",
+          "published_at": "2026-09-30T13:09:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/gin-architect@v1.0.2/gin-architect-v1.0.2.tar.gz"
         }
       }
     },
     "go-architect": {
       "name": "go-architect",
       "description": "Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.",
-      "latest": "1.7.0",
+      "latest": "1.7.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -238,6 +253,11 @@
           "version": "1.7.0",
           "published_at": "2026-09-26T23:57:30Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.7.0/go-architect-v1.7.0.tar.gz"
+        },
+        "1.7.1": {
+          "version": "1.7.1",
+          "published_at": "2026-09-30T13:09:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.7.1/go-architect-v1.7.1.tar.gz"
         }
       }
     },
@@ -299,12 +319,17 @@
     "grpc-architect": {
       "name": "grpc-architect",
       "description": "Vanilla gRPC standards — .proto services, status.Error with standard codes, domain→code mapping, interceptor chain (auth/log/recovery/validation/metrics), client deadlines, context propagation, reflection off in prod, bufconn testing. Language-agnostic; Go examples. Use when designing or reviewing a gRPC service.",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/grpc-architect@v1.0.0/grpc-architect-v1.0.0.tar.gz"
+        },
+        "1.0.1": {
+          "version": "1.0.1",
+          "published_at": "2026-09-30T13:09:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/grpc-architect@v1.0.1/grpc-architect-v1.0.1.tar.gz"
         }
       }
     },
@@ -404,25 +429,35 @@
     },
     "nethttp-architect": {
       "name": "nethttp-architect",
-      "description": "Framework-specific delta on rest-api-architect — Go stdlib net/http (Go 1.22+ ServeMux, no router) on Go 1.26. Feature layout, struct-tag validation, RFC 7807 errors, JWT or IdP auth, graceful shutdown, OpenAPI via kin-openapi. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a stdlib net/http service.",
-      "latest": "1.0.1",
+      "description": "Framework-specific delta on rest-api-architect — Go stdlib net/http (Go 1.22+ ServeMux, no router) on Go 1.26. Feature layout, struct-tag validation, RFC 9457 errors, JWT or IdP auth, graceful shutdown, OpenAPI via kin-openapi. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a stdlib net/http service.",
+      "latest": "1.0.2",
       "versions": {
         "1.0.1": {
           "version": "1.0.1",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/nethttp-architect@v1.0.1/nethttp-architect-v1.0.1.tar.gz"
+        },
+        "1.0.2": {
+          "version": "1.0.2",
+          "published_at": "2026-09-30T13:09:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/nethttp-architect@v1.0.2/nethttp-architect-v1.0.2.tar.gz"
         }
       }
     },
     "nextjs-architect": {
       "name": "nextjs-architect",
       "description": "Next.js 16 standards — App Router only, server components by default with explicit `\"use client\"` boundaries, server actions for mutations, streaming Suspense, edge vs node runtime, Image/Font/Metadata APIs. Pairs with react-architect. Use when scaffolding or reviewing a Next.js app or auditing server/client boundaries.",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/nextjs-architect@v1.0.0/nextjs-architect-v1.0.0.tar.gz"
+        },
+        "1.0.1": {
+          "version": "1.0.1",
+          "published_at": "2026-09-30T13:09:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/nextjs-architect@v1.0.1/nextjs-architect-v1.0.1.tar.gz"
         }
       }
     },
@@ -538,8 +573,8 @@
     },
     "rest-api-architect": {
       "name": "rest-api-architect",
-      "description": "Cross-language REST conventions — resource URLs, method semantics, status codes, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 7807 errors, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth. Framework-agnostic. Use when designing or auditing REST endpoints.",
-      "latest": "1.1.0",
+      "description": "Cross-language REST conventions — resource URLs, method semantics, status codes, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 9457 errors, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth. Framework-agnostic. Use when designing or auditing REST endpoints.",
+      "latest": "1.1.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -550,6 +585,11 @@
           "version": "1.1.0",
           "published_at": "2026-07-18T13:48:56Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/rest-api-architect@v1.1.0/rest-api-architect-v1.1.0.tar.gz"
+        },
+        "1.1.1": {
+          "version": "1.1.1",
+          "published_at": "2026-09-30T13:09:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/rest-api-architect@v1.1.1/rest-api-architect-v1.1.1.tar.gz"
         }
       }
     },
@@ -660,12 +700,17 @@
     "ui-ux-architect": {
       "name": "ui-ux-architect",
       "description": "UI/UX standards — WCAG 2.2 AA, Radix + Tailwind 4 + shadcn/ui, design-token theming, mandatory loading/error/empty/success states on every async surface, mobile-first responsive, keyboard parity, contrast checked in CI. Use when designing UI components, building a design system, or auditing accessibility.",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/ui-ux-architect@v1.0.0/ui-ux-architect-v1.0.0.tar.gz"
+        },
+        "1.0.1": {
+          "version": "1.0.1",
+          "published_at": "2026-09-30T13:09:12Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/ui-ux-architect@v1.0.1/ui-ux-architect-v1.0.1.tar.gz"
         }
       }
     },
