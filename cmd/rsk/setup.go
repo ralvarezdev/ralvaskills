@@ -14,6 +14,11 @@ import (
 func setupCommands() {
 	rootCmd.AddGroup(rootGroups...)
 
+	// Cobra's built-in help/completion commands would otherwise land in an
+	// untitled block; devtrack and finance file theirs under a group too.
+	rootCmd.SetHelpCommandGroupID(groupOther)
+	rootCmd.SetCompletionCommandGroupID(groupOther)
+
 	// catalog command
 	rootCmd.AddCommand(catalogCmd)
 	termkit.MarkTableView(catalogCmd)

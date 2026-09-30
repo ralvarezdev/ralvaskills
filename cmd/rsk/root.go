@@ -25,6 +25,7 @@ const (
 	groupPinning   = "pinning"
 	groupToolsConf = "tools"
 	groupViews     = "views"
+	groupOther     = "other"
 )
 
 // Build metadata — injected via -ldflags at release time.
@@ -43,6 +44,7 @@ var rootGroups = []*cobra.Group{
 	{ID: groupPinning, Title: "Project pinning (auto-import into each tool's project config):"},
 	{ID: groupToolsConf, Title: "Tool configuration:"},
 	{ID: groupViews, Title: "Read-only views:"},
+	{ID: groupOther, Title: "Other:"},
 }
 
 var rootCmd = &cobra.Command{
