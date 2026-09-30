@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -19,77 +18,84 @@ import (
 )
 
 var catalogCmd = &cobra.Command{
-	Use:   "catalog [flags]",
+	Use:   "catalog",
 	Short: "Browse the catalog of available skills and bundles.",
-	Args:  cobra.MaximumNArgs(1),
-	Long: `Browse what rsk knows about. By default lists every skill. Use --bundle
-alone to list bundles instead, or --bundle <name> to list the skills inside a
-single bundle.
+	Args:  cobra.NoArgs,
+	Long: `Browse what rsk knows about. By default lists every skill.
 
-The older --bundles and --personal flags still work as hidden aliases of
---bundle and --include personal.
+The bundles subcommand lists the bundles themselves; use
+catalog bundle <name> to list the skills inside one bundle.
 
 Examples:
   rsk catalog                       # all skills
-  rsk catalog --bundle              # all bundles
-  rsk catalog --bundle go-grpc      # skills inside the go-grpc bundle
+  rsk catalog bundles               # all bundles
+  rsk catalog bundle go-grpc        # skills inside the go-grpc bundle
   rsk catalog --source local        # filter by source
   rsk catalog --include personal    # include personal/ skills
   rsk catalog -o json`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		inc, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal)
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		opts, err := catalogSkillsOpts(cmd)
 		if err != nil {
 			return err
 		}
-		sourceFilter, err := parseSourceFilter(cmdx.String(cmd, cmdx.FlagSource))
-		if err != nil {
-			return err
-		}
-		bundles, bundle, err := resolveBundleFlag(cmdx.String(cmd, cmdx.FlagBundle), args)
-		if err != nil {
-			return err
-		}
+		return runCatalogSkills(cmd, opts)
+	},
+}
+
+// catalogBundlesCmd lists the catalog's bundles and how much of each is
+// installed.
+var catalogBundlesCmd = &cobra.Command{
+	Use:   "bundles",
+	Short: "List the catalog's bundles and how many of their skills are installed.",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, _ []string) error {
 		output, err := parseOutputFormat(cmdx.String(cmd, cmdx.FlagOutput))
 		if err != nil {
 			return err
 		}
-		return runCatalog(cmd, catalogOpts{
-			bundles:  bundles,
-			personal: inc.Personal,
-			bundle:   bundle,
-			source:   sourceFilter,
-			output:   output,
-		})
+		return runCatalogBundles(cmd, catalogOpts{output: output})
 	},
 }
 
-// bundleListSentinel is --bundle's NoOptDefVal: the value the flag takes when
-// given with no explicit name, meaning "list the bundles themselves".
-const bundleListSentinel = "*"
+// catalogBundleCmd lists the skills that belong to one bundle.
+var catalogBundleCmd = &cobra.Command{
+	Use:   "bundle <name>",
+	Short: "List the skills inside one bundle.",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		opts, err := catalogSkillsOpts(cmd)
+		if err != nil {
+			return err
+		}
+		opts.bundle = args[0]
+		return runCatalogSkills(cmd, opts)
+	},
+}
 
-// resolveBundleFlag folds --bundle [name] and an optional positional name into
-// (list bundles?, bundle name). pflag only binds a NoOptDefVal flag's value
-// with --bundle=NAME, so a lone positional argument after a bare --bundle is
-// taken as the name (--bundle NAME).
-func resolveBundleFlag(flagValue string, args []string) (listBundles bool, name string, err error) {
-	if len(args) > 0 && flagValue != bundleListSentinel {
-		return false, "", fmt.Errorf("unexpected argument %q (a bundle name goes after --bundle)", args[0])
+// catalogSkillsOpts reads the flags shared by the skill-list views: the
+// --include/--personal scope, the --source filter, and the --output format.
+func catalogSkillsOpts(cmd *cobra.Command) (catalogOpts, error) {
+	inc, err := cmdx.ReadIncludes(cmd, cmdx.IncludePersonal)
+	if err != nil {
+		return catalogOpts{}, err
 	}
-	if len(args) > 0 {
-		flagValue = args[0]
+	sourceFilter, err := parseSourceFilter(cmdx.String(cmd, cmdx.FlagSource))
+	if err != nil {
+		return catalogOpts{}, err
 	}
-	if flagValue == bundleListSentinel {
-		return true, "", nil
+	output, err := parseOutputFormat(cmdx.String(cmd, cmdx.FlagOutput))
+	if err != nil {
+		return catalogOpts{}, err
 	}
-	return false, flagValue, nil
+	return catalogOpts{personal: inc.Personal, source: sourceFilter, output: output}, nil
 }
 
 type (
 	catalogOpts struct {
-		bundles, personal bool
-		bundle            string
-		source            skill.Source
-		output            outputFormat
+		personal bool
+		bundle   string
+		source   skill.Source
+		output   outputFormat
 	}
 
 	skillEntry struct {
@@ -113,19 +119,6 @@ type (
 		Linked      int    `json:"linked"`
 	}
 )
-
-func runCatalog(cmd *cobra.Command, opts catalogOpts) error {
-	if !opts.output.valid() {
-		return fmt.Errorf("--output must be '%s' or '%s'", outputText, outputJSON)
-	}
-	if opts.bundles && (opts.bundle != "" || opts.personal || opts.source != "") {
-		return errors.New("--bundle <name>, --include, and --source apply when listing skills, not bundles")
-	}
-	if opts.bundles {
-		return runCatalogBundles(cmd, opts)
-	}
-	return runCatalogSkills(cmd, opts)
-}
 
 func runCatalogSkills(cmd *cobra.Command, opts catalogOpts) error {
 	out := cmd.OutOrStdout()
@@ -211,7 +204,7 @@ func filterByBundle(
 	}
 	bundle, ok := config.FindBundle(catalog, bundleName)
 	if !ok {
-		return nil, fmt.Errorf("bundle %q not found — run 'rsk catalog --bundles' to see all bundles", bundleName)
+		return nil, fmt.Errorf("bundle %q not found — run 'rsk catalog bundles' to see all bundles", bundleName)
 	}
 	want := make(map[string]bool, len(bundle.Skills))
 	for _, ref := range bundle.Skills {

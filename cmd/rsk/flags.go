@@ -41,6 +41,19 @@ func parseSourceFilter(raw string) (skill.Source, error) {
 	}
 }
 
+// registerSourceCompletion wires --source's shell completion from the
+// selectable catalog sources.
+func registerSourceCompletion(cmd *cobra.Command) {
+	err := cmd.RegisterFlagCompletionFunc(cmdx.FlagSource,
+		func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+			return []string{skill.SourceLocal.String(), skill.SourceOfficial.String()},
+				cobra.ShellCompDirectiveNoFileComp
+		})
+	if err != nil {
+		panic("register --source completion on " + cmd.Name() + ": " + err.Error())
+	}
+}
+
 // registerForCompletion wires --for's shell completion from the registered
 // tools, optionally including the "all" scope for commands that accept it.
 func registerForCompletion(cmd *cobra.Command, includeAll bool) {

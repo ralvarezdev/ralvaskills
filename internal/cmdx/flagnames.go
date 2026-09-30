@@ -9,7 +9,6 @@ const (
 	FlagVersion  = "version"
 	FlagSource   = "source"
 	FlagOutput   = "output"
-	FlagBundle   = "bundle"
 	FlagStack    = "stack"
 	FlagRefresh  = "refresh"
 	FlagOfficial = "official"

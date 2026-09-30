@@ -6,7 +6,6 @@ import (
 	"github.com/ralvarezdev/termkit"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
 )
 
@@ -19,25 +18,32 @@ func setupCommands() {
 	rootCmd.SetHelpCommandGroupID(groupOther)
 	rootCmd.SetCompletionCommandGroupID(groupOther)
 
-	// catalog command
+	// catalog command tree: catalog (all skills), catalog bundles, and
+	// catalog bundle <name>. The bundles view used to hide behind a bare
+	// --bundle; it is its own subcommand now.
 	rootCmd.AddCommand(catalogCmd)
 	termkit.MarkTableView(catalogCmd)
 	f := catalogCmd.Flags()
 	f.Bool(cmdx.FlagStack, false, "Fetch and display dependency metadata alongside skills")
-	f.String(cmdx.FlagBundle, "", "List bundles; with a name (--bundle NAME), list that bundle's skills")
-	f.Lookup(cmdx.FlagBundle).NoOptDefVal = bundleListSentinel
 	cmdx.RegisterInclude(catalogCmd, "Include extra skills in the output", cmdx.IncludePersonal)
 	f.String(cmdx.FlagSource, "", "Filter by source: local|official")
-	err := catalogCmd.RegisterFlagCompletionFunc(cmdx.FlagSource,
-		func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
-			return []string{skill.SourceLocal.String(), skill.SourceOfficial.String()},
-				cobra.ShellCompDirectiveNoFileComp
-		})
-	if err != nil {
-		panic("register --source completion: " + err.Error())
-	}
+	registerSourceCompletion(catalogCmd)
 	f.StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
 	registerOutputCompletion(catalogCmd)
+
+	catalogCmd.AddCommand(catalogBundlesCmd)
+	termkit.MarkTableView(catalogBundlesCmd)
+	catalogBundlesCmd.Flags().StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
+	registerOutputCompletion(catalogBundlesCmd)
+
+	catalogCmd.AddCommand(catalogBundleCmd)
+	termkit.MarkTableView(catalogBundleCmd)
+	f = catalogBundleCmd.Flags()
+	cmdx.RegisterInclude(catalogBundleCmd, "Include extra skills in the output", cmdx.IncludePersonal)
+	f.String(cmdx.FlagSource, "", "Filter by source: local|official")
+	registerSourceCompletion(catalogBundleCmd)
+	f.StringP(cmdx.FlagOutput, "o", string(outputText), outputUsage())
+	registerOutputCompletion(catalogBundleCmd)
 
 	// tools command (canonical) and the hidden legacy `claude tools` path,
 	// both built by the same factory.
@@ -128,6 +134,8 @@ func setupCommands() {
 	// row actions: install/uninstall directly from a catalog/list table row
 	// in the TUI, instead of leaving the view to type the name.
 	ui.MarkRowAction(catalogCmd, "i", "install", installCmd)
+	ui.MarkRowAction(catalogBundlesCmd, "i", "install", installCmd)
+	ui.MarkRowAction(catalogBundleCmd, "i", "install", installCmd)
 	ui.MarkRowAction(listCmd, "u", "uninstall", uninstallCmd)
 	ui.MarkRowAction(listCmd, "p", "pin", pinCmd)
 	ui.MarkRowActionArgs(listCmd, "n", "unpin", pinCmd, func(id string, _ termkit.Data) []string {

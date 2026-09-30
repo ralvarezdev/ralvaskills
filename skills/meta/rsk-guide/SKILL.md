@@ -68,8 +68,8 @@ Names are auto-resolved against the catalog: a name that matches a bundle expand
 | Command | Purpose |
 |---|---|
 | `rsk catalog` | All available skills |
-| `rsk catalog --bundle` | All available bundles (`--bundles` still works) |
-| `rsk catalog --bundle <name>` (or `--bundle=<name>`) | Skills in a specific bundle |
+| `rsk catalog bundles` | All available bundles |
+| `rsk catalog bundle <name>` | Skills in a specific bundle |
 | `rsk catalog --source local\|official` | Filter by source |
 | `rsk catalog --include personal` (`--personal` still works) | Include personal skills |
 | `rsk catalog -o json` | Machine-readable output |

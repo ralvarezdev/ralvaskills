@@ -782,14 +782,20 @@ Without `--global`, `rsk list` shows the project manifest contents (`.rsk/rsk.mo
 
 ```bash
 rsk catalog [flags]
+rsk catalog bundles [flags]
+rsk catalog bundle <name> [flags]
+
+Subcommands:
+  bundles           List the catalog's bundles and how many of their skills are installed
+  bundle <name>     List the skills inside one bundle
 
 Flags:
-  --bundle          List bundles instead of skills (`--bundles` still works)
-  --bundle <name>   Show skills in a specific bundle (`--bundle=<name>` also)
-  --source <s>      Filter by source: local | official
+  --source <s>      Filter by source: local | official (catalog, catalog bundle)
   --include personal  Include personal/ skills in listing (`--personal` still works)
   -o, --output <f>  Output format: text (default) | json
 ```
+
+`rsk catalog` lists every available skill; `rsk catalog bundles` lists the bundles; `rsk catalog bundle <name>` lists one bundle's skills.
 
 `rsk catalog` is read-only and scope-less — it describes what *exists* in the catalog, not what's installed. Use `rsk list` for installed state.
 
@@ -1254,7 +1260,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | `rsk status` | ✅ | Scans global + project dirs, source labels `[ralva]`/`[anthr]`, bundle tags, `[pinned]` marker from `rsk.mod`; `--global` / `--project` / `--for` scope flags |
 | `rsk status --stack` | 📋 | Reads each skill's `STACK.md`, fetches latest versions from `proxy.golang.org` (Go) and `pypi.org` (Python), highlights stale skills; results cached 24 h; opt-in only — current build errors with "not yet implemented" |
 | `rsk list` | ✅ | Installed view: project manifest entries (with installed + pinned marks) or `--global` symlinks in tool dirs; `-o text\|json` |
-| `rsk catalog` | ✅ | Browse view: every available skill, or bare `--bundle` for the bundle list (`--bundles` still works), or `--bundle <name>` for the skills in one bundle; `--source`, `--include personal` (`--personal` still works), `-o text\|json` |
+| `rsk catalog` | ✅ | Browse view: every available skill, `catalog bundlescatalog bundles` for the bundle list, or `catalog catalog bundle <name>` for the skills in one bundle; `--source`, `--include personal` (`--personal` still works), `-o text\|json` |
 | `rsk uninstall` | ✅ | Remove symlinks for bundles or skills (auto-resolved); project removes also clean `rsk.mod` / `rsk.lock` / `.rsk/CLAUDE.md`; `--dry-run` |
 | `rsk pin [--remove]` (hidden `rsk unpin`) | ✅ | Toggle a manifest skill's entry in the `pinned` list and re-sync every configured tool's project config |
 | Official skill cache | ✅ | Clone and cache `anthropics/skills` at `~/.ralvaskills/cache/anthropic/` via `rsk update --include official` |

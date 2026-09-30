@@ -7,6 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/ralvarezdev/termkit"
+
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 )
 
@@ -98,45 +100,40 @@ func TestSourceScopeFlagsRegistered(t *testing.T) {
 	if f := updateCmd.Flags().Lookup(cmdx.FlagOfficial); f == nil || !f.Hidden {
 		t.Error("update: --official must be a hidden alias")
 	}
-	if f := catalogCmd.Flags().Lookup(cmdx.FlagBundle); f == nil || f.NoOptDefVal != bundleListSentinel {
-		t.Error("catalog: --bundle must be an optional-value flag")
-	}
 	if catalogCmd.Flags().Lookup(cmdx.FlagSource) == nil {
 		t.Error("catalog: --source (local|official) must be kept")
 	}
 }
 
-func TestResolveBundleFlag(t *testing.T) {
-	tests := []struct {
-		name      string
-		flag      string
-		args      []string
-		wantList  bool
-		wantName  string
-		wantError bool
-	}{
-		{"unset", "", nil, false, "", false},
-		{"bare --bundle lists bundles", bundleListSentinel, nil, true, "", false},
-		{"--bundle=NAME", "go-grpc", nil, false, "go-grpc", false},
-		{"--bundle NAME (positional)", bundleListSentinel, []string{"go-grpc"}, false, "go-grpc", false},
-		{"stray positional", "", []string{"x"}, false, "", true},
+func TestCatalogBundleSubcommands(t *testing.T) {
+	t.Parallel()
+
+	if catalogCmd.Flags().Lookup("bundle") != nil {
+		t.Error("catalog: --bundle must be gone (use `catalog bundles` / `catalog bundle <name>`)")
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			list, name, err := resolveBundleFlag(tt.flag, tt.args)
-			if (err != nil) != tt.wantError || list != tt.wantList || name != tt.wantName {
-				t.Errorf(
-					"got (%v, %q, %v), want (%v, %q, err=%v)",
-					list,
-					name,
-					err,
-					tt.wantList,
-					tt.wantName,
-					tt.wantError,
-				)
-			}
-		})
+
+	for _, path := range [][]string{
+		{"catalog", "bundles"},
+		{"catalog", "bundle", "go-grpc"},
+	} {
+		found, _, err := rootCmd.Find(path)
+		if err != nil || found == nil {
+			t.Errorf("rsk %s not reachable: %v", strings.Join(path, " "), err)
+			continue
+		}
+		if !termkit.IsTableView(found) {
+			t.Errorf("rsk %s is not marked a table view", strings.Join(path, " "))
+		}
+	}
+
+	if catalogBundlesCmd.Flags().Lookup(cmdx.FlagOutput) == nil {
+		t.Error("catalog bundles: missing --output")
+	}
+	if catalogBundleCmd.Flags().Lookup(cmdx.FlagSource) == nil {
+		t.Error("catalog bundle: missing --source")
+	}
+	if f := catalogBundleCmd.Flags().Lookup(cmdx.FlagInclude); f == nil || f.Hidden {
+		t.Error("catalog bundle: --include missing or hidden")
 	}
 }
 

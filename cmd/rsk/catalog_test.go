@@ -56,8 +56,8 @@ func TestRunCatalogSkillsCapture(t *testing.T) {
 		t.Fatal("expected a capture on the command's context")
 	}
 
-	if err := runCatalog(catalogCmd, catalogOpts{output: outputText}); err != nil {
-		t.Fatalf("runCatalog: unexpected error: %v", err)
+	if err := runCatalogSkills(catalogCmd, catalogOpts{output: outputText}); err != nil {
+		t.Fatalf("runCatalogSkills: unexpected error: %v", err)
 	}
 
 	if buf.Len() != 0 {
@@ -115,8 +115,8 @@ func TestRunCatalogSkillsCaptureJSON(t *testing.T) {
 		t.Fatal("expected a capture on the command's context")
 	}
 
-	if err := runCatalog(catalogCmd, catalogOpts{output: outputJSON}); err != nil {
-		t.Fatalf("runCatalog: unexpected error: %v", err)
+	if err := runCatalogSkills(catalogCmd, catalogOpts{output: outputJSON}); err != nil {
+		t.Fatalf("runCatalogSkills: unexpected error: %v", err)
 	}
 
 	if buf.Len() != 0 {
