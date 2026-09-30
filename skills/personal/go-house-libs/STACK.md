@@ -48,4 +48,4 @@ Each module pins the siblings it builds on at the version below (its `go.mod`, 2
 - **ginkit** carries `CORS`, so the earlier advice to use `gin-contrib/cors` directly is obsolete.
 
 _Last reviewed: 2026-09-29_
-_Skill version at last review: 0.2.0_
+_Skill version at last review: 0.3.0_

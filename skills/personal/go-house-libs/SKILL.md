@@ -1,12 +1,12 @@
 ---
-name: house-kits
-version: 0.2.0
+name: go-house-libs
+version: 0.3.0
 description: Maps a need to the ralvarezdev shared Go modules — restkit, ginkit, pgkit, mcpkit (REST envelope and problem details, gin, Postgres, MCP), identity and identitygin (accounts, auth, PATs), ratelimit, email, webpush, termkit (CLI UI). Use when building or extending a Go API, MCP server, CLI or Postgres store, before hand-writing envelopes, cursors, pgtype conversions, auth, rate limiting, mail or push.
 ---
 
-# House Kits
+# Go House Libs
 
-Small, reusable Go modules extracted from finance and its sibling projects. Each follows [go-library-builder](../go-library-builder/SKILL.md): a port in the root package, adapters in technology-named subpackages, config structs over options, no globals. The cross-cutting rules live in the architect skills; the modules are how this house implements them. Design notes (they predate the later releases): `finance-platform/docs/2026-09-29-house-kits-design.md`, `finance-platform/docs/2026-09-29-kit-adoption.md`. Reference consumer for most of them: `finance-platform/backend` (`internal/bootstrap`, `internal/api/router`).
+Small, reusable Go modules extracted from finance and its sibling projects. This skill is for *using* them; [go-library-builder](../go-library-builder/SKILL.md) is for creating a new one. `email`, `ratelimit` and `webpush` follow its port-and-adapter shape (a port in the root package, adapters in technology-named subpackages), and `identity` its vertical-slice shape. `restkit`, `pgkit`, `mcpkit` and `termkit` are toolkits of helpers with no domain port, and `ginkit` and `identitygin` are framework adapter modules; the builder does not describe those two shapes. The cross-cutting rules live in the architect skills; the modules are how this house implements them. Design notes (they predate the later releases): `finance-platform/docs/2026-09-29-house-kits-design.md`, `finance-platform/docs/2026-09-29-kit-adoption.md`. Reference consumer for most of them: `finance-platform/backend` (`internal/bootstrap`, `internal/api/router`).
 
 ## 1. Pick the package
 

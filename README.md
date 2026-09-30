@@ -115,6 +115,7 @@ These are personal to me and excluded from bundle installs. Listed here for tran
 - **`uru-thesis-defense-architect`** — URU-style thesis defense deck specs: fixed institutional slide structure, Spanish-only content, logo placement rules. Outputs `.md` only.
 - **`uru-scientific-paper-architect`** — Manuscript formatting for Revista Tecnocientífica URU: typography rules, IMRyD-derived structure by article type, citation/reference formats. Outputs one `.md` manuscript spec.
 - **`go-library-builder`** — Scaffolds reusable Go 1.26 library modules in the ralvarezdev DDD + hexagonal house style: domain-pure root package, narrow composed ports, technology-named adapter subpackages (prod/dev/test), config structs over options, testcontainers over mocks. Module namespace is a parameter.
+- **`go-house-libs`** — Maps a need to the ralvarezdev shared Go modules (restkit, ginkit, pgkit, mcpkit, identity, identitygin, ratelimit, email, webpush, termkit): a router plus one `references/` file per module with its package layout, a recipe and the gotchas; the consumer-side companion of `go-library-builder`.
 
 ---
 
