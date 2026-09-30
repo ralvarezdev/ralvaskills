@@ -24,7 +24,6 @@ func setupCommands() {
 	rootCmd.AddCommand(catalogCmd)
 	termkit.MarkTableView(catalogCmd)
 	f := catalogCmd.Flags()
-	f.Bool(cmdx.FlagStack, false, "Fetch and display dependency metadata alongside skills")
 	cmdx.RegisterInclude(catalogCmd, "Include extra skills in the output", cmdx.IncludePersonal)
 	f.String(cmdx.FlagSource, "", "Filter by source: local|official")
 	registerSourceCompletion(catalogCmd)
