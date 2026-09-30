@@ -33,4 +33,4 @@ This skill pins **specifications**, not libraries. Library choices live in the f
 - **OpenAPI tooling (CI, not library):** [Redocly CLI](https://redocly.com/docs/cli/) for `lint`/`bundle` on every PR. Rendered docs UI is project-dependent — [Scalar](https://github.com/scalar/scalar) is a solid modern default, but not mandatory.
 
 _Last reviewed: 2026-09-29_
-_Skill version at last review: 1.1.0_
+_Skill version at last review: 1.1.1_

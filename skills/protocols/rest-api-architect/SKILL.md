@@ -1,6 +1,6 @@
 ---
 name: rest-api-architect
-version: 1.1.0
+version: 1.1.1
 description: Cross-language REST conventions — resource URLs, method semantics, status codes, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 9457 errors, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth. Framework-agnostic. Use when designing or auditing REST endpoints.
 ---
 

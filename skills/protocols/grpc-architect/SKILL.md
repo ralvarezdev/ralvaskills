@@ -1,6 +1,6 @@
 ---
 name: grpc-architect
-version: 1.0.0
+version: 1.0.1
 description: Vanilla gRPC standards — .proto services, status.Error with standard codes, domain→code mapping, interceptor chain (auth/log/recovery/validation/metrics), client deadlines, context propagation, reflection off in prod, bufconn testing. Language-agnostic; Go examples. Use when designing or reviewing a gRPC service.
 ---
 
