@@ -1,44 +1,54 @@
 ---
 name: house-kits
-version: 0.1.0
-description: Maps a need to the ralvarezdev shared Go kits — restkit (REST envelope, RFC 9457 problem details, cursor codec, HTTP client core, net/http adapter, idempotency contract), ginkit (gin responders, validation, request-id, logger, recovery, idempotency, rate limit), pgkit (pgx/sqlc helpers, transactions, idempotency store, Postgres test container), mcpkit (MCP server helpers), identitygin (identity auth for gin). Use when building or extending a Go REST API, CLI client, MCP server or Postgres store, before hand-writing response envelopes, cursor tokens, pgtype conversions or MCP plumbing.
+version: 0.2.0
+description: Maps a need to the ralvarezdev shared Go modules — restkit, ginkit, pgkit, mcpkit (REST envelope and problem details, gin, Postgres, MCP), identity and identitygin (accounts, auth, PATs), ratelimit, email, webpush, termkit (CLI UI). Use when building or extending a Go API, MCP server, CLI or Postgres store, before hand-writing envelopes, cursors, pgtype conversions, auth, rate limiting, mail or push.
 ---
 
 # House Kits
 
-Small, reusable Go modules extracted from finance. Design: `finance-platform/docs/2026-09-29-house-kits-design.md`; what each kit gained since v0.1.0 and how other repos compare: `finance-platform/docs/2026-09-29-kit-adoption.md`. Each follows [go-library-builder](../go-library-builder/SKILL.md): stdlib-only core, one adapter module per framework, config structs over options, no globals. The cross-cutting rules live in the architect skills; the kits are how this house implements them.
+Small, reusable Go modules extracted from finance and its sibling projects. Each follows [go-library-builder](../go-library-builder/SKILL.md): a port in the root package, adapters in technology-named subpackages, config structs over options, no globals. The cross-cutting rules live in the architect skills; the modules are how this house implements them. Design notes (they predate the later releases): `finance-platform/docs/2026-09-29-house-kits-design.md`, `finance-platform/docs/2026-09-29-kit-adoption.md`. Reference consumer for most of them: `finance-platform/backend` (`internal/bootstrap`, `internal/api/router`).
 
-## 1. Pick the kit
+## 1. Pick the package
 
-| Need | Kit | Rule it implements |
+Read the linked reference before wiring; it has the package layout, a recipe and the gotchas.
+
+| Need | Package | Reference |
 |---|---|---|
-| Response envelope, RFC 9457 problem details (`problem`: typed `Catalog`, correlation id, 5xx redaction), list `Meta`, cursor token, typed HTTP client for a CLI/MCP | `restkit` |
-| `net/http` service without gin: problem writer, request-id, panic recovery (`httpx`); the store contract for Idempotency-Key (`idempotency`) | `restkit` | [rest-api-architect](../../protocols/rest-api-architect/SKILL.md) |
-| Gin handlers, validation errors, request-id, request logger, panic recovery, body cap, `Idempotency-Key`, per-user rate limit (CORS: use gin-contrib/cors) | `ginkit` | [gin-architect](../../frameworks/gin-architect/SKILL.md) |
-| pgx/sqlc value conversion, `ErrNoRows` mapping, `RunInTx`, Postgres `Idempotency-Key` store, container-backed DB tests | `pgkit` | [sql-architect](../../databases/sql-architect/SKILL.md) |
-| MCP panic recovery, backend-delegated auth, per-caller state | `mcpkit` | [mcp-architect](../../protocols/mcp-architect/SKILL.md) |
-| Cookie/PAT auth middleware on identity | `identitygin` | identity |
+| Response envelope, list `Meta`, cursor token, RFC 9457 problems, typed HTTP client for a CLI or MCP, ETags, the idempotency contract, a `net/http` service without gin | `restkit` | [RESTKIT](references/RESTKIT.md) |
+| Gin responders, validation, request-id, logger, recovery, body cap, CORS, `Idempotency-Key`, rate-limit middleware, handler test helpers | `ginkit` | [GINKIT](references/GINKIT.md) |
+| pgx/sqlc value conversion, `RunInTx`, per-module goose migrations, Postgres idempotency store, pool metrics, container-backed DB tests | `pgkit` | [PGKIT](references/PGKIT.md) |
+| MCP server: panic recovery, backend-delegated auth, tool results, API-key gate, per-caller state | `mcpkit` | [MCPKIT](references/MCPKIT.md) |
+| User accounts, login, sessions, TOTP and WebAuthn, RBAC, personal access tokens | `identity` | [IDENTITY](references/IDENTITY.md) |
+| Cookie and PAT auth middleware for gin on identity | `identitygin` | [IDENTITYGIN](references/IDENTITYGIN.md) |
+| Throttle by key (user, IP, API key), in memory or shared through Valkey | `ratelimit` | [RATELIMIT](references/RATELIMIT.md) |
+| Send email (SMTP, log-only, in-memory for tests) | `email` | [EMAIL](references/EMAIL.md) |
+| Web Push with VAPID and a Postgres subscription store | `webpush` | [WEBPUSH](references/WEBPUSH.md) |
+| Terminal UI: tables, charts, forms, session shell, dates, json/yaml/csv output | `termkit` | [TERMKIT](references/TERMKIT.md) |
 
-## 2. Dependency direction
+## 2. Shape and dependency direction
 
-`ginkit -> restkit`; never the reverse. `restkit` imports the standard library only, including its `httpx` and `idempotency` packages. `ginkit` uses an idempotency store through the `restkit/idempotency` interface, so it never imports `pgkit`. A different framework gets its own `<framework>kit` adapter, not a branch inside `restkit`.
+- **The root package is the port.** `restkit`, `email`, `ratelimit` and `webpush` import no third-party code at their root; adapters live in subpackages (`smtp`, `valkey`, `vapid`, `postgres`). An app depends on the port (`email.Mailer`, `ratelimit.Limiter`, `webpush.Sender`) and picks the adapter in its bootstrap package.
+- **Direction**: `ginkit -> restkit, ratelimit`; `pgkit -> restkit`; `identity -> email, pgkit, ratelimit`; `identitygin -> identity`; `webpush -> pgkit`. Never the reverse, and never a kit importing a consumer. `ginkit` uses an idempotency store through `restkit/idempotency`, so it never imports `pgkit`.
+- **Adapters own their dependency**, per package: gin in `ginkit`; goose in `pgkit/migrate`; testcontainers in `pgkit/pgtest`; Prometheus in `pgkit/pgmetrics`; Valkey in `ratelimit/valkey`; gomail in `email/smtp`; `webpush-go` in `webpush/vapid`; the MCP SDK in `mcpkit`. A consumer that does not use one must not pull it in.
+- A different HTTP framework gets its own `<framework>kit` adapter, not a branch inside `restkit`.
 
 ## 3. Rules
 
-- **Do not re-declare a kit type locally.** A second copy of `Response[T]`, a cursor codec or `pgtype` helpers is a bug; import the kit.
-- **A project keeps one wire contract.** Finance uses the `restkit.Response` envelope; `Meta` stays camelCase while bodies stay snake_case, and the frontend, CLI and MCP depend on it. Other repos return bare resources with problem+json errors: adopt the kit's middleware and `problem` there, not the envelope. New projects start on RFC 9457 problems.
-- **Do not leak internals on 5xx.** Use `problem.RedactServerError` (or `httpx.Config.WriteError`) so a 5xx `detail` is generic outside debug mode.
-- **Idempotency fails closed.** A store outage must refuse the request, never run the handler; release the key on 5xx or panic.
-- **Generated code is types only.** oapi-codegen never generates client or server; hand-write calls on `restkit/client.Do`.
-- **Adapters own their dependency.** gin lives in `ginkit`, testcontainers in `pgkit/pgtest`, the MCP SDK in `mcpkit`. Consumers that do not use one must not pull it in.
-- **Promote only with a second consumer.** Code moves into a kit when a second project needs it. The exception is `mcpkit`, extracted up front for planned reuse and kept on v0.x until a second MCP server adopts it.
-- **Verify a kit release against its previous tag** (`git diff <prev-tag>`) before labelling it additive.
+- **Do not re-declare a kit type locally.** A second `Response[T]`, cursor codec, `pgtype` helper or mailer interface is a bug; import the module.
+- **A project keeps one wire contract.** Finance uses the `restkit.Response` envelope (`Meta` camelCase, bodies snake_case; frontend, CLI and MCP depend on it). Other repos return bare resources with problem+json errors: adopt the middleware and `problem` there, not the envelope. New projects start on RFC 9457.
+- **Do not leak internals on 5xx.** Never pass `err.Error()` to `ginkit.Err` for a 5xx: log the real error, answer with a generic message, and show the raw text only in debug mode (`problem.RedactServerError`, or finance's `respondInternalError`). Tool errors to agents go through `mcpkit.ErrorMsg`.
+- **Idempotency fails closed.** A store outage refuses the request, never runs the handler; release the key on 5xx or panic.
+- **Generated code is types only.** oapi-codegen never generates a client or server; hand-write calls on `restkit/client.Do`.
+- **Infrastructure is its own module, not part of the app or identity.** Rate limiting is not login throttling (`identity/auth.AttemptLimiter`); email and push are not identity concerns. Wire them, do not fold them in.
+- **Promote only with a second consumer.** Code moves into a module when a second project needs it. The exception is `mcpkit`, extracted up front for planned reuse and kept on v0.x until a second MCP server adopts it.
+- **Verify a release against its previous tag** (`git diff <prev-tag>`) before labelling it additive, and check `STACK.md`: modules pin older siblings, so the consumer's `go.mod` may resolve a different version than the latest tag.
+- **A tag is a promise about behavior.** A change that turns a call that returned nil into an error (for example `webpush` `Send`) is breaking for callers even when the signature is unchanged; say so in the commit and the docs.
 
-## 4. Adding to a kit
+## 4. Adding to a module
 
 1. Confirm a second consumer exists and the code imports no project domain package.
 2. Add it to the narrowest module that fits (§1, §2), with a test.
 3. Tag, then migrate the consumer in one commit and delete the local copy.
-4. Update this skill's table and [STACK.md](STACK.md).
+4. Update the module's file in `references/`, the table in §1, and [STACK.md](STACK.md) (tag, pins, consumers).
 
-See [STACK.md](STACK.md) for kit versions and their pinned dependencies.
+A new module gets its own `references/<NAME>.md` (UPPER_SNAKE_CASE) and a row in §1. See [STACK.md](STACK.md) for tags, Go versions, dependency pins and consumers.
