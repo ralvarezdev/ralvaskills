@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/ralvarezdev/svckit"
 	"github.com/spf13/cobra"
 
 	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
@@ -178,13 +180,22 @@ func buildInfoFallback(curVersion, curCommit, curBuildDate string) (version, com
 }
 
 // Execute runs the root command and exits on error.
-// A user cancellation (Ctrl+C during a prompt) exits 130 silently per SIGINT convention.
+// A user cancellation (Ctrl+C during a prompt) or a caught SIGINT/SIGTERM exits 130 silently per SIGINT convention.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		if errors.Is(err, ui.ErrAborted) {
-			os.Exit(exitAborted)
-		}
-		fmt.Fprintln(os.Stderr, "rsk: "+err.Error())
-		os.Exit(1)
+	os.Exit(execute())
+}
+
+func execute() int {
+	ctx, stop := svckit.NotifyContext(context.Background())
+	defer stop()
+
+	err := rootCmd.ExecuteContext(ctx)
+	if errors.Is(context.Cause(ctx), svckit.ErrInterrupted) || errors.Is(err, ui.ErrAborted) {
+		return exitAborted
 	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "rsk: "+err.Error())
+		return 1
+	}
+	return 0
 }
