@@ -39,7 +39,7 @@ One server: `return svckit.Finish(ctx, svckit.Serve(ctx, srv, svckit.Config{}))`
 - **Tests use `:0`.** Read the port from `Config.OnListening`, or hand your own listener to `ServeListener`.
 - **An already-cancelled context returns nil without binding.**
 - **`Group` joins every failure, first first,** and does not treat a service that returns nil or only `context.Canceled` as failed.
-- **Wrap the returned error** at the call site if your linter requires it (finance does: `serve api: %w`); svckit already prefixes the service name inside a `Group`.
+- **Wrap the returned error** at the call site if your linter requires it (for example `serve api: %w`); svckit already prefixes the service name inside a `Group`.
 - **Log lines changed from the hand-rolled versions** ("listening" with a `service` field); check alerts that match the old text.
 
 ## Not here

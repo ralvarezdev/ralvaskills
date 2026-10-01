@@ -1,12 +1,12 @@
 ---
 name: go-house-libs
-version: 0.5.0
+version: 0.5.1
 description: Maps a need to the ralvarezdev shared Go modules — restkit, ginkit, pgkit, mcpkit (REST envelope and problem details, gin, Postgres, MCP), identity and identitygin (accounts, auth, PATs), ratelimit, email, webpush, termkit (CLI UI), svckit (server lifecycle), tick (periodic jobs), sqlitekit (SQLite), resilience (retry, backoff, supervisor). Use when building or extending a Go API, MCP server, CLI, service or Postgres/SQLite store, before hand-writing envelopes, cursors, pgtype conversions, auth, rate limiting, mail, push, a server start/shutdown block, a ticker loop, a retry loop or a SQLite open.
 ---
 
 # Go House Libs
 
-Small, reusable Go modules extracted from finance and its sibling projects. This skill is for *using* them; [go-library-builder](../go-library-builder/SKILL.md) is for creating a new one. `email`, `ratelimit` and `webpush` follow its port-and-adapter shape (a port in the root package, adapters in technology-named subpackages), and `identity` its vertical-slice shape. `restkit`, `pgkit`, `mcpkit`, `termkit`, `svckit`, `tick`, `sqlitekit` and `resilience` are toolkits of helpers with no domain port, and `ginkit` and `identitygin` are framework adapter modules; the builder does not describe those two shapes. The cross-cutting rules live in the architect skills; the modules are how this house implements them. Design notes (they predate the later releases): `finance-platform/docs/2026-09-29-house-kits-design.md`, `finance-platform/docs/2026-09-29-kit-adoption.md`. Reference consumer for most of them: `finance-platform/backend` (`internal/bootstrap`, `internal/api/router`).
+Small, reusable Go modules extracted from code that several projects repeated. This skill is for *using* them; [go-library-builder](../go-library-builder/SKILL.md) is for creating a new one. `email`, `ratelimit` and `webpush` follow its port-and-adapter shape (a port in the root package, adapters in technology-named subpackages), and `identity` its vertical-slice shape. `restkit`, `pgkit`, `mcpkit`, `termkit`, `svckit`, `tick`, `sqlitekit` and `resilience` are toolkits of helpers with no domain port, and `ginkit` and `identitygin` are framework adapter modules; the builder does not describe those two shapes. The cross-cutting rules live in the architect skills; the modules are how this house implements them.
 
 ## 1. Pick the package
 
@@ -41,8 +41,8 @@ Read the linked reference before wiring; it has the package layout, a recipe and
 
 - **Do not hand-write lifecycle, ticker, retry or SQLite-open code.** A `go srv.ListenAndServe()` that only logs on failure while `main` waits on `ctx.Done()` idles forever on a bind error (`svckit.Serve`); a `time.NewTicker` select loop is `tick.Every`; an `Exec("PRAGMA ...")` or a mattn-style DSN (`_journal_mode=`) on modernc leaves SQLite without WAL or a busy timeout (`sqlitekit`); a retry that retries every error with no jitter belongs in `resilience/retry`.
 - **Do not re-declare a kit type locally.** A second `Response[T]`, cursor codec, `pgtype` helper or mailer interface is a bug; import the module.
-- **A project keeps one wire contract.** Finance uses the `restkit.Response` envelope (`Meta` camelCase, bodies snake_case; frontend, CLI and MCP depend on it). Other repos return bare resources with problem+json errors: adopt the middleware and `problem` there, not the envelope. New projects start on RFC 9457.
-- **Do not leak internals on 5xx.** Never pass `err.Error()` to `ginkit.Err` for a 5xx: log the real error, answer with a generic message, and show the raw text only in debug mode (`problem.RedactServerError`, or finance's `respondInternalError`). Tool errors to agents go through `mcpkit.ErrorMsg`.
+- **A project keeps one wire contract.** A project that adopted the `restkit.Response` envelope keeps it (`Meta` camelCase, bodies snake_case; its frontend, CLI and MCP clients depend on it). A project built on bare resources keeps returning them with problem+json errors: adopt the middleware and `problem` there, not the envelope. New projects start on RFC 9457.
+- **Do not leak internals on 5xx.** Never pass `err.Error()` to `ginkit.Err` for a 5xx: log the real error, answer with a generic message, and show the raw text only in debug mode (`problem.RedactServerError`, or an app-level helper that does the same). Tool errors to agents go through `mcpkit.ErrorMsg`.
 - **Idempotency fails closed.** A store outage refuses the request, never runs the handler; release the key on 5xx or panic.
 - **Generated code is types only.** oapi-codegen never generates a client or server; hand-write calls on `restkit/client.Do`.
 - **Infrastructure is its own module, not part of the app or identity.** Rate limiting is not login throttling (`identity/auth.AttemptLimiter`); email and push are not identity concerns. Wire them, do not fold them in.

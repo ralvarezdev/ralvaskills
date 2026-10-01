@@ -1,6 +1,6 @@
 # mcpkit
 
-`github.com/ralvarezdev/mcpkit` — the helpers an MCP server built on the official `modelcontextprotocol/go-sdk` needs and the SDK does not provide. Extracted from finance-platform's MCP server, its only consumer. Current tag v0.4.1 (go-sdk v1.8.0, Go 1.27.1).
+`github.com/ralvarezdev/mcpkit` — the helpers an MCP server built on the official `modelcontextprotocol/go-sdk` needs and the SDK does not provide. Extracted from one MCP server; it stays v0.x until a second server adopts it. Current tag v0.4.1 (go-sdk v1.8.0, Go 1.27.1).
 
 ## What it gives you
 
@@ -40,7 +40,7 @@ activeProfile := mcpkit.NewCallers[string]() // shared; Get/Set(ctx) per request
 
 ## Removed in v0.4.0 (breaking)
 
-`ToolOutput[T]`, `ToolStatus`, `ToolError`, `ToolSuccess`, `BearerToken`, `RequireAPIKey` and `ErrEmptyAPIKey` are gone: no consumer used them (finance-platform renders results natively and verifies with `BackendVerifier`). They live on in v0.2.0 and in plc-platform's and uns-platform's local `pkg/mcpkit` copies, and return only when a second server adopts them. Do not recommend them; return plain tool results and let the go-sdk fill `Content`. The repo README still lists them; the code is the truth.
+`ToolOutput[T]`, `ToolStatus`, `ToolError`, `ToolSuccess`, `BearerToken`, `RequireAPIKey` and `ErrEmptyAPIKey` are gone: no consumer used them (servers render results natively and verify with `BackendVerifier`). They live on in v0.2.0 and in some projects' local copies, and return only when a second server adopts them. Do not recommend them; return plain tool results and let the go-sdk fill `Content`. The repo README still lists them; the code is the truth.
 
 ## Not included
 

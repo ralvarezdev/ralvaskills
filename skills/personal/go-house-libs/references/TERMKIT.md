@@ -64,7 +64,7 @@ return printer.Print(cmd, projects, func(f *output.Formatter) {
 
 ## Consumers and stability
 
-finance-platform's CLI, devtrack and rsk (ralvaskills). Pre-1.0 (`v0.x`, current v0.64.1): the API may change between minor versions. It is on Go 1.27.1, newer than the other kits ([../STACK.md](../STACK.md)). The module's `docs/` folder (`form-scope.md`, `session-scope.md`, `charts-scope.md`) holds the open work and lists per-CLI copies of this code that still need migrating.
+Used by several CLIs. Pre-1.0 (`v0.x`, current v0.64.1): the API may change between minor versions. It is on Go 1.27.1, newer than the other kits ([../STACK.md](../STACK.md)). The module's `docs/` folder (`form-scope.md`, `session-scope.md`, `charts-scope.md`) holds the open work and lists per-CLI copies of this code that still need migrating.
 
 ## Not here
 

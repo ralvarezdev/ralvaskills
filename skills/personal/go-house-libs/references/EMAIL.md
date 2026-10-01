@@ -46,7 +46,7 @@ if errors.As(err, &c) && !c.IsPermanent() { /* transient: retry later with the s
 
 ## Reference consumers
 
-finance-platform wires `email/logger` in `backend/internal/bootstrap/bootstrap.go` (real SMTP still pending as of the last check; set `TLS` and call `Config.Validate()` when wiring it); identity sends its verification and reset mail through this port, so any app on identity needs a `Mailer` ([IDENTITY.md](IDENTITY.md)).
+Wire `email/logger` in development and `email/smtp` in production (set `TLS` and call `Config.Validate()` when wiring it); identity sends its verification and reset mail through this port, so any app on identity needs a `Mailer` ([IDENTITY.md](IDENTITY.md)).
 
 ## Not here
 

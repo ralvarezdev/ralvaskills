@@ -31,7 +31,7 @@ For gin, do not write the middleware: `ginkit.RateLimit(limiter, key)` ([GINKIT.
 ## Rules
 
 - **Prefer `valkey.NewGCRA` over `valkey.New`** unless a token bucket implementation is specifically wanted: it admits and denies identically and stores one value per key.
-- **The caller owns the key.** A user id, an IP or an API key; the port is identity-agnostic. Finance keys the `/api` group by the authenticated caller: `api.Use(ginkit.RateLimit(limiter, middleware.MustCallerID))` in `internal/api/router/router.go` ([GINKIT.md](GINKIT.md)).
+- **The caller owns the key.** A user id, an IP or an API key; the port is identity-agnostic. Key an authenticated `/api` group by the caller: `api.Use(ginkit.RateLimit(limiter, callerID))` ([GINKIT.md](GINKIT.md)).
 - **Choose fail-open or fail-closed on error, explicitly.** `Allow` returns an error only when the limiter could not evaluate (store unreachable); denial is `Allowed == false` with no error. `ginkit.RateLimit` fails open; for a security-sensitive path use `RateLimitOptions{FailClosed: true}`.
 - **Token bucket, not a fixed window**: a fixed window lets a key spend twice its budget around the boundary.
 - **`Policy.Window` is `Burst / Rate`** (time to refill an empty bucket), not a fixed window.

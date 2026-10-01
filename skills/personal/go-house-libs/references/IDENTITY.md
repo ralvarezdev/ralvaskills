@@ -19,7 +19,7 @@
 
 Prefer `identityapp.NewFromDeps(identityapp.Deps{Users, Store, PermCache, PreAuth, Issuer, Hasher, Limiter, TOTP, WebAuthn, Mailer, Config})`: one `*auth/postgres.Store` satisfies `Store` (all eight auth store ports), a missing dependency returns `ErrMissingDependency` naming the field, and it runs `LinkEmailComposer.Validate` and `auth.Service.Validate` (hardening misconfiguration fails at startup). It nil-checks interfaces only, so a typed nil pointer passes. Build the JWT issuer with `jwt.NewChecked` (secret >= 32 bytes, optional `Issuer`/`Audience`/`NotBefore`/`Leeway`); `jwt.New` is deprecated.
 
-Reference consumer: finance's `backend/internal/bootstrap/bootstrap.go` (identity app, WebAuthn adapter, `LinkEmailComposer`, PAT store, `EnsureAdmin` seeding, Valkey adapters with a no-op fallback, and since v1.10 the ceremony store, TOTP replay guard and backup-code pepper). Read it before wiring a second app. The package README also carries a full in-process quick start.
+A full wiring covers the identity app, WebAuthn adapter, `LinkEmailComposer`, PAT store, `EnsureAdmin` seeding, Valkey adapters with a no-op fallback, and since v1.10 the ceremony store, TOTP replay guard and backup-code pepper. The package README also carries a full in-process quick start.
 
 ```go
 identityApp := identityapp.New(/* userSvc, authSvc, stores, mailer */, identityapp.Config{
@@ -90,7 +90,7 @@ cfg := identityapp.Config{
 - **`EnsureAdmin`** is a no-op (password unchecked) for a verified account already holding the admin role; any repair (pending account, role missing) needs the matching password (`ErrAdminPasswordMismatch`, `ErrAdminAccountInactive` for a suspended one) and never reactivates it. Run it before serving traffic.
 - **Known limitations.** Access tokens are not bound to sessions: a revoked session's access token lives until expiry plus `Leeway`, and `ValidateAccess` does not check user status. `LogoutOthers` is not atomic with a concurrent refresh.
 - **Two pools, two Postgres roles.** Apps reach identity data only through identity's interface, enforced at the database level by separate roles and connection pools.
-- **Authorization is separate from authentication.** identity answers who the caller is and their RBAC roles; an app derives its own permissions from that (finance's `authz` resolves roles through identity).
+- **Authorization is separate from authentication.** identity answers who the caller is and their RBAC roles; an app derives its own permissions from that (for example a resolver that maps identity roles to app permissions).
 - **Login throttling is not rate limiting.** `auth.AttemptLimiter` counts failed logins per account. API throughput is [RATELIMIT.md](RATELIMIT.md).
 - **The domain imports no infrastructure**; adapters point inward (hexagonal). New storage or cache backends implement identity's ports in an adapter subpackage.
 - **Never log or return credentials.** A PAT's raw value exists once, at creation; only its hash is stored. `PATTouchInterval` (default 1m) throttles `last_used_at` writes.

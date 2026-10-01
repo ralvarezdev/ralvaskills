@@ -56,11 +56,11 @@ r.GET("/healthz", ginkit.Health())
 r.GET("/readyz", ginkit.Readiness(map[string]ginkit.Check{"db": pingDB}))
 ```
 
-Finance's request pipeline (`internal/api/router/pipeline.go`) is `RequestID`, `Logger`, `RecoveryWith`, then the body cap.
+A typical request pipeline is `RequestID`, `Logger`, `RecoveryWith`, then the body cap.
 
 ## Rules
 
-- **`Err` logs and returns the same message at 5xx.** Never pass `err.Error()` for a 500: it ships SQL and constraint names to the client. Log the real error, answer with a generic message, and show the raw text only when `gin.IsDebugging()`. Finance does this in `respondInternalError` (`internal/api/handler/internal_error.go`); a problem-details service uses `problem.RedactServerError`.
+- **`Err` logs and returns the same message at 5xx.** Never pass `err.Error()` for a 500: it ships SQL and constraint names to the client. Log the real error, answer with a generic message, and show the raw text only when `gin.IsDebugging()`. Wrap it in one app-level helper; a problem-details service uses `problem.RedactServerError`.
 - **Order matters.** `Idempotency` runs after `RequestID` and after auth (`Owner` returning `ok=false` is a 401). `CORS` goes before any middleware that sets `Vary`.
 - **Rate limit contract.** When `key` returns `ok=false` it must already have responded (use `Abort`); if it did not, the middleware aborts with a 500 problem instead of letting the request through. A denied request gets 429 with `Retry-After` rounded up to whole seconds. A limiter error fails open by default (logs a warning); set `FailClosed` for login and other brute-force-sensitive routes (503 + `Retry-After: 5`).
 - **Rate limit headers are opt-in** (`Headers: true`): `RateLimit` / `RateLimit-Policy` per draft-ietf-httpapi-ratelimit-headers -11 (an Internet-Draft, not an RFC), written only when the limiter reports `Result.Limit > 0`; `w=` appears only if the limiter has a `Policy()` (memory and valkey do). `PolicyName` must be printable ASCII, otherwise it falls back to `"default"`.

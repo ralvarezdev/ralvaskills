@@ -60,7 +60,7 @@ if owner, ok, _ := store.Owner(ctx, ep); ok && owner != userID { /* 409 */ }
 
 ## Consumers
 
-None yet (as of the 2026-09-29 go.mod scan; not re-checked). finance-platform has the push-notification opt-in UI still to build and is the intended first consumer.
+No consumer yet (as of the 2026-09-29 `go.mod` scan; not re-checked).
 
 ## Not here
 

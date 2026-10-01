@@ -25,7 +25,7 @@ db, err := migrate.Open(ctx, path, sqlitekit.Config{}, migrate.Config{
 ## Rules
 
 - **Pragmas go in the DSN, not in `db.Exec`.** A `PRAGMA` sent with `Exec` reaches only the one pooled connection that ran it. sqlitekit writes every pragma as `_pragma=name(value)`, which the driver applies to each connection.
-- **Never use the mattn spellings** (`?_journal_mode=WAL&_busy_timeout=5000`) with modernc: v1.52.0 silently ignores them (the database stays on `journal_mode=delete` with `busy_timeout=0`). vtitan's session recorder shipped with this bug. Assert the pragmas in a test (`PRAGMA journal_mode`, `PRAGMA busy_timeout`).
+- **Never use the mattn spellings** (`?_journal_mode=WAL&_busy_timeout=5000`) with modernc: v1.52.0 silently ignores them (the database stays on `journal_mode=delete` with `busy_timeout=0`). A real recorder shipped with this bug until a test asserted the pragmas. Assert the pragmas in a test (`PRAGMA journal_mode`, `PRAGMA busy_timeout`).
 - **Adopting an existing database:** make the baseline migration idempotent (`CREATE TABLE IF NOT EXISTS`) so files created before goose open cleanly and keep their rows; test it by opening a legacy file. Give each module its own `TableName`.
 - **Switching an old database to WAL** adds `-wal` and `-shm` files next to it on first open.
 - **Requires modernc v1.60.1 and Go 1.27.1**; adopting it bumps the consumer's driver.
