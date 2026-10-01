@@ -12,8 +12,8 @@ Description tokens hit **every turn** for installed skills. Body tokens are paid
 
 | What | When loaded | Estimated tokens |
 |---|---|---:|
-| All `SKILL.md` bodies | Only when invoked | ~121430 |
-| All side files (`STACK` + `RECIPES` + topic files) | On-demand only | ~93491 |
+| All `SKILL.md` bodies | Only when invoked | ~121471 |
+| All side files (`STACK` + `RECIPES` + topic files) | On-demand only | ~93690 |
 | All `description:` fields (every skill) | Every turn, if all installed | ~5412 |
 
 ## Session profiles
@@ -48,7 +48,7 @@ These skills are not part of any bundle. They are installed individually with `r
 | Skill | Category | ~Body tkns | ~Desc tkns | ~Side tkns |
 |---|---|---:|---:|---:|
 | `mcp-architect` | protocols | ~7224 | ~212 | ~6473 |
-| `go-house-libs` | personal | ~1880 | ~202 | ~999 |
+| `go-house-libs` | personal | ~1921 | ~202 | ~1198 |
 | `go-library-builder` | personal | ~3915 | ~166 | ~3353 |
 | `uru-scientific-paper-architect` | personal | ~2233 | ~141 | ~2021 |
 | `uru-thesis-defense-architect` | personal | ~1798 | ~132 | ~1525 |
@@ -68,7 +68,7 @@ These skills are not part of any bundle. They are installed individually with `r
 
 | Category | Skills | ~Body tkns | ~Desc tkns | ~Side tkns |
 |---|---:|---:|---:|---:|
-| personal | 9 | ~19641 | ~1179 | ~28026 |
+| personal | 9 | ~19682 | ~1179 | ~28225 |
 | frameworks | 7 | ~16853 | ~758 | ~11680 |
 | protocols | 3 | ~12310 | ~420 | ~12474 |
 | languages | 3 | ~12085 | ~278 | ~5781 |
@@ -146,8 +146,8 @@ Catalog from `internal/config/catalog.toml`. `External` are `source = "official"
 | 32 | `uru-thesis-architect` | personal | 7789 | ~1948 | ~114 | ~0 | ~1679 | ~4950 |
 | 33 | `protobuf-architect` | encoding | 7763 | ~1941 | ~84 | ~474 | ~762 | ~0 |
 | 34 | `nethttp-architect` | frameworks | 7494 | ~1928 | ~120 | ~398 | ~1508 | ~0 |
-| 35 | `ddd-architect` | design | 7602 | ~1901 | ~78 | ~0 | ~0 | ~751 |
-| 36 | `go-house-libs` | personal | 7517 | ~1880 | ~202 | ~999 | ~0 | ~0 |
+| 35 | `go-house-libs` | personal | 7684 | ~1921 | ~202 | ~1198 | ~0 | ~0 |
+| 36 | `ddd-architect` | design | 7602 | ~1901 | ~78 | ~0 | ~0 | ~751 |
 | 37 | `improve-codebase-architecture` | refactoring | 7437 | ~1860 | ~97 | ~0 | ~0 | ~3941 |
 | 38 | `design-patterns` | refactoring | 7299 | ~1825 | ~122 | ~0 | ~0 | ~2130 |
 | 39 | `fastapi-architect` | frameworks | 7220 | ~1805 | ~120 | ~420 | ~1016 | ~0 |
@@ -164,7 +164,7 @@ Catalog from `internal/config/catalog.toml`. `External` are `source = "official"
 | 50 | `logic-cleaner` | refactoring | 2395 | ~599 | ~93 | ~0 | ~0 | ~0 |
 | 51 | `caveman` | meta | 1687 | ~422 | ~71 | ~0 | ~0 | ~0 |
 
-**Totals:** 480614 body bytes · ~121430 body tokens · ~5412 desc tokens · ~93491 side tokens
+**Totals:** 480781 body bytes · ~121471 body tokens · ~5412 desc tokens · ~93690 side tokens
 
 ## Topic files
 

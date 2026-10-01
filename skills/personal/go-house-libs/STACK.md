@@ -13,7 +13,7 @@ Inherits the Go stack from [go-architect/STACK.md](../../languages/go-architect/
 | identity | v1.10.0 | 1.27.1 | released | pgx v5, goose 3, pquerna/otp, go-webauthn, golang-jwt v5, valkey-go, x/crypto, email, pgkit, ratelimit |
 | identitygin | v0.3.3 | 1.27.1 | released | gin 1.12, identity |
 | ratelimit | v0.4.0 | 1.27.1 | released | stdlib root; `valkey`: valkey-go; `valkeytest`: testcontainers valkey |
-| email | v0.4.0 | 1.27.1 | released | stdlib root; `smtp`: gomail v2 |
+| email | v0.4.0 | 1.27.1 | released | stdlib root; `smtp`: go-mail |
 | webpush | v0.6.0 | 1.27.1 | released, no consumer yet | webpush-go 1.4, pgx v5, goose 3, pgkit |
 | termkit | v0.64.1 | 1.27.1 | released, pre-1.0 | bubbletea 1.3, huh 1, lipgloss, cobra, viper |
 | svckit | v0.1.0 | 1.27.1 | released 2026-09-30, private | stdlib only |
@@ -21,7 +21,7 @@ Inherits the Go stack from [go-architect/STACK.md](../../languages/go-architect/
 | sqlitekit | v0.1.0 | 1.27.1 | released 2026-09-30, private | modernc.org/sqlite 1.60.1; `migrate`: goose 3 |
 | resilience | v0.1.0 | 1.27.1 | released 2026-09-30, private | stdlib only (`backoff`, `retry`, `supervise`) |
 
-`grpckit` exists in `~/Dev/active/libraries` but is untagged and has no skill reference yet.
+`grpckit` is untagged (two commits, CHANGELOG all `[Unreleased]`); its reference says so, and consumers should pin a commit until the first tag. Consumers of its pattern today: uns-platform and vtitan.
 
 ## Sibling pins
 
@@ -42,13 +42,15 @@ Each module pins the siblings it builds on at the version below (its `go.mod`, 2
 
 | Module | Used by |
 |---|---|
-| restkit, ginkit, pgkit, mcpkit, identitygin, ratelimit | finance-platform |
+| restkit, ginkit, pgkit, identitygin, ratelimit | finance-platform |
+| mcpkit | finance-platform, work-hour-reports (`RecoverWith`) |
 | identity, email | finance-platform, repuestos-edge (older pins) |
 | termkit | finance-platform (CLI), devtrack, rsk (ralvaskills), vtitan |
-| svckit | finance-platform (`cmd/api`, `internal/mcpserver`), rsk |
-| tick | finance-platform (materialized-view refresh) |
-| sqlitekit | finance-platform (MCP sync-state) |
-| resilience, webpush | none yet |
+| svckit | finance-platform (`cmd/api`, `internal/mcpserver`), rsk, vtitan (`src/go` foxglove-bridge), work-hour-reports (mockapi, mcp) |
+| tick | finance-platform (materialized-view refresh), vtitan (`src/go` motor feedback, telemetry) |
+| sqlitekit | finance-platform (MCP sync-state), work-hour-reports (devtrack) |
+| resilience | vtitan (`src/go/pkg/supervise` delegates to `resilience/supervise`) |
+| webpush | none yet |
 
 Blocked on Go 1.27.1 (the kits need it): repuestos-edge (1.26.4), uns-platform (1.26.5), vtitan `other/apps/backend` and `other/apps/auto-annotator` (1.26), mcp-solver and benchmarks (1.26.x).
 
@@ -58,6 +60,8 @@ Blocked on Go 1.27.1 (the kits need it): repuestos-edge (1.26.4), uns-platform (
 - **Go policy:** every module is on Go 1.27.1 (golangci-lint 2.14.0), so a consumer still on 1.26 must bump its `go` directive before it can import any current tag.
 - **resilience v0.1.0 gaps** found against real call sites: no linear backoff (plc `casBackoff`), no `OnStart`/`OnGiveUp` hooks or consecutive-failure budget (strucgo supervisor). Planned for v0.2.0.
 - **sqlitekit** requires modernc v1.60.1; modernc v1.52.0 silently ignores mattn-style DSN options (vtitan's session recorder was affected and is fixed with `_pragma=`).
+- **mcpkit v0.4.0 removed** `ToolOutput`, `ToolStatus`, `ToolError`, `ToolSuccess`, `BearerToken`, `RequireAPIKey` and `ErrEmptyAPIKey`; the repo README still lists them. uns-platform and plc-platform keep local `pkg/mcpkit` copies.
+- **identity v1.10.0** `App.EnableTOTP`/`GenerateTOTP` do not apply TOTP replay protection or secret sealing (the login second factor does); see [IDENTITY](references/IDENTITY.md).
 - **ginkit** carries `CORS`, so the earlier advice to use `gin-contrib/cors` directly is obsolete.
 
 _Last reviewed: 2026-09-30_
