@@ -11,7 +11,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.4.1
 	github.com/mattn/go-isatty v0.0.24
 	github.com/ralvarezdev/svckit v0.1.0
-	github.com/ralvarezdev/termkit v0.64.0
+	github.com/ralvarezdev/termkit v0.65.0
 	github.com/spf13/cobra v1.10.2
 )
 
