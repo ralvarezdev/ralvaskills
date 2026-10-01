@@ -94,6 +94,9 @@ func (*ClaudeTool) RemovePinned(projectDir string) error {
 
 func writePinnedClaude(rskDir string, pinnedNames []string) error {
 	path := filepath.Join(rskDir, ClaudeFileName)
+	if err := refuseIfLink(path); err != nil {
+		return err
+	}
 	return fsx.WriteAtomic(path, rskTempPattern, func(w io.Writer) error {
 		for _, name := range pinnedNames {
 			if _, err := fmt.Fprintf(w, claudeSkillPathReference, name); err != nil {
@@ -113,6 +116,10 @@ func appendClaudeImport(claudeMDPath string) error {
 		return nil
 	}
 
+	if err = refuseIfLink(claudeMDPath); err != nil {
+		return err
+	}
+
 	f, err := os.OpenFile(claudeMDPath, claudeFileOpenFlags, fsperm.File)
 	if err != nil {
 		return fmt.Errorf("open %s: %w", claudeMDPath, err)
@@ -126,6 +133,50 @@ func appendClaudeImport(claudeMDPath string) error {
 	return closeErr
 }
 
+// refuseIfLink fails when path is a symlink or junction rather than a regular
+// file.
+//
+// rsk's two write paths disagree about links, and neither behavior is safe.
+// appendClaudeImport opens with O_APPEND, which resolves the link and writes
+// the import line into an unrelated target file. The WriteAtomic callers rename
+// over the link, silently replacing it with a regular file. A link that points
+// at rsk's own generated .rsk/CLAUDE.md is worse than either: the append lands
+// in the generated file, which then imports itself.
+//
+// Failing loudly is deliberate. Someone who symlinked CLAUDE.md did it on
+// purpose, and rsk cannot know whether the target wants an rsk import line, so
+// it must not guess in either direction.
+func refuseIfLink(path string) error {
+	fi, err := os.Lstat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("stat %s: %w", path, err)
+	}
+	if skill.IsLink(fi) {
+		return fmt.Errorf("%s is a symlink (→ %s): rsk will not write through it, "+
+			"because that would modify the target file or replace the link. "+
+			"Remove the link, or point CLAUDE.md at a real file, then retry",
+			path, linkTarget(fi))
+	}
+	if !fi.Mode().IsRegular() {
+		return fmt.Errorf("%s is not a regular file (mode %s): refusing to write",
+			path, fi.Mode())
+	}
+	return nil
+}
+
+// linkTarget returns a symlink's target for the error message, or "" when the
+// mode bit came from a Windows junction, which has no readable target.
+func linkTarget(fi os.FileInfo) string {
+	target, err := os.Readlink(fi.Name())
+	if err != nil {
+		return "unknown"
+	}
+	return target
+}
+
 func removeClaudeImport(claudeMDPath string) error {
 	data, err := os.ReadFile(claudeMDPath)
 	if os.IsNotExist(err) {
@@ -133,6 +184,10 @@ func removeClaudeImport(claudeMDPath string) error {
 	}
 	if err != nil {
 		return fmt.Errorf("read %s: %w", claudeMDPath, err)
+	}
+
+	if err = refuseIfLink(claudeMDPath); err != nil {
+		return err
 	}
 
 	lines := strings.Split(string(data), "\n")
