@@ -12,6 +12,17 @@ import (
 	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
 )
 
+// The five tests marked paralleltest below are deliberately sequential. They
+// read the package-level cobra command tree, which only looks read-only:
+// Commands() sorts c.commands in place, and Find lazily merges and caches
+// inherited flag sets (mergePersistentFlags) as it walks. Parallel tests in
+// this package race on that shared state — `go test -race -count=2 ./cmd/rsk/...`
+// reports a DATA RACE between TestToolsCommandIsVisible and
+// TestCatalogBundleSubcommands on unmodified main. A mutex around just the two
+// Find call sites only moved the race to Commands(), so the whole group stays
+// sequential until the tree is rebuilt per test.
+//
+//nolint:paralleltest // shared cobra tree mutates on read; see note above
 func TestVisibleTopLevelCommandsAreGrouped(t *testing.T) {
 	declared := make([]string, 0, len(rootGroups))
 	for _, group := range rootCmd.Groups() {
@@ -46,6 +57,7 @@ func TestToolsCommandIsVisible(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // shared cobra tree mutates on read; see note above
 func TestRequireClaudeTarget(t *testing.T) {
 	cases := map[string]string{
 		"":            "",
@@ -69,6 +81,7 @@ func TestRequireClaudeTarget(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // shared cobra tree mutates on read; see note above
 func TestDestructiveCommandsHaveYesFlag(t *testing.T) {
 	for _, cmd := range []*cobra.Command{destroyCmd, installCmd, uninstallCmd, updateCmd} {
 		f := cmd.Flags().Lookup(cmdx.FlagYes)
@@ -88,6 +101,7 @@ func TestPinIsVisibleWithRemove(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // shared cobra tree mutates on read; see note above
 func TestSourceScopeFlagsRegistered(t *testing.T) {
 	for _, cmd := range []*cobra.Command{installCmd, uninstallCmd, updateCmd, listCmd, statusCmd, catalogCmd} {
 		if f := cmd.Flags().Lookup(cmdx.FlagInclude); f == nil || f.Hidden {
@@ -137,6 +151,7 @@ func TestCatalogBundleSubcommands(t *testing.T) {
 	}
 }
 
+//nolint:paralleltest // shared cobra tree mutates on read; see note above
 func TestSessionRunnable(t *testing.T) {
 	cases := []struct {
 		cmd  *cobra.Command
