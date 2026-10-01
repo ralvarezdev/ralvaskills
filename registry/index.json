@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-01T02:35:09Z",
+  "generated_at": "2026-10-01T03:46:09Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -16,6 +16,18 @@
           "version": "1.0.1",
           "published_at": "2026-09-30T13:09:12Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/api-contract-reviewer@v1.0.1/api-contract-reviewer-v1.0.1.tar.gz"
+        }
+      }
+    },
+    "astro-architect": {
+      "name": "astro-architect",
+      "description": "Astro 6+ standards — islands architecture with zero JS by default, Content Layer collections with loader + Zod schema validation, `\u003cscript\u003e` processing, `getStaticPaths`, Actions and Sessions for forms, Server Islands for dynamic islands, per-adapter deployment. Use when scaffolding or reviewing an Astro site, wiring content collections, or auditing where client JS leaked into a static page.",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-10-01T03:46:09Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/astro-architect@v1.0.0/astro-architect-v1.0.0.tar.gz"
         }
       }
     },
