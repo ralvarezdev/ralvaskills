@@ -11,15 +11,15 @@ import (
 
 	"github.com/ralvarezdev/termkit"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
-	rskgit "github.com/ralvarezdev/ralvaskills/v2/internal/git"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/source"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
-	updatecheck "github.com/ralvarezdev/ralvaskills/v2/internal/update"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/config"
+	rskgit "github.com/ralvarezdev/ralvaskills/v3/internal/git"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/source"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/tool"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/ui"
+	updatecheck "github.com/ralvarezdev/ralvaskills/v3/internal/update"
 )
 
 // updatePair is a skill with a newer version available in the registry.

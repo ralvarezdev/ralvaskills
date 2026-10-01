@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
-	updatecheck "github.com/ralvarezdev/ralvaskills/v2/internal/update"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/config"
+	updatecheck "github.com/ralvarezdev/ralvaskills/v3/internal/update"
 )
 
 // rskUpdateCheckWorkerEnv marks a detached background process spawned by

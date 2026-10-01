@@ -10,7 +10,7 @@ import (
 	"github.com/ralvarezdev/termkit"
 	"github.com/ralvarezdev/termkit/session"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
 )
 
 // addScopeFlags gives cmd the --global/--for/--personal flags a scope command

@@ -6,7 +6,7 @@ import (
 
 	"github.com/ralvarezdev/termkit/session"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/ui"
 )
 
 // TestListPinUnpinRowActions pins the row actions on the installed-skills list:

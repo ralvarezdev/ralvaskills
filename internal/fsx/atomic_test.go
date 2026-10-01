@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/fsperm"
 )
 
 const testTempPattern = ".fsxtest-*.tmp"

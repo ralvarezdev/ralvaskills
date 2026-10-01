@@ -3,9 +3,9 @@ package manifest
 import (
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/schema"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/schema"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/tool"
 )
 
 func TestWriteReadMod_roundtrip(t *testing.T) {

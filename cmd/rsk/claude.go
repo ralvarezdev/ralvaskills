@@ -9,10 +9,10 @@ import (
 	"github.com/ralvarezdev/termkit"
 	"github.com/ralvarezdev/termkit/output"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/tool"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/ui"
 )
 
 // availableClaudeTools lists all Claude Code tools that can be managed.

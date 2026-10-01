@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal"
+	"github.com/ralvarezdev/ralvaskills/v3/internal"
 )
 
 const (

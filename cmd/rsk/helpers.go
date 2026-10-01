@@ -9,7 +9,7 @@ import (
 
 	"github.com/ralvarezdev/termkit"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/ui"
 )
 
 // Names of the session form fields (form.Field.Name) that validation errors

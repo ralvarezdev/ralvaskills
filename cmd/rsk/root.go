@@ -13,8 +13,8 @@ import (
 	"github.com/ralvarezdev/svckit"
 	"github.com/spf13/cobra"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/ui"
 )
 
 const exitAborted = 130 // SIGINT + 128 per POSIX convention

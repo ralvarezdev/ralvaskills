@@ -9,10 +9,10 @@ import (
 
 	"github.com/BurntSushi/toml"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/fsx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/schema"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/fsx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/schema"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/tool"
 )
 
 // Mod is the in-memory representation of rsk.mod.

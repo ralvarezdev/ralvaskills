@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/fsperm"
 )
 
 // WriteAtomic writes to a temporary file in the same directory as path, then

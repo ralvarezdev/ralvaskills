@@ -5,8 +5,8 @@ import (
 
 	"github.com/ralvarezdev/termkit"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/ui"
 )
 
 // setupCommands registers all subcommands and their flags with the root command.

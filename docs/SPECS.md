@@ -23,9 +23,9 @@
 | Thing | Value |
 |---|---|
 | GitHub repo | `ralvarezdev/ralvaskills` |
-| Go module | `github.com/ralvarezdev/ralvaskills/v2` |
+| Go module | `github.com/ralvarezdev/ralvaskills/v3` |
 | CLI binary | `rsk` |
-| Install | `go install github.com/ralvarezdev/ralvaskills/v2/cmd/rsk@latest` |
+| Install | `go install github.com/ralvarezdev/ralvaskills/v3/cmd/rsk@latest` |
 
 ### Skill Sources
 
@@ -57,7 +57,7 @@ The CLI manages skills from two independent sources:
 ```
 ralvaskills/                          # current state — (📋) marks planned additions/moves
 │
-├── go.mod                            # ✅ single module: github.com/ralvarezdev/ralvaskills/v2
+├── go.mod                            # ✅ single module: github.com/ralvarezdev/ralvaskills/v3
 ├── go.sum
 ├── cmd/                              # ✅ all binaries live here
 │   ├── rsk/                          # ✅ Go CLI source (binary: rsk)

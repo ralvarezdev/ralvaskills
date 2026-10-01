@@ -3,7 +3,7 @@ package source
 import (
 	"context"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/skill"
 )
 
 // Resolver is the common interface satisfied by Local, Official, and Registry.

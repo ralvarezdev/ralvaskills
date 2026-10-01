@@ -3,7 +3,7 @@ package cmdx_test
 import (
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
 )
 
 func TestParseTargetScope(t *testing.T) {

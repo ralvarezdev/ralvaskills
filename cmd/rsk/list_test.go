@@ -11,7 +11,7 @@ import (
 	"github.com/ralvarezdev/termkit"
 	"github.com/ralvarezdev/termkit/output"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/config"
 )
 
 // TestRunListGlobalLabelsRowsByTool guards against the regression where a

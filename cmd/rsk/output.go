@@ -9,8 +9,8 @@ import (
 	"github.com/ralvarezdev/termkit/cli"
 	"github.com/ralvarezdev/termkit/output"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/ui"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/ui"
 )
 
 // printer owns the shared --output/-o flag (text|json): registration,

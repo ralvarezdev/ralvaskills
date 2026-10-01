@@ -13,13 +13,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/config"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/fsx"
-	rskgit "github.com/ralvarezdev/ralvaskills/v2/internal/git"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/manifest"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/source"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/fsx"
+	rskgit "github.com/ralvarezdev/ralvaskills/v3/internal/git"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/source"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/tool"
 )
 
 const (

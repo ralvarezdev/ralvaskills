@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/tool"
 )
 
 // forToolFlag reads --for as a registered tool ID. Empty means the flag was

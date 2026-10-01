@@ -19,9 +19,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/fsperm"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/fsx"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/fsperm"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/fsx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/skill"
 )
 
 const (

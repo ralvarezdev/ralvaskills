@@ -6,7 +6,7 @@ import (
 	"github.com/ralvarezdev/termkit"
 	"github.com/ralvarezdev/termkit/session"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
 )
 
 // rowActions is the registry of row actions each table view offers. The

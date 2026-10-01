@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/skill"
 )
 
 // Padding is the standard left/right padding for UI output.

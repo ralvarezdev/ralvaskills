@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/ralvarezdev/ralvaskills/v2/internal/skill"
-	"github.com/ralvarezdev/ralvaskills/v2/internal/tool"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/skill"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/tool"
 )
 
 func TestParseSourceFilter(t *testing.T) {
