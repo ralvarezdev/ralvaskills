@@ -1,7 +1,7 @@
 ---
 name: rsk-guide
-version: 0.3.1
-description: Operator's guide for the rsk CLI — manage ralvaskills via the .rsk/ project manifest (rsk new, rsk install, rsk pin) or via bundle installs, plus global installs and the official Anthropic cache. Use when the user mentions rsk, asks how to install/pin/update skills, wants to add a skill to a project, or wants to set up ralvaskills on a new machine. Companion to cli-tool-architect (CLI design) and skill-builder (authoring new skills).
+version: 0.4.0
+description: Operator's guide for the rsk CLI — manage ralvaskills via the .rsk/ project manifest (rsk new, rsk install, rsk pin), bundle/global installs and the official Anthropic cache, and the `rsk mcp` server the agent queries for project standards. Use when the user mentions rsk, asks how to install/pin/update skills, wants to add a skill to a project, is starting work in a new project or scaffolding (to learn which standards apply), or wants to set up ralvaskills on a new machine. Companion to cli-tool-architect (CLI design), mcp-architect (server design) and skill-builder (authoring new skills).
 ---
 
 # RSK Guide
@@ -175,6 +175,25 @@ Per the spec this is opt-in with a 24h cache; the current build returns an expli
 ```
 
 `./CLAUDE.md` gets a single appended line: `@.rsk/CLAUDE.md`. Both `rsk new` (creates it) and `rsk destroy` (removes it) are idempotent.
+
+## MCP server (`rsk mcp`)
+
+`rsk new` can register the rsk MCP server in the project (`.mcp.json` for Claude Code, `opencode.json` for OpenCode) and write a short pointer into `./CLAUDE.md`. Re-run `rsk new` to register later — it is idempotent and never drops other MCP servers. `rsk destroy` removes the registration.
+
+The server exposes, over stdio:
+
+| Primitive | Name | Does |
+|---|---|---|
+| Tool | `project_profile` | Detects the project's stack (citing the file that proves each trait) and proposes the skills that apply. Read-only. |
+| Tool | `search_skills` | Keyword search over the catalog. Read-only. |
+| Tool | `install_skills` | Installs skills/bundles into the project or globally. |
+| Resource | `rsk://catalog` | The catalog, with descriptions truncated. |
+
+Recommended flow: `project_profile` → propose to the user → `install_skills` once approved. Installed skills appear automatically in the client's skill list, so no extra skill is needed to discover them.
+
+**Approval is on the client, not the server.** `install_skills` carries `destructiveHint: true`, so the client asks the user before writing — this holds even if the model never read this skill. Never install skills yourself without the user's confirmation; state which skills and which scope.
+
+The server is launched by the client, so **`rsk` must be on PATH**. `rsk new` warns and skips registration when it is not.
 
 ## Full reference
 
