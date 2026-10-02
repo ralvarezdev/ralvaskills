@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/ralvarezdev/ralvaskills/v3/internal/catalog"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/fsperm"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/mcp"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/source"
@@ -157,5 +160,32 @@ func writeFile(t *testing.T, path string, data []byte) {
 	}
 	if err := os.WriteFile(path, data, fsperm.File); err != nil {
 		t.Fatalf("write %s: %v", path, err)
+	}
+}
+
+func TestIndexCacheFetchesRegistryIndexAndServesOffline(t *testing.T) {
+	t.Parallel()
+
+	body := `{"skills":{"go-architect":{"name":"go-architect","description":"Go standards",` +
+		`"latest":"1.2.0","versions":{"1.2.0":{"version":"1.2.0","archive_url":"http://example/g.tar.gz"}}}}}`
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+
+	dir := t.TempDir()
+	reg := source.NewRegistry(srv.URL, dir)
+	snap, err := mcp.NewIndexCache(dir, mcp.DefaultIndexTTL, reg.Index).Load(t.Context())
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	entries := catalog.FromIndex(snap.Skills)
+	if len(entries) != 1 || entries[0].Name != "go-architect" || entries[0].Latest != "1.2.0" {
+		t.Fatalf("catalog = %+v, want go-architect at 1.2.0", entries)
+	}
+
+	// With the server down, a fresh cache must still serve the index.
+	srv.Close()
+	if _, offlineErr := mcp.NewIndexCache(dir, mcp.DefaultIndexTTL, reg.Index).Load(t.Context()); offlineErr != nil {
+		t.Errorf("offline load: %v", offlineErr)
 	}
 }
