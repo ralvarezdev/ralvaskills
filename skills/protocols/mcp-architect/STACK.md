@@ -11,7 +11,7 @@ This skill pins **protocol-level** spec revisions and the **Python + Go** SDK ru
 | Python — `pydantic` | 2.x | Tool input/output schema + validation; matches [python-architect](../../languages/python-architect/STACK.md). Schemas now support full JSON Schema 2020-12 (`oneOf`/`anyOf`/`allOf`, `$ref`) per spec 2026-07-28 |
 | Python — `httpx` | 0.28+ | Client HTTP for tools that call upstream APIs |
 | Python — `pytest` + `pytest-asyncio` | 9.x / 0.24+ | Test framework |
-| Go — `github.com/modelcontextprotocol/go-sdk` | ≥2.0.0 (first tag targeting 2026-07-28; verify exact minor against the module's release notes before pinning) | Official Go SDK (maintained with Google); Tier-1 SDK for spec 2026-07-28; packages: `mcp`, `jsonrpc`, `auth`, `oauthex` |
+| Go — `github.com/modelcontextprotocol/go-sdk` | ≥1.7.0 (first tag targeting 2026-07-28; latest is v1.8.0 — the module stayed on the v1 major, **there is no v2**) | Official Go SDK (maintained with Google); Tier-1 SDK for spec 2026-07-28; packages: `mcp`, `jsonrpc`, `auth`, `oauthex` |
 | Go — `github.com/atombender/go-jsonschema` | ≥0.24.0 | Generates Go types from JSON Schema (the `jsonschemagen` tool, invoked as the module root, not `cmd/jsonschemagen`). For servers with >10 tools — see [RECIPES §12](RECIPES.md#12-schema-driven-tool-contracts-go) |
 | Go runtime | 1.26 | Matches [go-architect](../../languages/go-architect/STACK.md) |
 | MCP Inspector | 0.10+, spec-2026-07-28-aware build | Visual + CLI tester. **Pin ≥0.10** — older versions have CVE-2025-49596 (RCE). Use a release that understands header-based routing and MRTR when testing against this spec target |
@@ -25,13 +25,13 @@ This skill pins **protocol-level** spec revisions and the **Python + Go** SDK ru
 ## Notes
 
 - **Stable spec target is 2026-07-28.** SKILL.md and RECIPES.md examples are written against this revision. It is a breaking rewrite of the transport contract versus 2025-11-25 — don't treat it as additive when migrating an existing server; audit every `Mcp-Session-Id` reference, every server-initiated `elicitation/create`/`sampling/createMessage`/`roots/list` call, and every hardcoded `-32002`.
-- **SDK version numbers above are floors, not exact pins** — the Tier-1 SDKs (TypeScript, Python, Go, C#) all began shipping 2026-07-28 support at the spec's stable release; check each package's changelog for the first release that dropped 2025-11-25-only session handling before pinning an exact version in a real project.
+- **SDK version numbers above are floors, not exact pins** — the Tier-1 SDKs (TypeScript, Python, Go, C#) all began shipping 2026-07-28 support at the spec's stable release; check each package's changelog for the first release that dropped 2025-11-25-only session handling before pinning an exact version in a real project. **Verify the floor against the real tag list**: the Go SDK is a case where the floor is a v1.x, not a v2.
 - **Python SDK note.** The `mcp` package ships FastMCP as `mcp.server.fastmcp.FastMCP`. The standalone `fastmcp` PyPI package (a community fork) is **not** the canonical path — recipes use the official `mcp` package only.
-- **Go SDK note.** `github.com/modelcontextprotocol/go-sdk` (Google-maintained, official since mid-2025) supersedes the earlier community `github.com/mark3labs/mcp-go`. New code should use the official SDK; only stay on `mark3labs/mcp-go` if you're maintaining an existing server.
+- **Go SDK note.** `github.com/modelcontextprotocol/go-sdk` (Google-maintained, official since mid-2025) supersedes the earlier community `github.com/mark3labs/mcp-go`. New code should use the official SDK; only stay on `mark3labs/mcp-go` if you're maintaining an existing server. The module reached 2026-07-28 at **v1.7.0** (`mcp/shared.go`: `latestProtocolVersion = protocolVersion20260728`) and stays on the v1 major — don't look for a v2 tag.
 - **JSON Schema generation note.** `go-jsonschema`'s binary is the module root (`go run github.com/atombender/go-jsonschema@latest`) — there is no `cmd/jsonschemagen` package. It does **not** follow `$ref` (a referenced property degrades to `interface{}` silently) and does not descend into `allOf`, so inline refs before generating. A `$ref` with a sibling `description` works without a wrapper. `--only-models` removes the generated `UnmarshalJSON`, which is the only validation these types get outside the SDK — see [RECIPES §12](RECIPES.md#12-schema-driven-tool-contracts-go).
 - **Transport scope.** Recipes cover Streamable HTTP (default for remote) and stdio (default for local subprocess). Legacy HTTP+SSE is deprecated as of spec 2026-07-28 (twelve-month offramp) and intentionally omitted.
 - **Auth scope.** OAuth 2.1 + RFC 8707 + RFC 9207 issuer validation; CIMD over DCR for new servers; no legacy implicit / ROPC flows.
 - **Tasks scope.** `io.modelcontextprotocol/tasks` is now an opt-in extension (negotiated via `ClientCapabilities`/`ServerCapabilities.extensions`), not a core method group. Not covered in RECIPES.md — treat it as a separate reference lookup if you need it.
 
-_Last reviewed: 2026-08-10_
-_Skill version at last review: 2.0.0_
+_Last reviewed: 2026-10-02_
+_Skill version at last review: 2.1.2_

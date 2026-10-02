@@ -1,6 +1,6 @@
 ---
 name: mcp-architect
-version: 2.1.1
+version: 2.1.2
 description: MCP (Model Context Protocol) 2026-07-28 server standards — tool/resource/prompt primitives, stateless protocol core (no initialize handshake, no Mcp-Session-Id), Mcp-Method/Mcp-Name header routing, Multi Round-Trip Requests (MRTR) for elicitation/sampling, cacheable list results (ttlMs/cacheScope), OAuth 2.1 + RFC 8707 resource indicators + RFC 9207 issuer validation, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server. Go schema-driven contracts — authoring JSON Schemas as the source of truth for tool inputs and outputs, and generating Go types with atombender/go-jsonschema, sharing enums through $defs, and the two traps (the SDK resolves OutputSchema with no loader; go-jsonschema does not follow $ref) that silently produce a wrong contract.
 ---
 
@@ -249,7 +249,7 @@ Per [§9](#9-authorization--oauth-21--rfc-8707): missing audience validation, ig
 ## 12. Versioning + deprecation
 
 - **Spec revisions are dated** (`2024-11-05`, `2025-03-26`, `2025-06-18`, `2025-11-25`, `2026-07-28`). Servers declare the version they support via the `MCP-Protocol-Version` header (per-request, since there's no `initialize` response to declare it in anymore — see [§8](#8-request-model--the-stateless-core)) and via the mandatory `server/discover` RPC.
-- **SDKs lag the spec.** Pin your SDK and pin the spec target in [STACK.md](STACK.md); don't claim a spec version you haven't tested against. All four Tier-1 SDKs (TypeScript, Python, Go, C#) speak 2026-07-28 as of the stable release.
+- **SDKs lag the spec.** Pin your SDK and pin the spec target in [STACK.md](STACK.md); don't claim a spec version you haven't tested against. All four Tier-1 SDKs (TypeScript, Python, Go, C#) speak 2026-07-28 as of the stable release. For Go specifically, the official SDK's first 2026-07-28 tag is **v1.7.0** (the module stayed on the v1 major — there is no v2); pin v1.7.0+ accordingly.
 - **Feature Lifecycle Policy is now formal** ([SEP-2596](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2596)): three states — Active → Deprecated → Removed — with a minimum **twelve-month** window in Deprecated before a feature is eligible for removal (an expedited path exists for published security advisories, minimum ninety days). Check the deprecation registry before assuming a "removed" feature is actually gone.
 - **What's Deprecated as of 2026-07-28** (still works; twelve-month clock started at this release — [SEP-2577](https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2577)):
 
