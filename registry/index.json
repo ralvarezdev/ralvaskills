@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-02T18:09:34Z",
+  "generated_at": "2026-10-02T20:27:20Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -423,7 +423,7 @@
     "mcp-architect": {
       "name": "mcp-architect",
       "description": "MCP (Model Context Protocol) 2026-07-28 server standards — tool/resource/prompt primitives, stateless protocol core (no initialize handshake, no Mcp-Session-Id), Mcp-Method/Mcp-Name header routing, Multi Round-Trip Requests (MRTR) for elicitation/sampling, cacheable list results (ttlMs/cacheScope), OAuth 2.1 + RFC 8707 resource indicators + RFC 9207 issuer validation, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server. Go schema-driven contracts — authoring JSON Schemas as the source of truth for tool inputs and outputs, and generating Go types with atombender/go-jsonschema, sharing enums through $defs, and the two traps (the SDK resolves OutputSchema with no loader; go-jsonschema does not follow $ref) that silently produce a wrong contract.",
-      "latest": "2.1.1",
+      "latest": "2.1.2",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -444,6 +444,11 @@
           "version": "2.1.1",
           "published_at": "2026-10-02T18:09:34Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/mcp-architect@v2.1.1/mcp-architect-v2.1.1.tar.gz"
+        },
+        "2.1.2": {
+          "version": "2.1.2",
+          "published_at": "2026-10-02T20:27:20Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/mcp-architect@v2.1.2/mcp-architect-v2.1.2.tar.gz"
         }
       }
     },
