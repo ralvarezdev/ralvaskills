@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -15,7 +16,10 @@ import (
 
 	"github.com/ralvarezdev/ralvaskills/v3/internal"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/install"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/manifest"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/source"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/tool"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/ui"
 )
@@ -93,6 +97,12 @@ func runNew(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	if resolveGuideFlag(cmd) {
+		if err = installRskGuide(cmd.Context(), out, cwd, rskDir); err != nil {
+			return err
+		}
+	}
+
 	fmt.Fprintln(out)
 	if isNew {
 		ui.Success(out, "initialized .rsk/ for "+forFlag)
@@ -146,7 +156,7 @@ func loadOrCreateManifest(
 		}
 		if len(added) == 0 {
 			ui.Info(out, "rsk project already configured for "+forFlag)
-			return nil, "", false, nil
+			return &loaded, existing, false, nil
 		}
 
 		ui.Info(out, fmt.Sprintf("Adding tools to existing project: %v", added))
@@ -225,5 +235,70 @@ func registerProjectMCP(out io.Writer, cwd string, tools []tool.ID) error {
 	}
 
 	ui.Success(out, "registered the rsk MCP server ("+strings.Join(paths, ", ")+")")
+	return nil
+}
+
+// flagGuide is the boolean flag that installs rsk-guide without a prompt.
+const flagGuide = "guide"
+
+// resolveGuideFlag returns whether to install rsk-guide: the --guide flag when
+// set, an interactive prompt otherwise.
+func resolveGuideFlag(cmd *cobra.Command) bool {
+	if cmd.Flags().Changed(flagGuide) {
+		return cmdx.Bool(cmd, flagGuide)
+	}
+	if ui.InSession(cmd.Context()) {
+		return false
+	}
+	return termkit.Confirm(cmd, false, termkit.StdioIsTerminal(), "Install the rsk-guide skill in this project?")
+}
+
+// installRskGuide installs rsk-guide into the project and pins it, so the agent
+// loads the rsk policy automatically. It is best-effort: a missing config or an
+// unresolvable skill warns instead of failing the whole command.
+func installRskGuide(ctx context.Context, out io.Writer, cwd, rskDir string) error {
+	cfg, err := config.Load()
+	if err != nil {
+		ui.Warn(out, "skipping rsk-guide install: "+err.Error()+"\n  Run 'rsk init' first.")
+		//nolint:nilerr // rsk not initialized is a skip with a warning, not a failure
+		return nil
+	}
+
+	bundles, catalogErr := config.LoadCatalog("")
+	if catalogErr != nil {
+		ui.Warn(out, "user catalog: "+catalogErr.Error())
+	}
+
+	skills, _, resolveErr := install.Resolve(
+		ctx, []string{"rsk-guide"}, bundles,
+		install.LocalSource(cfg),
+		source.NewOfficial(cfg.OfficialCache),
+	)
+	if resolveErr != nil {
+		ui.Warn(out, "could not resolve rsk-guide: "+resolveErr.Error())
+		//nolint:nilerr // best-effort convenience install; the project is still set up
+		return nil
+	}
+
+	m, err := manifest.ReadMod(rskDir)
+	if err != nil {
+		return err
+	}
+	results, err := install.Apply(skills, install.Options{
+		Scope:   install.ScopeProject,
+		Targets: install.ProjectSkillsDirs(cwd, m),
+		RskDir:  rskDir,
+		Pin:     true,
+	})
+	if err != nil {
+		return err
+	}
+	for _, r := range results {
+		if r.Err != nil {
+			ui.Warn(out, "rsk-guide: "+r.Err.Error())
+			continue
+		}
+		ui.Success(out, "installed and pinned rsk-guide")
+	}
 	return nil
 }
