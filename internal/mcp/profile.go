@@ -21,15 +21,19 @@ type (
 	// file that evidences it, relative to the project root — a signal without a
 	// proof is a bug, not a hit.
 	Signal struct {
-		Kind  SignalKind
-		Proof string
+		Kind  SignalKind `json:"kind"`
+		Proof string     `json:"proof"`
 	}
 
 	// Candidate is a skill or bundle proposed because of one or more signals.
 	// Because lists the signal kinds that proposed it, in first-seen order.
+	// Latest and Installed are zero from a bare Scan and are filled by the MCP
+	// layer from the skill catalog and the project manifest.
 	Candidate struct {
-		Because []SignalKind
-		Skill   string
+		Because   []SignalKind `json:"because"`
+		Skill     string       `json:"skill"`
+		Latest    string       `json:"latest"`
+		Installed bool         `json:"installed"`
 	}
 
 	// Profile is the deterministic result of scanning a project directory: the

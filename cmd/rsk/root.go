@@ -79,7 +79,7 @@ func sessionRunnable(cmd *cobra.Command) bool {
 		top = top.Parent()
 	}
 	switch top.Name() {
-	case "help", "completion", initCmd.Name():
+	case "help", "completion", mcpCmd.Name(), initCmd.Name():
 		return false
 	}
 	return true

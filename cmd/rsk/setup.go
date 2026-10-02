@@ -125,6 +125,9 @@ func setupCommands() {
 	f.BoolP(cmdx.FlagYes, "y", false, "Skip the confirmation prompt")
 	registerForCompletion(updateCmd, false)
 
+	// mcp command
+	rootCmd.AddCommand(mcpCmd)
+
 	// row actions: install/uninstall directly from a catalog/list table row
 	// in the TUI, instead of leaving the view to type the name.
 	ui.MarkRowAction(catalogCmd, "i", "install", installCmd)
@@ -169,6 +172,7 @@ func assignGroups() {
 		groupPinning:   {pinCmd},
 		groupToolsConf: {canonicalTools.root},
 		groupViews:     {listCmd, catalogCmd, statusCmd},
+		groupOther:     {mcpCmd},
 	} {
 		for _, cmd := range cmds {
 			cmd.GroupID = id
