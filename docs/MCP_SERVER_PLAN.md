@@ -297,7 +297,7 @@ type SearchSkillsIn struct {
 }
 ```
 
-**Out:** `[]Candidate` — la misma forma que devuelve `project_profile`, para que el agente use un único modelo mental y no dos. `Because` va vacío en búsquedas (no hay señales que citar); es la única diferencia semántica.
+**Out:** `{candidates: []Candidate}` — la misma forma de candidata que `project_profile`, envuelta en un objeto. Un array en la raíz de `structuredContent` hace que algunos clientes (Claude Code) marquen el resultado como inválido; el objeto lo evita. `Because` va `[]` en búsquedas (no hay señales que citar).
 
 ### 5.4 `install_skills` (tool)
 
@@ -334,30 +334,33 @@ El punto de diseño que más cuidado requiere. Hay **dos actos distintos con dos
 | Acto | Cuándo | Quién pide | Mecanismo |
 |---|---|---|---|
 | **Registrar** el server en config de cliente | Una vez, en `rsk new` | Humano, en el prompt de init | `huh` interactivo |
-| **Instalar** una skill | Cada vez, mid-sesión | Cliente LLM | Tool annotation `destructiveHint: true` |
+| **Instalar** una skill | Cada vez, mid-sesión | Cliente LLM | `destructiveHint` (hint) + `_meta["anthropic/requiresUserInteraction"]` (Claude Code fuerza el prompt) |
 
-### 6.1 Por qué las annotations son el mecanismo real
+### 6.1 Por qué las annotations no bastan (y qué las sustituye)
 
 Un servidor MCP **no tiene canal para preguntar al usuario**. No puede abrir un prompt. Por tanto el consentimiento de instalación no puede implementarse en el server, y no debe intentarse.
 
-Vive en las **tool annotations** (`mcp-architect` §4):
+La primera versión de este plan asumía que `destructiveHint: true` bastaba. **Verificado en un Claude Code real (2026-10-02): no lo es.** `destructiveHint` es una *hint* advisory; una vez aprobado el server de proyecto, Claude Code ejecutó `install_skills` sin prompt.
 
-```go
-project_profile  → readOnlyHint: true,  destructiveHint: false
-search_skills    → readOnlyHint: true,  destructiveHint: false
-install_skills   → readOnlyHint: false, destructiveHint: true, idempotentHint: false
+El mecanismo que sí fuerza la aprobación en Claude Code es una anotación de tool:
+
+```json
+"_meta": { "anthropic/requiresUserInteraction": true }
 ```
 
-**Consecuencia (a validar en PR 3):** los clientes que honran `destructiveHint` muestran el prompt de aprobación sin que el modelo haya leído ninguna skill. `mcp-architect` §3/§4 es explícito en que las annotations son *hints* que manejan UX del cliente y **no imponen política en el server**; el comportamiento concreto de Claude Code ante una tool MCP con `destructiveHint: true` es una **premisa de §6, no un hecho verificado**. Se comprueba en el criterio de aceptación de PR 3.
+Con ella Claude Code muestra el prompt **en cada llamada**, incluso en `acceptEdits`/`auto`/`bypassPermissions`, sin opción "no preguntar de nuevo", y las allow-rules no la saltan (`dontAsk` la deniega). Requiere Claude Code ≥ v2.1.199. Por eso `install_skills` emite ambas cosas:
+
+```go
+install_skills → readOnlyHint: false, destructiveHint: true, idempotentHint: false
+                 _meta["anthropic/requiresUserInteraction"] = true
+project_profile / search_skills → readOnlyHint: true, destructiveHint: false   (silenciosas)
+```
+
+`destructiveHint` queda como hint para clientes que la honren; `anthropic/requiresUserInteraction` es la imposición real en Claude Code. Otros clientes (opencode) tienen su propio modelo de permisos, a verificar por separado.
 
 ### 6.2 Defensa en profundidad
 
-`rsk-guide` §"Always ask the user before taking action" establece la política en texto. La annotation la **refuerza en el cliente** (es un hint, no una imposición server-side).
-
-Esta asimetría es intencional: la skill es *asesoramiento* y un modelo puede saltársela; la annotation es una restricción del cliente. Juntas cubren los dos casos:
-
-- El modelo leyó `rsk-guide` → sabe que debe preguntar y por qué.
-- El modelo no la leyó → el cliente (si honra la hint) le pide aprobación igual.
+`rsk-guide` §"Always ask the user before taking action" establece la política en texto; `_meta["anthropic/requiresUserInteraction"]` la **impone en el cliente**. La skill es *asesoramiento* y un modelo puede saltársela; el cliente no.
 
 ### 6.3 Lo que el server nunca hace
 
@@ -513,7 +516,7 @@ Dos cambios:
 |---|---|
 | `./CLAUDE.md` | Las 3 líneas del workflow pointer |
 | `rsk-guide` | Detalle del MCP + trigger corregido |
-| `install_skills` annotation | `destructiveHint: true` — el cliente, si honra la hint, fuerza el prompt |
+| `install_skills` | `destructiveHint: true` + `_meta["anthropic/requiresUserInteraction"]` — Claude Code fuerza el prompt en cada llamada |
 | **Skill nueva** | **Nada** |
 
 ---
@@ -645,6 +648,7 @@ Tests **in-process**, no HTTP real — el SDK Go trae transporte en memoria (`mc
 - Las 4 primitivas responden por el pipe en memoria.
 - Las 3 read llevan `readOnlyHint: true`; `install_skills` lleva `destructiveHint: true`.
 - El `inputSchema` de cada tool no está vacío (el SDK lo infiere del struct `In`; un tag roto o un `In` mal tipado lo dejaría vacío sin fallar).
+- `install_skills` declara `_meta["anthropic/requiresUserInteraction"] = true`.
 
 ### 12.5 Registro en config
 
@@ -685,7 +689,7 @@ Tests **in-process**, no HTTP real — el SDK Go trae transporte en memoria (`mc
 - [ ] `rsk mcp` arranca como subcomando y responde por stdio.
 - [ ] Las 4 primitivas funcionan: `rsk://catalog`, `project_profile`, `search_skills`, `install_skills`.
 - [ ] El catálogo funciona en modo local-clone y registry por igual (§2.6).
-- [ ] `install_skills` está anotada `destructiveHint: true`; se verificó que el cliente pide aprobación sin depender de que el modelo lea ninguna skill.
+- [ ] `install_skills` emite `destructiveHint: true` y `_meta["anthropic/requiresUserInteraction"] = true`; Claude Code fuerza el prompt sin depender de que el modelo lea ninguna skill.
 - [ ] La instalación comparte un core único con `rsk install` (`internal/install`), sin duplicar lógica ni escribir en stdout del protocolo.
 - [ ] Los handlers usan `mcpkit.RecoverWith` (un panic no tumba la sesión) y `mcpkit.ErrorMsg.ToolError` (el agente no ve causas internas).
 - [ ] Los fallos llegan como resultado de tool con `isError: true`, nunca como error JSON-RPC.

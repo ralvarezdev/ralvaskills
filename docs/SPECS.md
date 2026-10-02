@@ -848,7 +848,7 @@ The server exposes three tools and one resource:
 |---|---|---|
 | Tool | `project_profile` | Detects the project's signals (each citing the file that proves it) and proposes the skills that apply. Read-only. |
 | Tool | `search_skills` | Keyword search over the catalog. Read-only. |
-| Tool | `install_skills` | Installs skills/bundles into the project or globally via the same core as `rsk install`. Annotated `destructiveHint: true`, so the client asks the user to approve. |
+| Tool | `install_skills` | Installs skills/bundles into the project or globally via the same core as `rsk install`. Carries `destructiveHint: true` and `_meta["anthropic/requiresUserInteraction"]`, so Claude Code forces the approval prompt on every call. |
 | Resource | `rsk://catalog` | The catalog, with descriptions truncated. |
 
 `rsk new` registers the server in each configured tool's project config
