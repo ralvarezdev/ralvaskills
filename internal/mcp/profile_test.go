@@ -111,7 +111,7 @@ func TestScanRootIsFile(t *testing.T) {
 func signalKinds(signals []mcp.Signal) []string {
 	kinds := make([]string, 0, len(signals))
 	for _, s := range signals {
-		kinds = append(kinds, s.Kind)
+		kinds = append(kinds, s.Kind.String())
 	}
 	return kinds
 }
@@ -143,7 +143,7 @@ func assertProofs(t *testing.T, profile mcp.Profile, root string) {
 func assertBecause(t *testing.T, profile mcp.Profile) {
 	t.Helper()
 
-	kinds := make(map[string]struct{}, len(profile.Signals))
+	kinds := make(map[mcp.SignalKind]struct{}, len(profile.Signals))
 	for _, s := range profile.Signals {
 		kinds[s.Kind] = struct{}{}
 	}

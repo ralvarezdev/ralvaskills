@@ -4,14 +4,14 @@ package mcp
 // A rule's detect returns the relative path of the file that proves the signal;
 // it must never return ok with an empty proof.
 type signalRule struct {
-	detect     func(*fileIndex) (string, bool)
-	kind       string
 	candidates []string
+	kind       SignalKind
+	detect     func(*fileIndex) (string, bool)
 }
 
-// signalRules is the lookup table of SKILL and skill names: it does not score,
-// rank, or order by priority, it only proposes. The slice order fixes the order
-// of Profile.Signals and of first-seen candidates.
+// signalRules is the lookup table of signal kinds to candidate skills: it does
+// not score, rank, or order by priority, it only proposes. The slice order
+// fixes the order of Profile.Signals and of first-seen candidates.
 //
 // quality:refactor skills (logic-cleaner, improve-codebase-architecture) are
 // deliberately absent: they are never proposed by a project signal, only when
@@ -19,27 +19,27 @@ type signalRule struct {
 func signalRules() []signalRule {
 	return []signalRule{
 		{
-			kind:       "language:go",
+			kind:       SignalLanguageGo,
 			candidates: []string{"go-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				return idx.has("go.mod")
 			},
 		},
 		{
-			kind:       "language:python",
+			kind:       SignalLanguagePython,
 			candidates: []string{"python-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				return idx.hasAny("pyproject.toml", "requirements.txt", "uv.lock")
 			},
 		},
 		{
-			kind: "language:typescript",
+			kind: SignalLanguageTS,
 			detect: func(idx *fileIndex) (string, bool) {
 				return idx.hasAny("tsconfig.json", "package.json")
 			},
 		},
 		{
-			kind:       "framework:nextjs",
+			kind:       SignalFrameworkNextJS,
 			candidates: []string{"nextjs-architect", "react-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				if proof, ok := idx.firstRootPrefixed("next.config."); ok {
@@ -52,14 +52,14 @@ func signalRules() []signalRule {
 			},
 		},
 		{
-			kind:       "framework:astro",
+			kind:       SignalFrameworkAstro,
 			candidates: []string{"astro-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				return idx.firstRootPrefixed("astro.config.")
 			},
 		},
 		{
-			kind:       "protocol:grpc",
+			kind:       SignalProtocolGRPC,
 			candidates: []string{"grpc-architect", "protobuf-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				if proof, ok := idx.firstBySuffix(".proto"); ok {
@@ -72,7 +72,7 @@ func signalRules() []signalRule {
 			},
 		},
 		{
-			kind:       "protocol:rest",
+			kind:       SignalProtocolREST,
 			candidates: []string{"rest-api-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				if proof, ok := idx.hasAny("openapi.yaml", "openapi.yml", "swagger.json"); ok {
@@ -82,34 +82,34 @@ func signalRules() []signalRule {
 			},
 		},
 		{
-			kind:       "infra:docker",
+			kind:       SignalInfraDocker,
 			candidates: []string{"docker-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				return idx.hasAny("Dockerfile", "docker-compose.yml", "docker-compose.yaml")
 			},
 		},
 		{
-			kind: "infra:k8s",
+			kind: SignalInfraK8s,
 			detect: func(idx *fileIndex) (string, bool) {
 				return idx.hasAny("Chart.yaml", "kustomization.yaml", "kustomization.yml")
 			},
 		},
 		{
-			kind:       "infra:ci",
+			kind:       SignalInfraCI,
 			candidates: []string{"ci-cd-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				return idx.dirHasFiles(".github/workflows")
 			},
 		},
 		{
-			kind:       "repo:tooling",
+			kind:       SignalRepoTooling,
 			candidates: []string{"repo-tooling-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				return idx.hasAny(".golangci.yml", ".golangci.yaml", "mise.toml", "Taskfile.yml", "Taskfile.yaml")
 			},
 		},
 		{
-			kind:       "repo:cli",
+			kind:       SignalRepoCLI,
 			candidates: []string{"cli-tool-architect"},
 			detect: func(idx *fileIndex) (string, bool) {
 				if proof, ok := idx.has("main.go"); ok {
@@ -119,7 +119,7 @@ func signalRules() []signalRule {
 			},
 		},
 		{
-			kind: "data:postgres",
+			kind: SignalDataPostgres,
 			detect: func(idx *fileIndex) (string, bool) {
 				if !idx.goModHasDep("sqlx") && !idx.pythonHasDep("psycopg") {
 					return "", false
