@@ -521,7 +521,9 @@ Dos cambios:
 
 **Cinco PRs** (el plan original tenía cuatro; PR 2 se parte porque las correcciones de §2.6/§4/§8 añaden catálogo, caché de índice y extracción del core de instalación — demasiado para un PR revisable). El orden importa: cada uno deja el repo en estado verde y usable, y el primero valida la pieza de mayor incertidumbre (¿la predicción sirve?) sin haber invertido en transporte ni registro.
 
-### PR 1 — `project_profile` + tabla de señales
+> **Estado:** PR 1 ✅ completado y en `main`; PR 2–5 pendientes.
+
+### PR 1 — `project_profile` + tabla de señales ✅
 
 Sin servidor MCP. Es lógica pura, testeable en aislamiento, y es la parte que puede estar equivocada.
 
@@ -536,7 +538,7 @@ Sin servidor MCP. Es lógica pura, testeable en aislamiento, y es la parte que p
 - Sin cambios de CLI.
 - **Criterio de aceptación:** `go test ./internal/mcp/...` verde; los fixtures de §12 producen las candidatas esperadas; la salida cita `Proof` en el 100% de las señales.
 
-**Gate antes de seguir:** correr el perfil sobre ≥5 proyectos reales y confirmar que las candidatas son sensatas. Si la tabla predice mal, se corrige aquí — con 100 líneas, no con un servidor entero.
+**Gate (ejecutado en PR 1):** perfilado sobre 8 proyectos reales; las candidatas fueron sensatas salvo un falso positivo de `testdata/` (el repo se auto-detectaba como `protocol:grpc` por sus propias fixtures), corregido en §7.2.
 
 ### PR 2 — Catálogo unificado + caché de índice
 
@@ -606,12 +608,13 @@ fixtures/gomod-only/           go.mod
 fixtures/go-grpc/              go.mod + api/v1/service.proto
 fixtures/nextjs/               package.json (dep next) + next.config.ts
 fixtures/fullstack/            go.mod + Dockerfile + .github/workflows/ci.yml
-fixtures/empty/                (nada)
+fixtures/nested-testdata/      go.mod + testdata/sample.proto (el escaneo ignora testdata/)
 ```
 
 Tests:
 - Detección correcta por fixture, con `Proof` apuntando al fichero real.
-- `fixtures/empty/` → cero candidatas, **sin error**.
+- Proyecto vacío → cero candidatas, **sin error** (se prueba con `t.TempDir()`; git no versiona directorios vacíos).
+- El escaneo no desciende a `testdata/`: `fixtures/nested-testdata` no produce `protocol:grpc`.
 - La exclusión de `personal: true` se testea en `internal/catalog` con un índice stub (es propiedad de catálogo, no señal de proyecto), **no** con un fixture de filesystem.
 - Una señal nunca produce candidata sin `Proof`.
 
@@ -635,6 +638,7 @@ Tests **in-process**, no HTTP real — el SDK Go trae transporte en memoria (`mc
 
 - Las 4 primitivas responden por el pipe en memoria.
 - Las 3 read llevan `readOnlyHint: true`; `install_skills` lleva `destructiveHint: true`.
+- El `inputSchema` de cada tool no está vacío (el SDK lo infiere del struct `In`; un tag roto o un `In` mal tipado lo dejaría vacío sin fallar).
 
 ### 12.5 Registro en config
 
