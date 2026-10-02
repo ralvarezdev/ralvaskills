@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-02T20:27:20Z",
+  "generated_at": "2026-10-02T21:45:35Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -666,8 +666,8 @@
     },
     "rsk-guide": {
       "name": "rsk-guide",
-      "description": "Operator's guide for the rsk CLI — manage ralvaskills via the .rsk/ project manifest (rsk new, rsk install, rsk pin) or via bundle installs, plus global installs and the official Anthropic cache. Use when the user mentions rsk, asks how to install/pin/update skills, wants to add a skill to a project, or wants to set up ralvaskills on a new machine. Companion to cli-tool-architect (CLI design) and skill-builder (authoring new skills).",
-      "latest": "0.3.1",
+      "description": "Operator's guide for the rsk CLI — manage ralvaskills via the .rsk/ project manifest (rsk new, rsk install, rsk pin), bundle/global installs and the official Anthropic cache, and the `rsk mcp` server the agent queries for project standards. Use when the user mentions rsk, asks how to install/pin/update skills, wants to add a skill to a project, is starting work in a new project or scaffolding (to learn which standards apply), or wants to set up ralvaskills on a new machine. Companion to cli-tool-architect (CLI design), mcp-architect (server design) and skill-builder (authoring new skills).",
+      "latest": "0.4.0",
       "versions": {
         "0.3.0": {
           "version": "0.3.0",
@@ -678,6 +678,11 @@
           "version": "0.3.1",
           "published_at": "2026-05-23T03:41:49Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/rsk-guide@v0.3.1/rsk-guide-v0.3.1.tar.gz"
+        },
+        "0.4.0": {
+          "version": "0.4.0",
+          "published_at": "2026-10-02T21:45:35Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/rsk-guide@v0.4.0/rsk-guide-v0.4.0.tar.gz"
         }
       }
     },
