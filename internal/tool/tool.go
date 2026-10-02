@@ -35,6 +35,15 @@ type Tool interface {
 	// RemovePinned removes all rsk-managed skill imports from the tool's
 	// config. Returns nil if the config file does not exist.
 	RemovePinned(projectDir string) error
+
+	// RegisterMCP writes this tool's project MCP server entry for projectDir.
+	// It is idempotent and must preserve unrelated servers and config keys.
+	// Returns the path written.
+	RegisterMCP(projectDir string) (string, error)
+
+	// UnregisterMCP removes this tool's rsk MCP server entry, leaving other
+	// servers untouched. Returns nil when nothing was registered.
+	UnregisterMCP(projectDir string) error
 }
 
 // registry is the global map of registered tools, keyed by ID.

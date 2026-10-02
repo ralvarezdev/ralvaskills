@@ -66,6 +66,9 @@ func runDestroy(cmd *cobra.Command, _ []string) error {
 	if err = unlinkAndRemovePinned(out, cwd, tools, installedNames); err != nil {
 		return err
 	}
+	if err = unregisterMCP(cwd, tools); err != nil {
+		return err
+	}
 	if err = os.RemoveAll(rskDir); err != nil {
 		return fmt.Errorf("remove .rsk: %w", err)
 	}
@@ -138,4 +141,19 @@ func unlinkAndRemovePinned(out io.Writer, cwd string, tools []tool.ID, installed
 		}
 	}
 	return nil
+}
+
+// unregisterMCP removes the rsk MCP server from each configured tool's project
+// config and drops the workflow pointer from ./CLAUDE.md.
+func unregisterMCP(cwd string, tools []tool.ID) error {
+	for _, id := range tools {
+		t, ok := tool.Get(id)
+		if !ok {
+			continue
+		}
+		if err := t.UnregisterMCP(cwd); err != nil {
+			return err
+		}
+	}
+	return tool.RemoveMCPPointer(cwd)
 }

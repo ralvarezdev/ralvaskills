@@ -81,6 +81,7 @@ func setupCommands() {
 	rootCmd.AddCommand(newCmd)
 	f = newCmd.Flags()
 	f.String(cmdx.FlagFor, "", "Tools to configure: claude-code|opencode|all")
+	f.Bool(flagMCP, false, "Register the rsk MCP server in the project's client config")
 	registerForCompletion(newCmd, true)
 
 	// pin and unpin commands

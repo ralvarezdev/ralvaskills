@@ -4,10 +4,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/ralvarezdev/termkit"
 
 	"github.com/ralvarezdev/ralvaskills/v3/internal"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
@@ -81,6 +85,12 @@ func runNew(cmd *cobra.Command, _ []string) error {
 	}
 	if err = syncToolConfigs(tools, cwd, m.Pinned); err != nil {
 		return err
+	}
+
+	if resolveMCPFlag(cmd) {
+		if err = registerProjectMCP(out, cwd, tools); err != nil {
+			return err
+		}
 	}
 
 	fmt.Fprintln(out)
@@ -164,5 +174,56 @@ func syncToolConfigs(tools []tool.ID, cwd string, pinned []string) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// flagMCP is the boolean flag that registers the rsk MCP server without a
+// prompt, for non-interactive use.
+const flagMCP = "mcp"
+
+// resolveMCPFlag returns whether to register the rsk MCP server: the --mcp flag
+// when set, an interactive prompt otherwise.
+func resolveMCPFlag(cmd *cobra.Command) bool {
+	if cmd.Flags().Changed(flagMCP) {
+		return cmdx.Bool(cmd, flagMCP)
+	}
+	if ui.InSession(cmd.Context()) {
+		return false
+	}
+	return termkit.Confirm(cmd, false, termkit.StdioIsTerminal(), "Register the rsk MCP server in this project?")
+}
+
+// registerProjectMCP writes the rsk server into each configured tool's project
+// config and, for Claude Code, the workflow pointer in ./CLAUDE.md. It skips
+// (with a warning) when rsk is not on PATH, since the client would fail to
+// launch the server.
+func registerProjectMCP(out io.Writer, cwd string, tools []tool.ID) error {
+	if _, err := exec.LookPath("rsk"); err != nil {
+		ui.Warn(out, "'rsk' is not on PATH — skipping MCP registration. Put rsk on PATH "+
+			"first, or the client will fail to launch the server.")
+		//nolint:nilerr // not being on PATH is a skip with a warning, not a failure
+		return nil
+	}
+
+	paths := make([]string, 0, len(tools))
+	for _, id := range tools {
+		t, ok := tool.Get(id)
+		if !ok {
+			continue
+		}
+		path, err := t.RegisterMCP(cwd)
+		if err != nil {
+			return err
+		}
+		paths = append(paths, path)
+	}
+
+	if slices.Contains(tools, tool.ClaudeID) {
+		if err := tool.WriteMCPPointer(cwd); err != nil {
+			return err
+		}
+	}
+
+	ui.Success(out, "registered the rsk MCP server ("+strings.Join(paths, ", ")+")")
 	return nil
 }
