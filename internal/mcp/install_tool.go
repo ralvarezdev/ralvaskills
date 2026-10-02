@@ -33,10 +33,10 @@ type (
 
 	// InstallResultOut is the outcome for one skill.
 	InstallResultOut struct {
+		FilesChanged []string `json:"files_changed,omitempty"`
 		Name         string   `json:"name"`
 		Version      string   `json:"version"`
 		Scope        string   `json:"scope"`
-		FilesChanged []string `json:"files_changed,omitempty"`
 		Error        string   `json:"error,omitempty"`
 	}
 )

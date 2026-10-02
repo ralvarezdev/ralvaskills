@@ -18,8 +18,8 @@ import (
 // testable without the CLI.
 type Deps struct {
 	Cfg     config.Config
-	Logger  *slog.Logger
 	Version string
+	Logger  *slog.Logger
 }
 
 // NewServer builds the MCP server with every tool and resource registered. The

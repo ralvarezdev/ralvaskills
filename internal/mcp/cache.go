@@ -33,8 +33,8 @@ type IndexFetchFunc func(context.Context) (map[string]*source.IndexEntry, error)
 
 // IndexSnapshot is a registry index plus how current it is.
 type IndexSnapshot struct {
-	Skills    map[string]*source.IndexEntry
 	FetchedAt time.Time
+	Skills    map[string]*source.IndexEntry
 	Stale     bool
 }
 
@@ -42,8 +42,8 @@ type IndexSnapshot struct {
 // fetch when the file is missing or older than ttl. A failed fetch falls back to
 // a stale file so a server can still start offline.
 type IndexCache struct {
-	fetch IndexFetchFunc
 	path  string
+	fetch IndexFetchFunc
 	ttl   time.Duration
 }
 

@@ -130,7 +130,7 @@ const mcpPointerBody = "## Project standards\n\n" +
 	"in your skill list — invoke them with the Skill tool. Never install without " +
 	"asking.\n"
 
-var mcpPointerBlock = mcpPointerStart + "\n" + mcpPointerBody + mcpPointerEnd + "\n"
+const mcpPointerBlock = mcpPointerStart + "\n" + mcpPointerBody + mcpPointerEnd + "\n"
 
 // WriteMCPPointer adds the rsk workflow pointer to the project's ./CLAUDE.md,
 // replacing any previous block so repeated calls are idempotent. Other content

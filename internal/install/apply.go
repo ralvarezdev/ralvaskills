@@ -21,21 +21,21 @@ const (
 
 // Options configures Apply.
 type Options struct {
-	Constraints map[string]string
 	Targets     []string
 	RskDir      string
 	Scope       Scope
+	Constraints map[string]string
 	Pin         bool
 }
 
 // Result is the outcome for one skill. Files lists the links created; Err is
 // set when the skill could not be linked into every target.
 type Result struct {
+	Files   []string
 	Err     error
 	Name    string
 	Version string
 	Scope   Scope
-	Files   []string
 }
 
 // Apply links each skill into every target and, for the project scope, upserts
@@ -62,7 +62,7 @@ func Apply(skills []skill.Skill, opts Options) ([]Result, error) {
 	}
 
 	if opts.Scope == ScopeProject && len(linked) > 0 {
-		if _, err := applyProject(linked, opts); err != nil {
+		if err := applyProject(linked, opts); err != nil {
 			return results, err
 		}
 	}
@@ -71,23 +71,23 @@ func Apply(skills []skill.Skill, opts Options) ([]Result, error) {
 
 // applyProject upserts the linked skills into rsk.mod and rsk.lock, applies the
 // pin, and rewrites the pinned tool configs.
-func applyProject(linked []skill.Skill, opts Options) ([]string, error) {
+func applyProject(linked []skill.Skill, opts Options) error {
 	rskDir := opts.RskDir
 	if rskDir == "" {
 		var err error
 		rskDir, err = manifest.ProjectFolderPath()
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	m, err := manifest.ReadMod(rskDir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	lock, err := manifest.ReadLock(rskDir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	names := make([]string, 0, len(linked))
@@ -115,13 +115,10 @@ func applyProject(linked []skill.Skill, opts Options) ([]string, error) {
 	}
 
 	if writeErr := manifest.WriteMod(rskDir, m); writeErr != nil {
-		return nil, writeErr
+		return writeErr
 	}
 	if writeErr := manifest.WriteLock(rskDir, lock); writeErr != nil {
-		return nil, writeErr
+		return writeErr
 	}
-	if syncErr := SyncPinnedAllTools(rskDir, m); syncErr != nil {
-		return nil, syncErr
-	}
-	return []string{manifest.ModPath(rskDir), manifest.LockPath(rskDir)}, nil
+	return SyncPinnedAllTools(rskDir, m)
 }

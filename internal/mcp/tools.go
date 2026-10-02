@@ -37,10 +37,10 @@ type (
 	// ProjectProfileOut is the project_profile tool output: the detected
 	// signals, the skills they propose, and the project's install state.
 	ProjectProfileOut struct {
-		ProjectRoot string         `json:"project_root"`
 		Signals     []Signal       `json:"signals"`
 		Candidates  []Candidate    `json:"candidates"`
 		Installed   []InstalledRef `json:"installed"`
+		ProjectRoot string         `json:"project_root"`
 		Manifest    *ManifestState `json:"manifest,omitempty"`
 	}
 
@@ -54,9 +54,9 @@ type (
 
 	// ManifestState summarizes the project's rsk.mod, when it exists.
 	ManifestState struct {
-		Exists bool `json:"exists"`
 		Skills int  `json:"skills"`
 		Pinned int  `json:"pinned"`
+		Exists bool `json:"exists"`
 	}
 
 	// SearchSkillsIn is the search_skills tool input.
