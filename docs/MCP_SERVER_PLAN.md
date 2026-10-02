@@ -522,7 +522,7 @@ Dos cambios:
 
 **Cinco PRs** (el plan original tenía cuatro; PR 2 se parte porque las correcciones de §2.6/§4/§8 añaden catálogo, caché de índice y extracción del core de instalación — demasiado para un PR revisable). El orden importa: cada uno deja el repo en estado verde y usable, y el primero valida la pieza de mayor incertidumbre (¿la predicción sirve?) sin haber invertido en transporte ni registro.
 
-> **Estado:** PR 1 ✅ en `main`; PR 2 ✅ implementado; PR 3–5 pendientes.
+> **Estado:** PR 1 ✅ en `main`; PR 2 ✅ implementado; PR 3 ✅ implementado; PR 4–5 pendientes.
 
 ### PR 1 — `project_profile` + tabla de señales ✅
 
@@ -558,21 +558,23 @@ Sin transporte. Es la capa que §2.6 y §8 añaden, testeable en aislamiento.
 - Sin dependencia nueva. Sin cambios de CLI.
 - **Criterio de aceptación:** el catálogo produce entradas equivalentes en modo local y registry para un mismo skill; la caché arranca sin red si el índice está fresco; el TTL caduca y re-fetcha; la exclusión de `personal: true` se testea aquí con índice stub.
 
-### PR 3 — Servidor stdio + 4 primitivas + core de instalación
+### PR 3 — Servidor stdio + 4 primitivas + core de instalación ✅
 
 | Fichero | Cambio |
 |---|---|
 | `cmd/rsk/mcp.go` | Subcomando `rsk mcp` |
 | `cmd/rsk/setup.go` | `rootCmd.AddCommand(mcpCmd)` (los subcomandos se registran aquí, no en `root.go`) |
-| `internal/mcp/registry.go` | Registro de tools, desacoplado de transporte |
-| `internal/mcp/server.go` | `ServeStdio`; `mcpkit.RecoverWith` + logging |
-| `internal/mcp/tools/*.go` | `project_profile`, `search_skills`, `install_skills` |
-| `internal/mcp/catalog.go` | Recurso `rsk://catalog` sobre `internal/catalog` |
-| `internal/install/` (nuevo) | Core de instalación extraído de `cmd/rsk/install.go`: sin cobra, sin prompt, resultados estructurados |
-| `cmd/rsk/install.go` | Pasa a ser cliente del core extraído |
+| `internal/mcp/server.go` | `Deps`, `NewServer`, `ServeStdio`; `mcpkit.RecoverWith` |
+| `internal/mcp/tools.go` | `project_profile`, `search_skills` + tipos wire |
+| `internal/mcp/install_tool.go` | `install_skills` |
+| `internal/mcp/resource.go` | Recurso `rsk://catalog` sobre `internal/catalog` |
+| `internal/install/` (nuevo) | Core: `Resolve`, `Targets`, `Apply` — sin cobra, sin prompt, resultados estructurados |
+| `cmd/rsk/resolve.go` | Helpers convertidos en delegaciones finas a `internal/install` |
+| `cmd/rsk/install.go` | Pasa a ser cliente de `install.Resolve`/`Apply` |
+| `cmd/rsk/root.go`, `cmd/rsk/setup.go` | Registro de `mcp` (y exclusión del picker TUI) |
 | `go.mod` | `github.com/modelcontextprotocol/go-sdk` v1.8.0 + `github.com/ralvarezdev/mcpkit` v0.5.0 |
 
-- `internal/skill`, `internal/manifest` y `internal/source` solo se consumen (los cambios de `internal/skill` fueron en PR 2).
+- `internal/skill`, `internal/manifest` y `internal/source` solo se consumen (los cambios de `internal/skill` fueron en PR 2). La verificación de que **Claude Code muestra el prompt** ante `destructiveHint: true` queda como paso manual pendiente; los tests solo afirman la annotation.
 - **Criterio de aceptación:** arranca con Claude Code vía `claude mcp add`; las cuatro primitivas responden; `install_skills` produce el mismo efecto que `rsk install` **sin tocar stdout/stdin del protocolo**; se verifica que Claude Code pide aprobación ante `destructiveHint: true` (§6.1); un install falla con `isError: true`, no con error JSON-RPC.
 
 ### PR 4 — Registro en clientes vía `rsk new`
