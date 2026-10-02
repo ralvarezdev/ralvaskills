@@ -147,6 +147,10 @@ tasks:
     cmds:
       - golangci-lint run --config .golangci.yml ./...
 
+  deadcode:
+    desc: Report functions unreachable from any main or test
+    cmd: deadcode -test ./...
+
   lint:doccheck:
     desc: "Check exported doc-comment coverage (revive exported & package-comments rules)"
     cmds:
