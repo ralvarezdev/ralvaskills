@@ -1,7 +1,7 @@
 ---
 name: mcp-architect
-version: 2.0.0
-description: MCP (Model Context Protocol) 2026-07-28 server standards — tool/resource/prompt primitives, stateless protocol core (no initialize handshake, no Mcp-Session-Id), Mcp-Method/Mcp-Name header routing, Multi Round-Trip Requests (MRTR) for elicitation/sampling, cacheable list results (ttlMs/cacheScope), OAuth 2.1 + RFC 8707 resource indicators + RFC 9207 issuer validation, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server.
+version: 2.1.0
+description: MCP (Model Context Protocol) 2026-07-28 server standards — tool/resource/prompt primitives, stateless protocol core (no initialize handshake, no Mcp-Session-Id), Mcp-Method/Mcp-Name header routing, Multi Round-Trip Requests (MRTR) for elicitation/sampling, cacheable list results (ttlMs/cacheScope), OAuth 2.1 + RFC 8707 resource indicators + RFC 9207 issuer validation, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server. Go schema-driven contracts — authoring JSON Schemas as the source of truth for tool inputs and outputs, and generating Go types with atombender/go-jsonschema, sharing enums through $defs, and the two traps (the SDK resolves OutputSchema with no loader; go-jsonschema does not follow $ref) that silently produce a wrong contract.
 ---
 
 # MCP Architecture
@@ -52,6 +52,8 @@ Tools are the primary surface and the primary risk. Treat them like API endpoint
 - **JSON Schema required.** Every parameter typed, with descriptions. Omit no field. The model reads the schema to decide arguments — sloppy schemas produce sloppy calls.
 - **Description is the contract.** It's what the model reads to decide *whether* to call. Lead with the action; end with one line on side effects and any required confirmations. <300 tokens.
 - **Two output channels — populate both when you declare `outputSchema`.** See [§3a](#3a-tool-output--unstructured-content-vs-structuredcontent) below.
+- **The schema describes the wire, not the Go type.** In Go the SDK reflects over your struct, so a `Decimal = string` alias or an `omitempty` field means the JSON key and the Go field differ from the name you'd guess. Read the actual struct's tags before writing a schema that validates against it.
+- **A tool schema is a curated surface, not an endpoint mirror.** It may omit fields the API has and add ones the API has no place for. Author MCP enums separately from API enums — a schema listing values the tool rejects is worse than useless to the model. Past ~10 tools, author JSON Schema and generate the Go types; [RECIPES §12](RECIPES.md#12-schema-driven-tool-contracts-go) has the pipeline and the three SDK/generator traps.
 - **Tool annotations are hints, not guarantees** (see [§4](#4-tool-annotations-and-safety-hints)). They drive client UX (confirm vs auto-approve) but never enforce policy server-side. Validate on the server regardless of what the client claims.
 - **Return errors via `isError: true` in the tool result**, not as JSON-RPC errors. JSON-RPC errors mean *protocol* failures; tool-level failures (bad input, downstream API said 404) belong inside the result so the model can read and adapt. See [§10](#10-error-handling).
 
