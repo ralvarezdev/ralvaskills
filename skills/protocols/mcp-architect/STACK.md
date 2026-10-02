@@ -34,4 +34,4 @@ This skill pins **protocol-level** spec revisions and the **Python + Go** SDK ru
 - **Tasks scope.** `io.modelcontextprotocol/tasks` is now an opt-in extension (negotiated via `ClientCapabilities`/`ServerCapabilities.extensions`), not a core method group. Not covered in RECIPES.md — treat it as a separate reference lookup if you need it.
 
 _Last reviewed: 2026-10-02_
-_Skill version at last review: 2.1.2_
+_Skill version at last review: 2.2.0_

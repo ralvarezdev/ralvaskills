@@ -1,6 +1,6 @@
 ---
 name: mcp-architect
-version: 2.1.2
+version: 2.2.0
 description: MCP (Model Context Protocol) 2026-07-28 server standards — tool/resource/prompt primitives, stateless protocol core (no initialize handshake, no Mcp-Session-Id), Mcp-Method/Mcp-Name header routing, Multi Round-Trip Requests (MRTR) for elicitation/sampling, cacheable list results (ttlMs/cacheScope), OAuth 2.1 + RFC 8707 resource indicators + RFC 9207 issuer validation, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server. Go schema-driven contracts — authoring JSON Schemas as the source of truth for tool inputs and outputs, and generating Go types with atombender/go-jsonschema, sharing enums through $defs, and the two traps (the SDK resolves OutputSchema with no loader; go-jsonschema does not follow $ref) that silently produce a wrong contract.
 ---
 
@@ -100,6 +100,7 @@ Defaults if you omit: assume the *most dangerous* (not readonly, destructive, no
 - **Always set `title`** — it's what the user sees in the client UI when prompted to approve a call. The `name` is for the model; the `title` is for the human.
 - **`destructiveHint` is broader than "deletes data"** — overwriting a file, revoking a token, closing an issue, sending an email are all destructive. Err toward `true`.
 - **Clients gate confirmations on these.** Auto-approval policies (Claude Desktop's allowlist, Cursor's permissions) read annotations. Mislabeling a destructive tool as readonly turns user trust into a bug.
+- **`destructiveHint` alone does not prompt Claude Code.** Verified against a real client: once a project server is trusted, a tool with `destructiveHint: true` ran without a prompt. To force a permission prompt on *every* call — across `acceptEdits`/`auto`/`bypassPermissions`, with no "don't ask again" and not skippable by allow rules — set `_meta["anthropic/requiresUserInteraction"] = true` on the tool's `tools/list` entry (Claude Code ≥ v2.1.199). Reserve it for consent/access-grant tools where auto-approval would defeat the point.
 
 ## 5. Resource design
 

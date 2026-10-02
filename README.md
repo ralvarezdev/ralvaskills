@@ -121,7 +121,7 @@ These are personal to me and excluded from bundle installs. Listed here for tran
 
 ## `rsk` CLI
 
-A Go CLI that manages skill installation across projects without copy-pasting folders. Tracked in [`docs/SPECS.md`](docs/SPECS.md). Latest release: [`v2.0.2`](https://github.com/ralvarezdev/ralvaskills/releases/tag/v2.0.2).
+A Go CLI that manages skill installation across projects without copy-pasting folders. Tracked in [`docs/SPECS.md`](docs/SPECS.md). Latest release: [`v3.3.0`](https://github.com/ralvarezdev/ralvaskills/releases/tag/v3.3.0).
 
 ```
 go install github.com/ralvarezdev/ralvaskills/v3/cmd/rsk@latest
