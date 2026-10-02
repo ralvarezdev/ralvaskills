@@ -21,6 +21,11 @@ const (
 	defaultSearchLimit = 10
 	maxSearchLimit     = 25
 	searchNameWeight   = 2
+
+	// requiresUserInteractionKey is the Claude Code tool meta key that forces a
+	// permission prompt on every call, regardless of auto-approval modes. The
+	// MCP destructiveHint is advisory and does not trigger it.
+	requiresUserInteractionKey = "anthropic/requiresUserInteraction"
 )
 
 type (
@@ -59,6 +64,12 @@ type (
 		Query string `json:"query"`
 		Limit int    `json:"limit,omitempty" jsonschema:"Por defecto 10, máximo 25"`
 	}
+
+	// SearchSkillsOut is the search_skills tool output. It is an object rather
+	// than a bare array: some clients reject a top-level array structured result.
+	SearchSkillsOut struct {
+		Candidates []Candidate `json:"candidates"`
+	}
 )
 
 func registerTools(srv *sdk.Server, deps Deps) {
@@ -80,14 +91,16 @@ func registerTools(srv *sdk.Server, deps Deps) {
 		Annotations: readOnlyAnnotations("Search skills"),
 	}, searchHandler(deps))
 
-	sdk.AddTool(srv, &sdk.Tool{
+	installTool := &sdk.Tool{
 		Name:  "install_skills",
 		Title: "Install skills",
 		Description: "Install one or more skills or bundles into this project by " +
 			"name, resolving them through the ralvaskills catalog. Writes symlinks " +
 			"and the project manifest. The client asks the user to approve.",
 		Annotations: mutatingAnnotations("Install skills"),
-	}, installHandler(deps))
+	}
+	installTool.Meta = sdk.Meta{requiresUserInteractionKey: true}
+	sdk.AddTool(srv, installTool, installHandler(deps))
 }
 
 // mutatingAnnotations marks a tool that writes: the client asks for approval.
@@ -133,16 +146,17 @@ func profileHandler(deps Deps) sdk.ToolHandlerFor[ProjectProfileIn, ProjectProfi
 	}
 }
 
-func searchHandler(deps Deps) sdk.ToolHandlerFor[SearchSkillsIn, []Candidate] {
+func searchHandler(deps Deps) sdk.ToolHandlerFor[SearchSkillsIn, SearchSkillsOut] {
 	return func(
 		ctx context.Context, _ *sdk.CallToolRequest, in SearchSkillsIn,
-	) (*sdk.CallToolResult, []Candidate, error) {
+	) (*sdk.CallToolResult, SearchSkillsOut, error) {
 		entries, err := deps.catalog(ctx)
 		if err != nil {
 			errMsg := mcpkit.ErrorMsg{Public: "could not search the skill catalog"}
-			return nil, nil, errMsg.ToolError(deps.Logger, err)
+			return nil, SearchSkillsOut{}, errMsg.ToolError(deps.Logger, err)
 		}
-		return nil, searchCatalog(entries, in.Query, clampLimit(in.Limit)), nil
+		out := SearchSkillsOut{Candidates: searchCatalog(entries, in.Query, clampLimit(in.Limit))}
+		return nil, out, nil
 	}
 }
 
@@ -248,9 +262,10 @@ func installedRefs(lock manifest.Lock, mod manifest.Mod) []InstalledRef {
 // searchCatalog scores catalog entries against the query tokens, weighing a
 // name match over a description match, and returns at most limit candidates.
 func searchCatalog(entries []catalog.Entry, query string, limit int) []Candidate {
+	out := make([]Candidate, 0)
 	tokens := strings.Fields(fold(strings.ToLower(query)))
 	if len(tokens) == 0 {
-		return nil
+		return out
 	}
 
 	type hit struct {
@@ -286,12 +301,15 @@ func searchCatalog(entries []catalog.Entry, query string, limit int) []Candidate
 		return cmp.Compare(a.entry.Name, b.entry.Name)
 	})
 
-	out := make([]Candidate, 0, min(limit, len(hits)))
 	for i, h := range hits {
 		if i >= limit {
 			break
 		}
-		out = append(out, Candidate{Skill: h.entry.Name, Latest: h.entry.Latest})
+		out = append(out, Candidate{
+			Skill:   h.entry.Name,
+			Latest:  h.entry.Latest,
+			Because: []SignalKind{},
+		})
 	}
 	return out
 }

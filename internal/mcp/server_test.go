@@ -59,6 +59,9 @@ func TestServerToolsAndResource(t *testing.T) {
 		!*installTool.Annotations.DestructiveHint {
 		t.Error("install_skills: want destructiveHint true")
 	}
+	if v, ok := installTool.Meta["anthropic/requiresUserInteraction"].(bool); !ok || !v {
+		t.Error("install_skills: want anthropic/requiresUserInteraction true")
+	}
 
 	// project_profile on a Go project.
 	project := t.TempDir()
@@ -88,10 +91,10 @@ func TestServerToolsAndResource(t *testing.T) {
 
 	// search_skills by description.
 	res = callTool(t, session, "search_skills", map[string]any{"query": "architectural standards"})
-	var candidates []mcp.Candidate
-	decode(t, res.StructuredContent, &candidates)
-	if len(candidates) == 0 || candidates[0].Skill != "go-architect" {
-		t.Errorf("search candidates = %+v, want go-architect first", candidates)
+	var searchOut mcp.SearchSkillsOut
+	decode(t, res.StructuredContent, &searchOut)
+	if len(searchOut.Candidates) == 0 || searchOut.Candidates[0].Skill != "go-architect" {
+		t.Errorf("search candidates = %+v, want go-architect first", searchOut.Candidates)
 	}
 
 	// Read the catalog resource.
