@@ -2,195 +2,49 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"path/filepath"
 	"strings"
 
-	"github.com/ralvarezdev/termkit"
-
-	"github.com/ralvarezdev/ralvaskills/v3/internal/cmdx"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/config"
+	"github.com/ralvarezdev/ralvaskills/v3/internal/install"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/manifest"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/skill"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/source"
 	"github.com/ralvarezdev/ralvaskills/v3/internal/tool"
 )
 
-// newLocalSource returns the appropriate source.Resolver for local skills based
-// on whether the config points to a local repo clone or the hosted registry.
+// newLocalSource returns the appropriate source.Resolver for local skills.
 //
 //nolint:ireturn // returns interface for dependency injection
 func newLocalSource(cfg config.Config) source.Resolver {
-	if cfg.LocalMode() {
-		return source.NewLocal(cfg.RepoPath)
-	}
-	return source.NewRegistry(cfg.RegistryURL, cfg.RegistryCache())
+	return install.LocalSource(cfg)
 }
 
-// projectSkillsDirs returns deduplicated per-tool project skills directories for
-// all tools listed in m.Tools. In practice all tools share .claude/skills/ so
-// the result usually contains a single path.
+// projectSkillsDirs returns deduplicated per-tool project skills directories.
 func projectSkillsDirs(projectRoot string, m manifest.Mod) []string {
-	seen := make(map[string]bool, len(m.Tools))
-	dirs := make([]string, 0, len(m.Tools))
-	for _, id := range m.Tools {
-		t, ok := tool.Get(id)
-		if !ok {
-			continue
-		}
-		dir := t.ProjectSkillsDir(projectRoot)
-		if !seen[dir] {
-			seen[dir] = true
-			dirs = append(dirs, dir)
-		}
-	}
-	return dirs
+	return install.ProjectSkillsDirs(projectRoot, m)
 }
 
 // resolveTargetDirs determines which skill directories an operation should act on.
 // Without --global it returns the per-tool project-local skills directories.
 func resolveTargetDirs(cfg config.Config, global bool, forTool tool.ID) ([]string, error) {
-	if !global {
-		rskDir, err := manifest.ProjectFolderPath()
-		if err != nil {
-			return nil, err
-		}
-		m, err := manifest.ReadMod(rskDir)
-		if err != nil {
-			return nil, err
-		}
-		return projectSkillsDirs(filepath.Dir(rskDir), m), nil
-	}
-
-	if forTool != "" {
-		dir, ok := cfg.GlobalTargets[string(forTool)]
-		if !ok {
-			return nil, fieldError(
-				cmdx.FlagFor,
-				"tool %q is not configured — configured tools: %s",
-				forTool, joinKeys(cfg.GlobalTargets),
-			)
-		}
-		return []string{dir}, nil
-	}
-
-	scope := cfg.DefaultTargetScope
-	if scope == cmdx.ForAll {
-		dirs := make([]string, 0, len(cfg.GlobalTargets))
-		for _, dir := range cfg.GlobalTargets {
-			dirs = append(dirs, dir)
-		}
-		return dirs, nil
-	}
-
-	dir, ok := cfg.GlobalTargets[scope]
-	if !ok {
-		return nil, fmt.Errorf(
-			"default_target_scope %q does not match any configured tool — run 'rsk init' to fix",
-			scope,
-		)
-	}
-	return []string{dir}, nil
+	return install.Targets(cfg, global, forTool)
 }
 
 // findSkillByName looks up a skill by name, trying local first then official.
 func findSkillByName(ctx context.Context, name string, localSrc, officialSrc source.Resolver) (skill.Skill, error) {
-	s, localErr := localSrc.Find(ctx, name)
-	if localErr == nil {
-		return s, nil
-	}
-	if !errors.Is(localErr, source.ErrNotFound) {
-		return skill.Skill{}, localErr
-	}
-
-	s, officialErr := officialSrc.Find(ctx, name)
-	if officialErr == nil {
-		return s, nil
-	}
-	if !errors.Is(officialErr, source.ErrNotFound) {
-		return skill.Skill{}, officialErr
-	}
-
-	return skill.Skill{}, fmt.Errorf(
-		"skill %q not found in local repo or official cache\n  Run 'rsk catalog' to browse available skills",
-		name,
-	)
+	return install.FindSkill(ctx, name, localSrc, officialSrc)
 }
 
-// resolveNames takes a list of bundle-or-skill names and returns the resolved
-// skills (deduplicated) along with any soft warnings (skills inside a bundle
-// that couldn't be resolved). A name that matches a bundle expands to that
-// bundle's skills; otherwise the name is treated as a skill.
+// resolveNames expands bundle-or-skill names into skills, with soft warnings for
+// bundle members that could not be resolved.
 func resolveNames(
 	ctx context.Context,
 	names []string,
 	catalog []config.Bundle,
 	localSrc, officialSrc source.Resolver,
 ) ([]skill.Skill, []string, error) {
-	var skills []skill.Skill
-	var warnings []string
-
-	for _, raw := range names {
-		bareName, _, err := parseNameVersion(raw)
-		if err != nil {
-			return nil, nil, termkit.NewFieldError(fieldArgName, err)
-		}
-		if bundle, ok := config.FindBundle(catalog, bareName); ok {
-			ss, ws, resolveErr := resolveBundleSkills(ctx, bundle, localSrc, officialSrc)
-			if resolveErr != nil {
-				return nil, nil, resolveErr
-			}
-			skills = append(skills, ss...)
-			warnings = append(warnings, ws...)
-			continue
-		}
-		s, findErr := findSkillByName(ctx, bareName, localSrc, officialSrc)
-		if findErr != nil {
-			return nil, nil, termkit.NewFieldError(fieldArgName, findErr)
-		}
-		skills = append(skills, s)
-	}
-
-	return skills, warnings, nil
-}
-
-// resolveBundleSkills resolves a bundle's skill refs into concrete Skill values.
-// Planned skills (not on disk) and missing official cache entries produce
-// warnings rather than errors — the operation continues for available skills.
-func resolveBundleSkills(
-	ctx context.Context, bundle config.Bundle, localSrc, officialSrc source.Resolver,
-) ([]skill.Skill, []string, error) {
-	var skills []skill.Skill
-	var warnings []string
-
-	for _, ref := range bundle.Skills {
-		src, notFoundMsg := sourceForRef(ref.Source, localSrc, officialSrc)
-		s, err := src.Find(ctx, ref.Name)
-		if err == nil {
-			skills = append(skills, s)
-			continue
-		}
-		if !errors.Is(err, source.ErrNotFound) {
-			return nil, nil, fmt.Errorf("resolve %s skill %q: %w", ref.Source, ref.Name, err)
-		}
-		warnings = append(warnings, fmt.Sprintf(notFoundMsg, ref.Name))
-	}
-
-	return skills, warnings, nil
-}
-
-// sourceForRef returns the Resolver and a not-found warning format string for
-// the given source type. Format string receives the skill name as its argument.
-//
-//nolint:ireturn // returns interface for dependency injection
-func sourceForRef(
-	src skill.Source, localSrc, officialSrc source.Resolver,
-) (resolver source.Resolver, notFoundMsg string) {
-	if src == skill.SourceOfficial {
-		return officialSrc, "%s (official) not in cache — run 'rsk update --include official' to fetch it"
-	}
-	return localSrc, "%s is not yet available (planned) — skipped"
+	return install.Resolve(ctx, names, catalog, localSrc, officialSrc)
 }
 
 // filterSkills returns a new slice containing only the skills for which keep returns true.
@@ -216,15 +70,7 @@ func isLinkedAnywhere(name string, targets []string) bool {
 }
 
 func dedupSkills(skills []skill.Skill) []skill.Skill {
-	seen := make(map[string]bool, len(skills))
-	result := make([]skill.Skill, 0, len(skills))
-	for _, s := range skills {
-		if !seen[s.Name] {
-			seen[s.Name] = true
-			result = append(result, s)
-		}
-	}
-	return result
+	return install.DedupSkills(skills)
 }
 
 // skillNamesFromArgs resolves bundle-or-skill args to a deduplicated list of
@@ -308,33 +154,12 @@ func joinKeys(m map[string]string) string {
 	return strings.Join(keys, ", ")
 }
 
-// parseNameVersion splits a "name" or "name@version" argument. Returns an
-// error if the name half is empty.
+// parseNameVersion splits a "name" or "name@version" argument.
 func parseNameVersion(arg string) (name, version string, err error) {
-	if before, after, ok := strings.Cut(arg, "@"); ok {
-		name = before
-		version = after
-	} else {
-		name = arg
-	}
-	if name == "" {
-		return "", "", fmt.Errorf("skill name must not be empty (got %q)", arg)
-	}
-	return name, version, nil
+	return install.ParseNameVersion(arg)
 }
 
-// syncPinnedAllTools writes pinned skill entries for every tool listed in
-// m.Tools. rskDir is the .rsk/ directory; the project root is its parent.
+// syncPinnedAllTools writes pinned skill entries for every tool in rsk.mod.
 func syncPinnedAllTools(rskDir string, m manifest.Mod) error {
-	projectDir := filepath.Dir(rskDir)
-	for _, id := range m.Tools {
-		t, ok := tool.Get(id)
-		if !ok {
-			return fmt.Errorf("unknown tool %q in rsk.mod", id)
-		}
-		if err := t.SyncPinned(projectDir, m.Pinned); err != nil {
-			return err
-		}
-	}
-	return nil
+	return install.SyncPinnedAllTools(rskDir, m)
 }
