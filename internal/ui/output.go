@@ -34,7 +34,9 @@ func Debug(w io.Writer, msg string) {
 		return
 	}
 	fmt.Fprintln(w, MutedStyle.Render("debug: "+msg))
-} // Header prints a bold section title followed by a divider line. rsk's
+}
+
+// Header prints a bold section title followed by a divider line. rsk's
 // TitleStyle is termkit's own TitleStyle re-exported (see style.go), so this
 // delegates straight to termkit.WriteHeader rather than duplicating its body.
 func Header(w io.Writer, msg string) {
