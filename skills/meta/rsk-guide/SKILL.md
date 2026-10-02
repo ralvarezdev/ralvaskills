@@ -191,7 +191,7 @@ The server exposes, over stdio:
 
 Recommended flow: `project_profile` → propose to the user → `install_skills` once approved. Installed skills appear automatically in the client's skill list, so no extra skill is needed to discover them.
 
-**Approval is on the client, not the server.** `install_skills` carries `destructiveHint: true`, so the client asks the user before writing — this holds even if the model never read this skill. Never install skills yourself without the user's confirmation; state which skills and which scope.
+**Approval is on the client, not the server.** The server marks `install_skills` with `anthropic/requiresUserInteraction`, so Claude Code forces its approval prompt on every call — this holds even if the model never read this skill. Never install skills yourself without the user's confirmation; state which skills and which scope.
 
 The server is launched by the client, so **`rsk` must be on PATH**. `rsk new` warns and skips registration when it is not.
 
