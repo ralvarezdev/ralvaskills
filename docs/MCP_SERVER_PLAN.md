@@ -418,6 +418,7 @@ Cada arranque del proceso hará:
 
 - **TTL de refresco:** 24h. `install`/`update` refrescan de inmediato.
 - **Fuente de verdad:** `skills.ralvarez.dev/index.json`.
+- **Formato de caché:** `{fetched_at, skills}` — el índice publicado más la marca temporal que gobierna el TTL (no es byte-idéntico al índice remoto).
 - **Fallback:** si la caché no existe, se hace fetch (con `context` timeout) y se persiste. Si el fetch falla y hay caché vieja, se usa la vieja anotando su antigüedad; el server arranca **sin red** solo si hay caché.
 - **Modo local:** no hay índice que cachear — `internal/catalog` (§2.6) lee del filesystem.
 - **Escritura atómica:** reutilizar `fsx.WriteAtomic` (`internal/fsx/atomic.go`).
@@ -521,7 +522,7 @@ Dos cambios:
 
 **Cinco PRs** (el plan original tenía cuatro; PR 2 se parte porque las correcciones de §2.6/§4/§8 añaden catálogo, caché de índice y extracción del core de instalación — demasiado para un PR revisable). El orden importa: cada uno deja el repo en estado verde y usable, y el primero valida la pieza de mayor incertidumbre (¿la predicción sirve?) sin haber invertido en transporte ni registro.
 
-> **Estado:** PR 1 ✅ completado y en `main`; PR 2–5 pendientes.
+> **Estado:** PR 1 ✅ en `main`; PR 2 ✅ implementado; PR 3–5 pendientes.
 
 ### PR 1 — `project_profile` + tabla de señales ✅
 
@@ -540,17 +541,19 @@ Sin servidor MCP. Es lógica pura, testeable en aislamiento, y es la parte que p
 
 **Gate (ejecutado en PR 1):** perfilado sobre 8 proyectos reales; las candidatas fueron sensatas salvo un falso positivo de `testdata/` (el repo se auto-detectaba como `protocol:grpc` por sus propias fixtures), corregido en §7.2.
 
-### PR 2 — Catálogo unificado + caché de índice
+### PR 2 — Catálogo unificado + caché de índice ✅
 
 Sin transporte. Es la capa que §2.6 y §8 añaden, testeable en aislamiento.
 
 | Fichero | Cambio |
 |---|---|
 | `internal/skill/skill.go` | Campo `Description` en `Skill` |
-| `internal/skill/registry.go` | `parseSkill` parsea `description` del frontmatter |
-| `internal/catalog/catalog.go` | `CatalogEntry{Name, Description, Latest, Personal}` desde cualquier `source.Resolver` |
-| `internal/catalog/catalog_test.go` | Modo local y registry (con índice stubbeado) |
-| `internal/mcp/cache.go` | Caché de índice en disco (`<RegistryCache>/index.json`) + TTL 24h + escritura atómica vía `fsx.WriteAtomic` |
+| `internal/skill/registry.go` | `readFrontmatter` parsea `version` y `description` (tipo `Frontmatter`); `ReadVersion` se conserva |
+| `internal/source/registry.go` | `All`/`FindVersion` rellenan `Description` desde `IndexEntry` |
+| `internal/catalog/catalog.go` | `Entry{Name, Description, Latest, Personal}` desde cualquier `source.Resolver`, ordenado por nombre; `FromIndex` para el índice cacheado; `ExcludePersonal` |
+| `internal/catalog/catalog_test.go` | Equivalencia local ↔ registry (con índice stub) y exclusión de personal |
+| `internal/mcp/cache.go` | `IndexCache`: caché de índice en disco (`<RegistryCache>/index.json`) + TTL 24h + escritura atómica vía `fsx.WriteAtomic` |
+| `cmd/rsk/update.go` | Iteración por índice en dos bucles: `updatePair` engordó al añadir `Description` y cruzó el umbral de `rangeValCopy` |
 
 - Sin dependencia nueva. Sin cambios de CLI.
 - **Criterio de aceptación:** el catálogo produce entradas equivalentes en modo local y registry para un mismo skill; la caché arranca sin red si el índice está fresco; el TTL caduca y re-fetcha; la exclusión de `personal: true` se testea aquí con índice stub.
