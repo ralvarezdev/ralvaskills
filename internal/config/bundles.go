@@ -110,12 +110,3 @@ func FindBundle(bundles []Bundle, name string) (Bundle, bool) {
 	}
 	return Bundle{}, false
 }
-
-// BundleNames returns all bundle names in catalog order.
-func BundleNames(bundles []Bundle) []string {
-	names := make([]string, len(bundles))
-	for i, b := range bundles {
-		names[i] = b.Name
-	}
-	return names
-}

@@ -8,12 +8,6 @@ import (
 // info, muted, title) come from termkit's palette; the rsk-specific badges
 // below compose termkit colors with a local bold/underline where needed.
 var (
-	// BrandStyle is the primary branded style for the rsk name in the header.
-	BrandStyle = Theme.BrandStyle()
-
-	// VersionStyle is the style for the version string next to the brand name.
-	VersionStyle = Theme.MutedStyle()
-
 	// LocalStyle is the style for local (ralva) source labels in skill tables.
 	LocalStyle = lipgloss.NewStyle().Foreground(Theme.Brand).Bold(true)
 

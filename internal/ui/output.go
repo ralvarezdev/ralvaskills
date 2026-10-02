@@ -34,17 +34,7 @@ func Debug(w io.Writer, msg string) {
 		return
 	}
 	fmt.Fprintln(w, MutedStyle.Render("debug: "+msg))
-}
-
-// Brand prints the rsk name and version header.
-func Brand(w io.Writer, version string) {
-	_, _ = fmt.Fprintf(w, "\n"+Padding+"%s"+Padding+"%s\n\n",
-		BrandStyle.Render("rsk"),
-		VersionStyle.Render("v"+version),
-	)
-}
-
-// Header prints a bold section title followed by a divider line. rsk's
+} // Header prints a bold section title followed by a divider line. rsk's
 // TitleStyle is termkit's own TitleStyle re-exported (see style.go), so this
 // delegates straight to termkit.WriteHeader rather than duplicating its body.
 func Header(w io.Writer, msg string) {
