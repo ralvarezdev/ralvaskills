@@ -79,6 +79,28 @@ func registerTools(srv *sdk.Server, deps Deps) {
 			"Read-only.",
 		Annotations: readOnlyAnnotations("Search skills"),
 	}, searchHandler(deps))
+
+	sdk.AddTool(srv, &sdk.Tool{
+		Name:  "install_skills",
+		Title: "Install skills",
+		Description: "Install one or more skills or bundles into this project by " +
+			"name, resolving them through the ralvaskills catalog. Writes symlinks " +
+			"and the project manifest. The client asks the user to approve.",
+		Annotations: mutatingAnnotations("Install skills"),
+	}, installHandler(deps))
+}
+
+// mutatingAnnotations marks a tool that writes: the client asks for approval.
+func mutatingAnnotations(title string) *sdk.ToolAnnotations {
+	yes := true
+	no := false
+	return &sdk.ToolAnnotations{
+		Title:           title,
+		ReadOnlyHint:    false,
+		DestructiveHint: &yes,
+		IdempotentHint:  false,
+		OpenWorldHint:   &no,
+	}
 }
 
 // readOnlyAnnotations marks a tool that only reads.

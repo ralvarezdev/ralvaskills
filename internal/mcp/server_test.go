@@ -50,6 +50,16 @@ func TestServerToolsAndResource(t *testing.T) {
 		}
 	}
 
+	installTool := findTool(t, tools.Tools, "install_skills")
+	if installTool.InputSchema == nil {
+		t.Error("install_skills: inputSchema is empty")
+	}
+	if installTool.Annotations == nil ||
+		installTool.Annotations.DestructiveHint == nil ||
+		!*installTool.Annotations.DestructiveHint {
+		t.Error("install_skills: want destructiveHint true")
+	}
+
 	// project_profile on a Go project.
 	project := t.TempDir()
 	if writeErr := os.WriteFile(
@@ -179,5 +189,61 @@ func writeSkill(t *testing.T, dir, name, version, description string) {
 	body := "---\nname: " + name + "\nversion: " + version + "\ndescription: " + description + "\n---\n\n# " + name + "\n"
 	if err := os.WriteFile(filepath.Join(dir, "SKILL.md"), []byte(body), fsperm.File); err != nil {
 		t.Fatalf("write SKILL.md: %v", err)
+	}
+}
+
+func TestInstallSkillsGlobal(t *testing.T) {
+	t.Parallel()
+
+	repo := t.TempDir()
+	writeSkill(t, filepath.Join(repo, "skills", "tdd"), "tdd", "1.0.0", "Red-green-refactor workflow.")
+	globalDir := t.TempDir()
+
+	session := newSession(t, mcp.Deps{
+		Cfg: config.Config{
+			RepoPath:           repo,
+			GlobalTargets:      map[string]string{"claude-code": globalDir},
+			DefaultTargetScope: "claude-code",
+		},
+		Logger:  slog.New(slog.DiscardHandler),
+		Version: "test",
+	})
+
+	res := callTool(t, session, "install_skills", map[string]any{
+		"names": []string{"tdd"},
+		"scope": "global",
+	})
+	if res.IsError {
+		t.Fatalf("install_skills reported an error: %+v", res.Content)
+	}
+	var out mcp.InstallSkillsOut
+	decode(t, res.StructuredContent, &out)
+	if len(out.Installed) != 1 || out.Installed[0].Name != "tdd" {
+		t.Fatalf("installed = %+v, want tdd", out.Installed)
+	}
+	if _, err := os.Lstat(filepath.Join(globalDir, "tdd")); err != nil {
+		t.Errorf("tdd not linked into the global dir: %v", err)
+	}
+}
+
+func TestInstallSkillsUnknownNameIsToolError(t *testing.T) {
+	t.Parallel()
+
+	session := newSession(t, mcp.Deps{
+		Cfg: config.Config{
+			RepoPath:           t.TempDir(),
+			GlobalTargets:      map[string]string{"claude-code": t.TempDir()},
+			DefaultTargetScope: "claude-code",
+		},
+		Logger:  slog.New(slog.DiscardHandler),
+		Version: "test",
+	})
+
+	res := callTool(t, session, "install_skills", map[string]any{
+		"names": []string{"does-not-exist"},
+		"scope": "global",
+	})
+	if !res.IsError {
+		t.Error("install_skills with an unknown name: want isError true")
 	}
 }
