@@ -185,3 +185,25 @@ func TestExtractTarball_stripPrefix(t *testing.T) {
 		t.Errorf("unexpected content: %q", string(content))
 	}
 }
+
+func TestRegistryAllCarriesDescription(t *testing.T) {
+	t.Parallel()
+
+	body := `{"skills":{"go-architect":{"name":"go-architect","description":"Go standards","latest":"1.2.0","versions":{"1.2.0":{"version":"1.2.0","archive_url":"http://example/g.tar.gz"}}}}}`
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+
+	r := NewRegistry(srv.URL, t.TempDir())
+	skills, err := r.All(context.Background())
+	if err != nil {
+		t.Fatalf("All: %v", err)
+	}
+	if len(skills) != 1 {
+		t.Fatalf("got %d skills, want 1", len(skills))
+	}
+	if skills[0].Description != "Go standards" || skills[0].Version != "1.2.0" {
+		t.Errorf("All = %+v, want description and latest", skills[0])
+	}
+}

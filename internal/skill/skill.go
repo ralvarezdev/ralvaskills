@@ -3,9 +3,10 @@ package skill
 
 // Skill represents a skill discovered on disk.
 type Skill struct {
-	Name       string
-	Version    string
-	Path       string // absolute path to the skill folder
-	Source     Source
-	IsPersonal bool // true when path contains a "personal/" segment
+	Name        string
+	Version     string
+	Description string
+	Path        string // absolute path to the skill folder
+	Source      Source
+	IsPersonal  bool // true when path contains a "personal/" segment
 }

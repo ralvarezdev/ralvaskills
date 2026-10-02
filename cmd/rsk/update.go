@@ -487,7 +487,8 @@ var updatePlanTable = termkit.Table[updatePair]{
 // linked, reporting (rather than aborting on) a failure so the rest of the
 // batch still updates. It returns how many failed and their names.
 func relinkOutdated(out, errOut io.Writer, toUpdate []updatePair, targets []string) (failed int, failedNames []string) {
-	for _, u := range toUpdate {
+	for i := range toUpdate {
+		u := &toUpdate[i]
 		skillFailed := false
 		for _, target := range targets {
 			if !skill.IsLinked(u.name, target) {
@@ -518,8 +519,8 @@ func relinkOutdated(out, errOut io.Writer, toUpdate []updatePair, targets []stri
 // an aborted confirm).
 func updatePairNames(toUpdate []updatePair) []string {
 	names := make([]string, len(toUpdate))
-	for i, u := range toUpdate {
-		names[i] = u.name
+	for i := range toUpdate {
+		names[i] = toUpdate[i].name
 	}
 	return names
 }

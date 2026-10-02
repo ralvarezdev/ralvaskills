@@ -105,10 +105,11 @@ func (r *Registry) All(ctx context.Context) ([]skill.Skill, error) {
 	skills := make([]skill.Skill, 0, len(index))
 	for _, entry := range index {
 		skills = append(skills, skill.Skill{
-			Name:       entry.Name,
-			Version:    entry.Latest,
-			Source:     skill.SourceRegistry,
-			IsPersonal: entry.Personal,
+			Name:        entry.Name,
+			Version:     entry.Latest,
+			Description: entry.Description,
+			Source:      skill.SourceRegistry,
+			IsPersonal:  entry.Personal,
 		})
 	}
 	return skills, nil
@@ -147,11 +148,12 @@ func (r *Registry) FindVersion(ctx context.Context, name, version string) (skill
 	}
 
 	return skill.Skill{
-		Name:       name,
-		Version:    version,
-		Path:       skillDir,
-		Source:     skill.SourceRegistry,
-		IsPersonal: entry.Personal,
+		Name:        name,
+		Version:     version,
+		Description: entry.Description,
+		Path:        skillDir,
+		Source:      skill.SourceRegistry,
+		IsPersonal:  entry.Personal,
 	}, nil
 }
 

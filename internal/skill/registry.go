@@ -9,9 +9,19 @@ import (
 	"strings"
 )
 
+// Frontmatter is the subset of a SKILL.md YAML frontmatter that rsk reads.
+type Frontmatter struct {
+	Version     string
+	Description string
+}
+
 const (
 	// VersionPrefix is the YAML frontmatter key used to store a skill's version.
 	VersionPrefix = "version:"
+
+	// DescriptionPrefix is the YAML frontmatter key used to store a skill's
+	// description.
+	DescriptionPrefix = "description:"
 )
 
 // Walk discovers all skills under root. A directory that contains SKILL.md is
@@ -33,40 +43,52 @@ func Walk(root string, source Source) ([]Skill, error) {
 	return skills, err
 }
 
+// ReadFrontmatter parses the version and description from the SKILL.md in dir.
+// A missing description is not an error; a missing version is.
+func ReadFrontmatter(dir string) (Frontmatter, error) {
+	return readFrontmatter(filepath.Join(dir, SkillFileName))
+}
+
 // ReadVersion reads the version field from SKILL.md in dir.
 func ReadVersion(dir string) (string, error) {
-	return readVersionFromFrontmatter(filepath.Join(dir, SkillFileName))
+	fm, err := ReadFrontmatter(dir)
+	if err != nil {
+		return "", err
+	}
+	return fm.Version, nil
 }
 
 func parseSkill(root, dir string, source Source) Skill {
-	version, err := readVersionFromFrontmatter(filepath.Join(dir, SkillFileName))
+	fm, err := readFrontmatter(filepath.Join(dir, SkillFileName))
 	if err != nil {
-		version = ""
+		fm = Frontmatter{}
 	}
 
-	rel, err := filepath.Rel(root, dir)
-	if err != nil {
+	rel, relErr := filepath.Rel(root, dir)
+	if relErr != nil {
 		rel = dir
 	}
 
 	return Skill{
-		Name:       filepath.Base(dir),
-		Version:    version,
-		Path:       dir,
-		Source:     source,
-		IsPersonal: IsPersonalPath(rel),
+		Name:        filepath.Base(dir),
+		Version:     fm.Version,
+		Description: fm.Description,
+		Path:        dir,
+		Source:      source,
+		IsPersonal:  IsPersonalPath(rel),
 	}
 }
 
-// readVersionFromFrontmatter reads the "version:" value from YAML frontmatter
-// in path. Returns an error if the field is absent.
-func readVersionFromFrontmatter(path string) (string, error) {
+// readFrontmatter reads the "version:" and "description:" values from YAML
+// frontmatter in path. Returns an error if the version field is absent.
+func readFrontmatter(path string) (Frontmatter, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return "", err
+		return Frontmatter{}, err
 	}
 	defer func() { _ = f.Close() }()
 
+	var fm Frontmatter
 	scanner := bufio.NewScanner(f)
 	inFrontmatter := false
 	for scanner.Scan() {
@@ -78,10 +100,18 @@ func readVersionFromFrontmatter(path string) (string, error) {
 			}
 			break
 		}
-		if inFrontmatter && strings.HasPrefix(line, VersionPrefix) {
-			val := strings.TrimSpace(strings.TrimPrefix(line, VersionPrefix))
-			return strings.Trim(val, `"'`), nil
+		if !inFrontmatter {
+			continue
+		}
+		if v, ok := strings.CutPrefix(line, VersionPrefix); ok {
+			fm.Version = strings.Trim(strings.TrimSpace(v), `"'`)
+		}
+		if v, ok := strings.CutPrefix(line, DescriptionPrefix); ok {
+			fm.Description = strings.Trim(strings.TrimSpace(v), `"'`)
 		}
 	}
-	return "", fmt.Errorf("version field not found in %s", path)
+	if fm.Version == "" {
+		return Frontmatter{}, fmt.Errorf("version field not found in %s", path)
+	}
+	return fm, nil
 }
