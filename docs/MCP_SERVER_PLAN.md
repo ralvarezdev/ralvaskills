@@ -522,7 +522,7 @@ Dos cambios:
 
 **Cinco PRs** (el plan original tenía cuatro; PR 2 se parte porque las correcciones de §2.6/§4/§8 añaden catálogo, caché de índice y extracción del core de instalación — demasiado para un PR revisable). El orden importa: cada uno deja el repo en estado verde y usable, y el primero valida la pieza de mayor incertidumbre (¿la predicción sirve?) sin haber invertido en transporte ni registro.
 
-> **Estado:** PR 1 ✅ en `main`; PR 2 ✅ implementado; PR 3 ✅ implementado; PR 4–5 pendientes.
+> **Estado:** PR 1 ✅ en `main`; PR 2 ✅ implementado; PR 3 ✅ implementado; PR 4 ✅ implementado; PR 5 pendiente.
 
 ### PR 1 — `project_profile` + tabla de señales ✅
 
@@ -577,17 +577,18 @@ Sin transporte. Es la capa que §2.6 y §8 añaden, testeable en aislamiento.
 - `internal/skill`, `internal/manifest` y `internal/source` solo se consumen (los cambios de `internal/skill` fueron en PR 2). La verificación de que **Claude Code muestra el prompt** ante `destructiveHint: true` queda como paso manual pendiente; los tests solo afirman la annotation.
 - **Criterio de aceptación:** arranca con Claude Code vía `claude mcp add`; las cuatro primitivas responden; `install_skills` produce el mismo efecto que `rsk install` **sin tocar stdout/stdin del protocolo**; se verifica que Claude Code pide aprobación ante `destructiveHint: true` (§6.1); un install falla con `isError: true`, no con error JSON-RPC.
 
-### PR 4 — Registro en clientes vía `rsk new`
+### PR 4 — Registro en clientes vía `rsk new` ✅
 
 | Fichero | Cambio |
 |---|---|
-| `internal/tool/claude.go` | `.mcp.json` (nuevo) + pointer en `./CLAUDE.md` + limpieza del pointer en destroy |
-| `internal/tool/opencode.go` | Clave `mcp` en `opencode.json` (nueva) |
-| `internal/tool/tool.go` | Método de interfaz para registro MCP |
-| `internal/tool/*_test.go` | Idempotencia y no destructividad |
-| `cmd/rsk/new.go` | Verificación de PATH + pregunta de MCP + pregunta separada de `rsk-guide` |
+| `internal/tool/mcp.go` (nuevo) | `RegisterMCP`/`UnregisterMCP` (`.mcp.json` y `opencode.json`), `WriteMCPPointer`/`RemoveMCPPointer` en `./CLAUDE.md`, idempotentes y no destructivos |
+| `internal/tool/tool.go` | Métodos `RegisterMCP`/`UnregisterMCP` en la interfaz |
+| `internal/tool/mcp_test.go` | Idempotencia, no destructividad y pointer |
+| `cmd/rsk/new.go` | Flag `--mcp` + prompt, verificación de PATH, registro + pointer |
+| `cmd/rsk/destroy.go` | `unregisterMCP`: quita el registro y el pointer |
+| `cmd/rsk/setup.go` | Flag `--mcp` en `rsk new` |
 
-- **Criterio de aceptación:** `rsk new` avisa si `rsk` no está en PATH y no registra; registra sin perder claves ajenas; correrlo dos veces no duplica entradas; el pointer sobrevive a `rsk install`/`rsk pin`; `rsk destroy` limpia registro y pointer.
+- **Criterio de aceptación:** `rsk new` avisa si `rsk` no está en PATH y no registra; registra sin perder claves ajenas; correrlo dos veces no duplica entradas; el pointer sobrevive a `rsk install`/`rsk pin`; `rsk destroy` limpia registro y pointer. La pregunta separada de instalar `rsk-guide` se movió a PR 5, junto con el bump de `rsk-guide`.
 
 ### PR 5 — `rsk-guide` + README
 
