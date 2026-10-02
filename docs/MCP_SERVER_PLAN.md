@@ -522,7 +522,7 @@ Dos cambios:
 
 **Cinco PRs** (el plan original tenía cuatro; PR 2 se parte porque las correcciones de §2.6/§4/§8 añaden catálogo, caché de índice y extracción del core de instalación — demasiado para un PR revisable). El orden importa: cada uno deja el repo en estado verde y usable, y el primero valida la pieza de mayor incertidumbre (¿la predicción sirve?) sin haber invertido en transporte ni registro.
 
-> **Estado:** PR 1 ✅ en `main`; PR 2 ✅ implementado; PR 3 ✅ implementado; PR 4 ✅ implementado; PR 5 pendiente.
+> **Estado:** PR 1–5 ✅ implementados (PR 1 en `main`; 2–5 locales, sin push).
 
 ### PR 1 — `project_profile` + tabla de señales ✅
 
@@ -590,7 +590,7 @@ Sin transporte. Es la capa que §2.6 y §8 añaden, testeable en aislamiento.
 
 - **Criterio de aceptación:** `rsk new` avisa si `rsk` no está en PATH y no registra; registra sin perder claves ajenas; correrlo dos veces no duplica entradas; el pointer sobrevive a `rsk install`/`rsk pin`; `rsk destroy` limpia registro y pointer. La pregunta separada de instalar `rsk-guide` se movió a PR 5, junto con el bump de `rsk-guide`.
 
-### PR 5 — `rsk-guide` + README
+### PR 5 — `rsk-guide` + README ✅
 
 | Fichero | Cambio |
 |---|---|

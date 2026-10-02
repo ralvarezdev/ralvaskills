@@ -33,7 +33,7 @@ Skills are grouped by what they shape. Every folder with a `SKILL.md` is a skill
 
 - **`rest-api-architect`** — Cross-language REST conventions: resource URLs, method semantics, URL-prefix versioning, cursor pagination, snake_case JSON, ISO 8601 timestamps, RFC 9457, Idempotency-Key, ETag/If-Match, OpenAPI as source of truth.
 - **`grpc-architect`** — Vanilla gRPC: `.proto` services, `status.Error` with standard codes, domain→code mapping, interceptor chain (auth/log/recovery/validation/metrics), client deadlines, context propagation, bufconn testing.
-- **`mcp-architect`** — MCP 2025-11-25 servers: tool/resource/prompt primitives, capability negotiation, Streamable HTTP + `Mcp-Session-Id`, OAuth 2.1 + RFC 8707, tool annotations, structured output, prompt-injection/SSRF defenses. Python (FastMCP) and Go SDK recipes.
+- **`mcp-architect`** — MCP 2026-07-28 servers: tool/resource/prompt primitives, stateless core (no `initialize` handshake), header-based routing, Multi Round-Trip Requests, cacheable list results, OAuth 2.1 + RFC 8707/9207, tool annotations, structured output, prompt-injection/SSRF defenses. Python (FastMCP) and Go SDK recipes.
 
 ### `encoding/` — schemas and wire formats
 
@@ -100,7 +100,7 @@ Three rungs from expression-level polish to system-level architecture, plus a sk
 Skills about authoring/operating the toolkit itself, plus communication modes that aren't really workflows.
 
 - **`skill-builder`** — Meta-skill that scaffolds new ralvaskills skills per SPECS.md (SKILL.md skeleton, optional STACK/RECIPES, folder placement, SPECS updates). Interview-first.
-- **`rsk-guide`** — Quick reference for the `rsk` CLI: discover, install, update, check ralvaskills bundles and skills.
+- **`rsk-guide`** — Quick reference for the `rsk` CLI and its `rsk mcp` server: discover, install, update, and check ralvaskills bundles and skills.
 - **`caveman`** — Ultra-compressed communication mode that reduces token usage by ~75% while preserving technical accuracy.
 
 ### `personal/` — author-specific, not bundle-installable
@@ -152,6 +152,9 @@ rsk uninstall <name>                      # remove (cleans manifest in project s
 rsk pin <name> [--remove]                # toggle auto-load in CLAUDE.md / opencode.json (`rsk unpin` still works)
 rsk destroy                               # remove .rsk/ and tool config entries (--yes skips the prompt)
 
+# MCP server (registered by `rsk new`)
+rsk mcp                                   # stdio MCP server the agent queries (launched by the client)
+
 # Tool permissions (Claude Code by default; --for selects the tool)
 rsk tools list                            # current permissions for this project
 rsk tools allow <rule>                    # allow a tool
@@ -159,6 +162,12 @@ rsk tools deny <rule>                     # deny a tool
 rsk tools remove <rule>                   # drop a rule
 # (the older `rsk claude tools ...` path still works as a hidden alias)
 ```
+
+### MCP server
+
+`rsk new` can register `rsk mcp` in the project's client config (`.mcp.json` for Claude Code, `opencode.json` for OpenCode) and add a short pointer to `./CLAUDE.md`, so an agent can profile the project and install the skills that apply without you naming them. The server exposes the `project_profile`, `search_skills` and `install_skills` tools plus the `rsk://catalog` resource over stdio; `install_skills` is marked destructive, so the client asks you to approve each install.
+
+The client launches the server, so **`rsk` must be on PATH** on every machine that opens the project — `rsk new` warns and skips registration when it is not. Re-run `rsk new` to (re)register; it never overwrites other MCP servers. `rsk destroy` removes the registration and the pointer.
 
 ### Interactive mode
 

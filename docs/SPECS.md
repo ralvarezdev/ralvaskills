@@ -73,6 +73,7 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── status.go                 # rsk status [flags]
 │   │   ├── list.go                   # rsk list [flags]              (installed view: project / --global)
 │   │   ├── catalog.go                # rsk catalog [flags]           (browse skills + bundles)
+│   │   ├── mcp.go                    # rsk mcp                       (stdio MCP server: profile, search, install)
 │   │   └── resolve.go                # shared resolver helpers (source.Resolver, target dirs, bundle resolution)
 │   ├── count-tokens/                 # ✅ scans SKILL.md files → docs/TOKEN_COUNTS.md
 │   └── generate-registry/            # ✅ packs skill tarballs + index.json for the publish workflow
@@ -828,6 +829,32 @@ rsk pin <name> --remove    # remove from pinned list; the skill stays installed 
 ```
 
 Both commands operate on a project manifest (`.rsk/rsk.mod` must exist). `rsk pin` requires the skill to already be present in the manifest — install it first with `rsk install <name>`. Pinning rewrites every configured tool's project config to reflect the manifest's `pinned` list.
+
+---
+
+### MCP server
+
+```bash
+rsk mcp
+```
+
+Runs the rsk Model Context Protocol server over stdio. It is launched by an MCP
+client (Claude Code, OpenCode), not run by hand, and speaks JSON-RPC on stdout —
+logs go to stderr, so `rsk` must be on the client machine's PATH.
+
+The server exposes three tools and one resource:
+
+| Primitive | Name | Effect |
+|---|---|---|
+| Tool | `project_profile` | Detects the project's signals (each citing the file that proves it) and proposes the skills that apply. Read-only. |
+| Tool | `search_skills` | Keyword search over the catalog. Read-only. |
+| Tool | `install_skills` | Installs skills/bundles into the project or globally via the same core as `rsk install`. Annotated `destructiveHint: true`, so the client asks the user to approve. |
+| Resource | `rsk://catalog` | The catalog, with descriptions truncated. |
+
+`rsk new` registers the server in each configured tool's project config
+(`.mcp.json`, `opencode.json`) and writes a workflow pointer into `./CLAUDE.md`;
+`rsk destroy` removes both. The server reads the same `config.json` as the CLI
+and starts without network access when the registry index is cached.
 
 ---
 
