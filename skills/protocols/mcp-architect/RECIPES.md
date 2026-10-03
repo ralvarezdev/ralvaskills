@@ -324,6 +324,21 @@ Note what is **not** a trap: a `$ref` with a sibling `description` needs no wrap
 
 ### Sharing
 
+Three strategies, chosen by how many tools share the vocabulary and whether a generator sits
+between the schema and the code:
+
+1. **One shared `$defs` file** — a single `shared/enums.json` every tool `$ref`s. Best when several
+   tools share the vocabulary and JSON Schema is the source of truth. Detailed below.
+2. **One file per enum** — spread each enum into its own file. The workaround when you cannot use
+   `--only-models`: a shared enum referenced from a consumer file otherwise yields a *third* type
+   named after that consumer (`usea.json` → `UseADialect`) carrying the same values.
+3. **No shared schema files** — define each tool's input as a Go struct with `json` tags and let the
+   SDK derive the schema (work-hour-reports). No `$ref`, no resolved copies, no generator. The
+   accepted set lives as typed Go constants checked in a `switch`; the model learns the values only
+   if the tool `Description` spells them out, so keep them there.
+
+The rest of this section details strategy 1.
+
 Put reusable definitions in one file and reference them:
 
 ```
