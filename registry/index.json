@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-02T21:52:23Z",
+  "generated_at": "2026-10-08T20:55:07Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -82,12 +82,17 @@
     "commit-author": {
       "name": "commit-author",
       "description": "Generate concise Conventional Commits messages from a staged diff. Enforces full type set, imperative subject lines, no AI co-author attribution. Use when user wants to commit, asks for a commit message, mentions \"commit\", or invokes /commit.",
-      "latest": "1.0.0",
+      "latest": "1.11.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/commit-author@v1.0.0/commit-author-v1.0.0.tar.gz"
+        },
+        "1.11.0": {
+          "version": "1.11.0",
+          "published_at": "2026-10-08T20:55:07Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/commit-author@v1.11.0/commit-author-v1.11.0.tar.gz"
         }
       }
     },
