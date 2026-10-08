@@ -1,6 +1,6 @@
 ---
 name: commit-author
-version: 1.0.0
+version: 1.11.0
 description: Generate concise Conventional Commits messages from a staged diff. Enforces full type set, imperative subject lines, no AI co-author attribution. Use when user wants to commit, asks for a commit message, mentions "commit", or invokes /commit.
 ---
 
@@ -33,6 +33,11 @@ Full Conventional Commits v1.0.0 type set (Angular convention):
 ## 4. Body
 * **Content:** Explain *why* the change was made, not *what* changed. Do not write line-by-line file summaries.
 * **Formatting:** Hard wrap lines at 72 characters.
+
+## 4.1 Merge Commits
+* **Body content:** A bare `Merge branch '...'` message is not enough when the merge brings in meaningful changes. Use the body to summarize all the changes the merge introduces — group them by type or area, and note the key behavioral changes, so the merge commit is a useful record on its own.
+* **Format:** Keep the conventional `<type>(<scope>): <subject>` form (commonly `chore(merge): ...` or `feat: ...`), then list the aggregated changes in the body, hard wrapped at 72 characters.
+* **Footers:** Reference the merged branch or PR and any issues resolved by the combined work.
 
 ## 5. Footers
 * **Breaking Changes:** Must begin with `BREAKING CHANGE:` followed by a migration path. Applies to any type and forces a MAJOR version bump.
