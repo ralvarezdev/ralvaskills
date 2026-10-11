@@ -29,6 +29,7 @@ Read the linked reference before wiring; it has the package layout, a recipe and
 | A periodic background job (reaper, pruner, refresh): no overlap, jitter, timeout, panic recovery | `tick` | [TICK](references/TICK.md) |
 | Opening SQLite (modernc, pragmas on every connection, WAL, busy timeout) and embedded goose migrations | `sqlitekit` | [SQLITEKIT](references/SQLITEKIT.md) |
 | Retry with backoff and jitter, a reusable backoff, a restart supervisor for goroutines | `resilience` | [RESILIENCE](references/RESILIENCE.md) |
+| A secret from a file (`<VAR>_FILE`) instead of the environment, or rejecting secrets in a TOML config | `viperkit` | [VIPERKIT](references/VIPERKIT.md) |
 
 ## 2. Shape and dependency direction
 

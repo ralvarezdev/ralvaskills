@@ -20,6 +20,7 @@ Inherits the Go stack from [go-architect/STACK.md](../../languages/go-architect/
 | tick | v0.1.0 | 1.27.1 | released 2026-09-30, private | stdlib only |
 | sqlitekit | v0.1.0 | 1.27.1 | released 2026-09-30, private | modernc.org/sqlite 1.60.1; `migrate`: goose 3 |
 | resilience | v0.1.0 | 1.27.1 | released 2026-09-30, private | stdlib only (`backoff`, `retry`, `supervise`) |
+| viperkit | v0.1.0 | 1.27.1 | released 2026-10-10, private | stdlib root; `viperconfig`: viper 1.21 |
 
 `grpckit` is untagged (two commits, CHANGELOG all `[Unreleased]`); its reference says so, and consumers should pin a commit until the first tag.
 
