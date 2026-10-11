@@ -63,6 +63,7 @@ Skills are grouped by what they shape. Every folder with a `SKILL.md` is a skill
 - **`ci-cd-architect`** — CI/CD principles: pipeline taxonomy, trigger design, SHA-pinned supply-chain hygiene, OIDC cloud auth, caching, matrix strategy, test gates, release automation. Suggestion-mode; GitHub Actions recipes.
 - **`observability-architect`** — Application-side signal production: structured logs, Prometheus metrics, OTel traces, signal correlation, head sampling, PII discipline, RED+USE.
 - **`grafana-architect`** — Signal consumption: dashboards-as-code (Grizzly), per-service folders, one-question-per-panel, unified alerting with runbooks, low-cardinality discipline.
+- **`secrets-architect`** — Reference-based secret handling for one external store (`$SECRETS_DIR`): consumer decision matrix (Compose secrets, `*_FILE`, systemd `LoadCredential`, writable bind mount, CI), `700`/`600` + uid rules, per-secret migration workflow, live verification, pitfalls.
 
 ### `robotics/` — robotics platforms
 
