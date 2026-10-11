@@ -17,6 +17,7 @@ Pinned action / tool versions live in [STACK.md](STACK.md). Action SHAs in examp
 9. [Build & push image](#9-build--push-image)
 10. [release-please](#10-release-please)
 11. [Deploy with environment approval](#11-deploy-with-environment-approval)
+12. [Local CI with act](#12-local-ci-with-act)
 
 ---
 
@@ -462,3 +463,46 @@ jobs:
 ```
 
 The `environment: production` block enforces the manual reviewer gate and scopes any secrets/vars to prod. The `concurrency` group prevents overlapping prod deploys.
+
+---
+
+## 12. Local CI with `act`
+
+Run the real workflow locally instead of on billed runners. Keep the hosted
+workflow `workflow_dispatch`-only so a push never starts a runner.
+
+```yaml
+# .github/workflows/ci.yml — the same file act runs
+on:
+  workflow_dispatch:
+```
+
+```sh
+# e.g. a Taskfile / Makefile target
+act workflow_dispatch \
+  --action-offline-mode \             # don't re-fetch cached actions
+  --pull=false \                      # don't re-pull the runner image
+  --secret-file .secrets \            # repo secrets (gitignored)
+  --artifact-server-path .artifacts \ # upload/download-artifact between jobs
+  --env-file /dev/null                # don't leak the local .env into jobs
+```
+
+`.actrc` (committed — holds no secrets):
+
+```
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+--container-architecture=linux/amd64
+```
+
+Notes:
+
+- `~/.cache/actcache` is act's cache server; `actions/cache` and `setup-*`
+  steps persist there, so check they restore (SKILL.md §6).
+- `--concurrent-jobs 1` is a workaround for act's parallel action-clone race,
+  not a default — use it only while warming `~/.cache/act`, then drop it.
+- For `docker/build-push-action` under act, `cache-to: type=registry` writes to
+  a registry the builder can reach; add `driver-opts: network=host` to
+  `docker/setup-buildx-action` when that registry is on the host.
+- Seed `.secrets` from the same store the hosted repo secret would use, so a
+  local pass means what a hosted pass meant (e.g. a `ci:secrets` target that
+  renders `.secrets` from `$SECRETS_DIR`).

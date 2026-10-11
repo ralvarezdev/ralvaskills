@@ -1,7 +1,7 @@
 ---
 name: ci-cd-architect
-version: 1.1.0
-description: CI/CD principles — pipeline taxonomy, trigger design, supply-chain hygiene (SHA-pinned actions), OIDC cloud auth, caching, matrix strategy, test gates, release automation, deployment strategies. Suggestion-mode (trade-offs over mandates). GitHub Actions recipes in RECIPES.md. Use when designing, reviewing, or scaffolding CI/CD workflows.
+version: 1.2.0
+description: CI/CD principles — pipeline taxonomy, trigger design, supply-chain hygiene (SHA-pinned actions), OIDC cloud auth, caching (and the setup-* cache-key pitfalls that silently disable it), matrix strategy, test gates, release automation, deployment strategies, and running CI locally with act. Suggestion-mode (trade-offs over mandates). GitHub Actions recipes in RECIPES.md. Use when designing, reviewing, or scaffolding CI/CD workflows.
 ---
 
 # CI/CD Architecture
@@ -60,7 +60,7 @@ SHA-pinning + Renovate config snippet in [RECIPES.md §4](RECIPES.md#4-action-pi
 - **When long-lived secrets are unavoidable**, scope them to GitHub `environments:` with required reviewers — not to the repo.
 - **Never echo a secret** in logs. Masking catches direct prints; derivative leaks (a token shaped into a URL, a hash printed for "debugging") happen anyway. Treat any code path that reads `${{ secrets.X }}` as opaque.
 - **Rotate scheduled secrets** via a dedicated workflow; track rotation cadence in an ADR.
-- **Private deps need scoped tokens, and they differ.** A build that fetches private Go modules needs `contents:read`; one that fetches private `@scope/*` npm packages needs `read:packages`. Pass them as distinct build secrets (`--secret id=github_token,env=GH_PRIVATE_MODULES_TOKEN`, `--secret id=packages_token,env=NODE_AUTH_TOKEN`) — one token can't serve both, and the runner's `GITHUB_TOKEN` grants neither for other repos.
+- **Private deps need scoped tokens, and the scopes differ.** A build that fetches private Go modules needs `contents:read`; one that fetches private `@scope/*` npm packages needs `read:packages`. With *fine-grained* tokens that means two, passed as distinct build secrets (`--secret id=github_token,env=GH_PRIVATE_MODULES_TOKEN`, `--secret id=packages_token,env=NODE_AUTH_TOKEN`); a *classic* token carrying `repo` + `read:packages` covers both scopes in one — simpler to wire into every job, at the cost of read/write on every repo the owner can reach. Either way the runner's `GITHUB_TOKEN` grants neither for *other* repos, so a secret is unavoidable. Confirm a token's scopes with `curl -sI -H "Authorization: Bearer $TOKEN" https://api.github.com/rate_limit | grep -i x-oauth-scopes`.
 
 OIDC trust-policy snippets (AWS + GCP) in [RECIPES.md §5](RECIPES.md#5-oidc-cloud-auth).
 
@@ -72,6 +72,9 @@ Cache what's expensive to fetch and safe to reuse:
 - **Build artifacts** — only cache compiled outputs when builds are deterministic. Non-deterministic build → stale cache → mystery failures that waste hours.
 - **Docker layer cache** — `docker/build-push-action` with `cache-from: type=gha` + `cache-to: type=gha,mode=max` is the GitHub-native option. A registry cache (`type=registry,ref=<image>:cache`) survives across runners and is the better default for prod images.
 - **Key the cache on the lockfile hash.** Collisions silently degrade builds.
+- **Cache the store, not just the tools.** A tool-installer action (`mise-action`, `aqua`, `asdf`) caches the *tool binaries* it downloads — not the language's package store — so pnpm/npm still re-download every dependency each run. Use the language setup action's cache (`actions/setup-node` `cache: pnpm`, `actions/setup-go`'s default) or an explicit `actions/cache` on the store path.
+- **Point `cache-dependency-path` at the real manifest.** It defaults to the repo root (`go.sum`, `package-lock.json`), and a workflow-level `defaults.run.working-directory` does **not** apply to `uses:` steps — so a module under `backend/` is silently left uncached. Symptom: `Primary key was not generated` in the log, and the dependency downloads reappear every run.
+- **Verify the cache actually restores.** Grep a second run's log for `Cache restored from key:` and watch the download count (`go: downloading …`) drop; a cache that never restores is worse than none, because it hides the cost in the setup action's own overhead.
 
 Per-language caching examples in [RECIPES.md §6](RECIPES.md#6-language-caching).
 
@@ -122,7 +125,19 @@ Pick by blast radius, not by fashion:
 
 Whatever the strategy, the deploy workflow must be **idempotent and re-runnable**. A failed deploy mid-flight should be safe to retry without manual cleanup.
 
-## 12. Out of scope
+## 12. Running CI locally (cost control)
+
+GitHub-hosted runners are billed per minute. A solo repo can opt out by running the *same* workflow locally with [`act`](https://github.com/nektos/act), leaving the hosted workflow `workflow_dispatch`-only so a push never starts a runner. That trades an enforced gate on push for no bill — a fine trade for a personal repo, not for a team.
+
+- **Keep one workflow definition.** `act` runs the real `.github/workflows/*.yml`; don't fork a local-only pipeline or the two drift.
+- **`--action-offline-mode`** skips re-fetching actions already in `~/.cache/act`; **`--pull=false`** stops re-pulling the runner image every run.
+- **act's cache server is on by default** (`--cache-server-path`, default `~/.cache/actcache`), so `actions/cache`-based steps (`setup-go`, `setup-node`) persist between runs — verify they actually restore, per §6.
+- **Concurrency:** act can race when *several jobs clone the same action* at once (`archive/tar: write too long`). Serialize (`--concurrent-jobs 1`) only until the action cache is warm, then let jobs run in parallel again — a permanent `--concurrent-jobs 1` throws away the whole fan-out.
+- **`--secret-file`** holds the repo secrets (gitignored); pin `--env-file /dev/null` so the local `.env` does not leak into job containers and change test behaviour.
+
+Recipe: [RECIPES.md §12](RECIPES.md#12-local-ci-with-act).
+
+## 13. Out of scope
 
 - **Deep Kubernetes / Argo / Flux** — future `kubernetes-architect` (planned).
 - **Infrastructure provisioning** (Terraform, Pulumi) — future `iac-architect` (planned).
