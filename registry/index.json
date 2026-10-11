@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-08T20:55:07Z",
+  "generated_at": "2026-10-11T00:41:30Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -693,6 +693,18 @@
           "version": "0.4.0",
           "published_at": "2026-10-02T21:45:35Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/rsk-guide@v0.4.0/rsk-guide-v0.4.0.tar.gz"
+        }
+      }
+    },
+    "secrets-architect": {
+      "name": "secrets-architect",
+      "description": "Secret-handling standards for one external store consumed by reference — consumer decision matrix (Compose secrets, *_FILE, systemd LoadCredential, plain bind mount, CI), permission/uid rules, naming, migration workflow, live verification, pitfalls. Use when wiring a credential into a repo, container, systemd unit or CI job, migrating secrets out of .env or git, or auditing a secrets store.",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-10-11T00:41:30Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/secrets-architect@v1.0.0/secrets-architect-v1.0.0.tar.gz"
         }
       }
     },
