@@ -1,6 +1,6 @@
 ---
 name: docker-architect
-version: 1.2.0
+version: 1.3.0
 description: Docker standards — multi-stage builds, per-language base defaults (distroless Go, slim Python/Node), BuildKit cache mounts, non-root, multi-arch amd64+arm64, digest-pinned bases, Trivy scanning, Compose v2. Use when writing or reviewing Dockerfiles or Compose files.
 ---
 
@@ -33,6 +33,8 @@ Per-language defaults:
 
 BuildKit is the default builder in Docker 29 — use **cache mounts** (survive layer invalidation), **secret mounts** (never `COPY` secrets into layers), **bind mounts** (read source without `COPY`), and **here-docs** (multi-line scripts) deliberately. Snippets in [RECIPES.md](RECIPES.md).
 
+- **Build secrets come from the environment, not a `file:` outside the context.** A Compose `build.secrets` entry whose `file:` is outside the build context trips BuildKit/Bake's `fs.read` sandbox on `docker compose build` (`additional privileges requested: pass --allow=fs.read=…`). Use `environment: VAR` (the caller exports it); runtime `file:` secrets are unaffected.
+
 ## 4. Image security
 
 - **Digest-pin bases** in production Dockerfiles. Renovate updates them automatically; review the diff.
@@ -63,7 +65,7 @@ Always build `linux/amd64` + `linux/arm64`. Cloud is largely arm64-friendly now 
   This requires `db` to define a working `healthcheck`. `depends_on` without `condition:` only orders startup — doesn't wait for readiness.
 - **Named volumes for stateful data** (`db-data:`), bind mounts only for source-code hot-reload in dev.
 - **Networks:** declare them explicitly; don't rely on the default network for anything non-trivial.
-- **Secrets and configs:** use `secrets:` and `configs:` top-level blocks for production-shaped local runs.
+- **Secrets and configs:** use `secrets:` and `configs:` top-level blocks for production-shaped local runs. A secret read by a **non-root** container is a bind mount it opens directly, so the host file must be `644`, not `600`; a `build.secrets` source must come from the environment, not a `file:` outside the context (§3). A frontend stage that fetches a private registry must `COPY` its `.npmrc` (and `pnpm-workspace.yaml`) **before** `pnpm install`, or the token/policy is missing at install time.
 
 ## 7. Runtime defaults
 

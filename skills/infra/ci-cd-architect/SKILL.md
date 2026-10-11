@@ -1,6 +1,6 @@
 ---
 name: ci-cd-architect
-version: 1.0.0
+version: 1.1.0
 description: CI/CD principles — pipeline taxonomy, trigger design, supply-chain hygiene (SHA-pinned actions), OIDC cloud auth, caching, matrix strategy, test gates, release automation, deployment strategies. Suggestion-mode (trade-offs over mandates). GitHub Actions recipes in RECIPES.md. Use when designing, reviewing, or scaffolding CI/CD workflows.
 ---
 
@@ -60,6 +60,7 @@ SHA-pinning + Renovate config snippet in [RECIPES.md §4](RECIPES.md#4-action-pi
 - **When long-lived secrets are unavoidable**, scope them to GitHub `environments:` with required reviewers — not to the repo.
 - **Never echo a secret** in logs. Masking catches direct prints; derivative leaks (a token shaped into a URL, a hash printed for "debugging") happen anyway. Treat any code path that reads `${{ secrets.X }}` as opaque.
 - **Rotate scheduled secrets** via a dedicated workflow; track rotation cadence in an ADR.
+- **Private deps need scoped tokens, and they differ.** A build that fetches private Go modules needs `contents:read`; one that fetches private `@scope/*` npm packages needs `read:packages`. Pass them as distinct build secrets (`--secret id=github_token,env=GH_PRIVATE_MODULES_TOKEN`, `--secret id=packages_token,env=NODE_AUTH_TOKEN`) — one token can't serve both, and the runner's `GITHUB_TOKEN` grants neither for other repos.
 
 OIDC trust-policy snippets (AWS + GCP) in [RECIPES.md §5](RECIPES.md#5-oidc-cloud-auth).
 
