@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-11T03:18:44Z",
+  "generated_at": "2026-10-11T05:48:27Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -45,8 +45,8 @@
     },
     "ci-cd-architect": {
       "name": "ci-cd-architect",
-      "description": "CI/CD principles — pipeline taxonomy, trigger design, supply-chain hygiene (SHA-pinned actions), OIDC cloud auth, caching, matrix strategy, test gates, release automation, deployment strategies. Suggestion-mode (trade-offs over mandates). GitHub Actions recipes in RECIPES.md. Use when designing, reviewing, or scaffolding CI/CD workflows.",
-      "latest": "1.1.0",
+      "description": "CI/CD principles — pipeline taxonomy, trigger design, supply-chain hygiene (SHA-pinned actions), OIDC cloud auth, caching (and the setup-* cache-key pitfalls that silently disable it), matrix strategy, test gates, release automation, deployment strategies, and running CI locally with act. Suggestion-mode (trade-offs over mandates). GitHub Actions recipes in RECIPES.md. Use when designing, reviewing, or scaffolding CI/CD workflows.",
+      "latest": "1.2.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -57,6 +57,11 @@
           "version": "1.1.0",
           "published_at": "2026-10-11T03:18:44Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/ci-cd-architect@v1.1.0/ci-cd-architect-v1.1.0.tar.gz"
+        },
+        "1.2.0": {
+          "version": "1.2.0",
+          "published_at": "2026-10-11T05:48:27Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/ci-cd-architect@v1.2.0/ci-cd-architect-v1.2.0.tar.gz"
         }
       }
     },
@@ -709,7 +714,7 @@
     "secrets-architect": {
       "name": "secrets-architect",
       "description": "Secret-handling standards for one external store consumed by reference — consumer decision matrix (Compose secrets, *_FILE, systemd LoadCredential, plain bind mount, CI), permission/uid rules, naming, migration workflow, live verification, pitfalls. Use when wiring a credential into a repo, container, systemd unit or CI job, migrating secrets out of .env or git, or auditing a secrets store.",
-      "latest": "1.1.0",
+      "latest": "1.1.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -720,6 +725,11 @@
           "version": "1.1.0",
           "published_at": "2026-10-11T03:18:44Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/secrets-architect@v1.1.0/secrets-architect-v1.1.0.tar.gz"
+        },
+        "1.1.1": {
+          "version": "1.1.1",
+          "published_at": "2026-10-11T05:48:27Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/secrets-architect@v1.1.1/secrets-architect-v1.1.1.tar.gz"
         }
       }
     },
