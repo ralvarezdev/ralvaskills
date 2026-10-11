@@ -1,6 +1,6 @@
 ---
 name: secrets-architect
-version: 1.1.0
+version: 1.1.1
 description: Secret-handling standards for one external store consumed by reference — consumer decision matrix (Compose secrets, *_FILE, systemd LoadCredential, plain bind mount, CI), permission/uid rules, naming, migration workflow, live verification, pitfalls. Use when wiring a credential into a repo, container, systemd unit or CI job, migrating secrets out of .env or git, or auditing a secrets store.
 ---
 
@@ -29,7 +29,7 @@ $SECRETS_DIR/                  # 0700
 │   ├── api/ddns-token         # 0600  API tokens
 │   ├── tunnels/<tunnel-name>  # 0644  tunnel tokens (non-root reader)
 │   └── r2/<owner>/…
-├── github/{contents-read,contents-read-ci}
+├── github/{contents-read,ci-modules}
 ├── finance-platform/{postgres-password,database-dsn,jwt-secret,…}
 ├── ssh/  gpg/  bitwarden/  vpn/wireguard/  ...
 ```
