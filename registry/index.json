@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-12T23:16:44Z",
+  "generated_at": "2026-10-12T23:25:07Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -259,7 +259,7 @@
     "go-architect": {
       "name": "go-architect",
       "description": "Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.",
-      "latest": "1.7.3",
+      "latest": "1.7.4",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -315,6 +315,11 @@
           "version": "1.7.3",
           "published_at": "2026-10-12T23:16:44Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.7.3/go-architect-v1.7.3.tar.gz"
+        },
+        "1.7.4": {
+          "version": "1.7.4",
+          "published_at": "2026-10-12T23:25:07Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.7.4/go-architect-v1.7.4.tar.gz"
         }
       }
     },
@@ -345,7 +350,7 @@
       "name": "go-library-builder",
       "description": "Scaffolds reusable Go 1.26 library modules in the ralvarezdev house style — flat, vertical-slice, toolkit or framework-adapter shapes; domain-pure root package, ports as narrow interfaces, technology-named adapter subpackages (prod/dev/test), config structs over options, testcontainers over mocks, mise + Task + golangci tooling. Module namespace is a parameter (default github.com/ralvarezdev). Use when bootstrapping a new Go library, adding an adapter, or auditing one against the house style.",
       "personal": true,
-      "latest": "1.1.0",
+      "latest": "1.1.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -356,6 +361,11 @@
           "version": "1.1.0",
           "published_at": "2026-09-30T03:27:52Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-library-builder@v1.1.0/go-library-builder-v1.1.0.tar.gz"
+        },
+        "1.1.1": {
+          "version": "1.1.1",
+          "published_at": "2026-10-12T23:25:07Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-library-builder@v1.1.1/go-library-builder-v1.1.1.tar.gz"
         }
       }
     },
