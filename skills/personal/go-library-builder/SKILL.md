@@ -1,6 +1,6 @@
 ---
 name: go-library-builder
-version: 1.1.0
+version: 1.1.1
 description: Scaffolds reusable Go 1.26 library modules in the ralvarezdev house style — flat, vertical-slice, toolkit or framework-adapter shapes; domain-pure root package, ports as narrow interfaces, technology-named adapter subpackages (prod/dev/test), config structs over options, testcontainers over mocks, mise + Task + golangci tooling. Module namespace is a parameter (default github.com/ralvarezdev). Use when bootstrapping a new Go library, adding an adapter, or auditing one against the house style.
 ---
 
@@ -51,6 +51,7 @@ Interfaces are declared **by the domain, where consumed**, per [go-architect §4
 
 - **Accept interfaces, return concrete `*T`** (`ireturn`). Callers hold interfaces; wiring holds structs.
 - **Constructor injection only.** No globals, no `init()` (`gochecknoglobals` + `gochecknoinits`). Dependencies are constructor parameters.
+- **No DI container in the library.** The library exposes `New(deps...)` and never imports `fx`/`wire` — that would drag the container into every consumer. If `fx` users want the wiring, ship an **optional** `fx.Module` in a dedicated subpackage (`<name>/fxmod`); whoever uses `fx` includes it, everyone else calls `New` by hand. The container belongs to the consuming deployable's composition root, not here. See [go-architect §11](../../languages/go-architect/SKILL.md#11-dependencies--logging).
 - **Config is a plain validated struct, not functional options.** The house style deliberately rejects `Option func(*T)`. Fill zero values with a `setDefaults()` method over `Default*` constants; validate in `New` via `Config.Validate() error`. Rationale + the one exception in [RECIPES §2](RECIPES.md#2-config--constructors).
 - **The library never reads env, files, or viper.** The consuming app owns all config and passes secrets/DSNs/TTLs as plain values (`jwt.New(secret, accessTTL, refreshTTL)`).
 

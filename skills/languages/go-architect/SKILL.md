@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.7.3
+version: 1.7.4
 description: Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -88,6 +88,8 @@ Prefer stdlib over hand-rolled or third-party when stdlib now covers it.
 ## 11. Dependencies & Logging
 
 - **Injection:** Pass dependencies via constructors. No global state, no package `init()` setups. For larger graphs use `uber-go/fx` or `google/wire`.
+- **The container lives at the composition root, never in a library.** A library exposes `New(deps...)` and never imports `fx`/`wire` — doing so drags the container into every consumer. When a graph is large, the *deployable* owns the container (`app/`, `internal/bootstrap`, `cmd/`); libraries stay constructor-only. Optional courtesy for `fx` users: ship an `fx.Module` in a dedicated subpackage (`<pkg>/fxmod`) that groups the `fx.Provide`s for the library's constructors — whoever uses `fx` includes it, whoever doesn't calls `New` by hand, and the library stays DI-agnostic.
+- **Ports and constructors live in the packages; the container lives at the edge.** The rest of the code sees only interfaces — the DI framework never leaks past the composition root (see [hexagonal-arch §2](../../design/hexagonal-arch/SKILL.md#2-dependency-direction--always-inward)).
 - **Config:** `spf13/viper` for layered env + file + flag configuration.
 - **Logging:** `log/slog` (stdlib). Structured, context-aware. `zap`/`zerolog` only when slog is provably the bottleneck — start with slog.
 
