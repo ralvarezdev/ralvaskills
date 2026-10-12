@@ -1,6 +1,6 @@
 ---
 name: react-architect
-version: 1.0.0
+version: 1.0.1
 description: React 19 standards — TypeScript strict, feature-based components, hooks-first composition, TanStack Query for server state, zustand for cross-tree client state, Suspense + ErrorBoundary at every async boundary, Radix for a11y. Use when writing or reviewing React components, hooks, or client-side state.
 ---
 
@@ -25,6 +25,7 @@ Mirrors [fastapi-architect](../fastapi-architect/SKILL.md#1-project-structure--f
 - **A feature folder owns its UI, hooks, types, schemas, and API queries.** Cross-feature reuse moves to `src/components/`.
 - **`schemas.ts` per feature** — Zod schemas for every request body and response shape. Parse at the API boundary; throw on parse failure.
 - **`index.ts` exports the public surface** of each feature. Importing from `features/users/components/UserList` is cheating; import from `features/users` and re-export deliberately.
+- **Keep the feature folder scannable, not minimal.** Don't fragment a feature into one-component folders (`components/Button/index.tsx`) to cut file counts — the feature owns its files. Split only when two unrelated clusters emerge; see [code-design-refactor §4](../../refactoring/code-design-refactor/SKILL.md#4-extract).
 
 ## 3. Components
 

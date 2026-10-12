@@ -1,6 +1,6 @@
 ---
 name: nethttp-architect
-version: 1.0.2
+version: 1.0.3
 description: Framework-specific delta on rest-api-architect — Go stdlib net/http (Go 1.22+ ServeMux, no router) on Go 1.26. Feature layout, struct-tag validation, RFC 9457 errors, JWT or IdP auth, graceful shutdown, OpenAPI via kin-openapi. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a stdlib net/http service.
 ---
 
@@ -15,6 +15,7 @@ Same shape as `gin-architect` and `fastapi-architect`: one folder per bounded co
 - **`handlers.go`** depends on `service.go`; never reaches into `repo.go` directly.
 - **`service.go`** is pure Go — no `net/http` imports. Easy to unit-test.
 - **`dto.go`** holds wire types; never reuse domain structs as DTOs.
+- **Keep the feature folder scannable, not minimal.** Split on a real responsibility seam, not a file count — a subfolder here is a new package (import path + exported surface). See [code-design-refactor §4](../../refactoring/code-design-refactor/SKILL.md#4-extract).
 
 ## 2. Routing — `http.ServeMux` with method patterns (Go 1.22+)
 

@@ -1,6 +1,6 @@
 ---
 name: fastapi-architect
-version: 1.0.2
+version: 1.0.3
 description: Framework-specific delta on rest-api-architect — FastAPI 0.136 on Python 3.14. Feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 9457 errors, in-house OAuth2+JWT or external IdP. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a FastAPI service.
 ---
 
@@ -15,6 +15,7 @@ One folder per bounded context. Each feature owns its router, service, repo, sch
 - **`router.py`** depends on `service.py`; never reaches into `repo.py` directly.
 - **`service.py`** is pure Python — no FastAPI imports. Easy to unit-test.
 - **`schemas.py`** holds Pydantic models — never reused as ORM models or DB rows.
+- **Keep the feature folder scannable, not minimal.** Split on a real responsibility seam, not to hit a file count; many cohesive modules in one feature folder are fine. See [code-design-refactor §4](../../refactoring/code-design-refactor/SKILL.md#4-extract).
 
 ## 2. Routing & versioning
 

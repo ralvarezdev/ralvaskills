@@ -1,6 +1,6 @@
 ---
 name: gin-architect
-version: 1.0.2
+version: 1.0.3
 description: Framework-specific delta on rest-api-architect — Gin 1.12 on Go 1.26. Feature layout, struct-tag validation, RFC 9457 errors, in-house JWT or external IdP, route groups for URL-prefix versioning, OpenAPI. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a Gin service.
 ---
 
@@ -15,6 +15,7 @@ One folder per bounded context. Each feature owns its routes, service, repo, DTO
 - **`handlers.go`** depends on `service.go`; never reaches into `repo.go` directly.
 - **`service.go`** is pure Go — no `gin` imports. Easy to unit-test without a fake `*gin.Context`.
 - **`dto.go`** holds wire types with `json:` and `binding:` (validator) tags. **Never reuse domain structs as DTOs** — that's how internal fields leak into the API.
+- **Keep the feature folder scannable, not minimal.** Split on a real responsibility seam, not a file count — a subfolder here is a new package (import path + exported surface). See [code-design-refactor §4](../../refactoring/code-design-refactor/SKILL.md#4-extract).
 
 ## 2. Routing & versioning
 

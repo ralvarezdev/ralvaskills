@@ -1,6 +1,6 @@
 ---
 name: code-design-refactor
-version: 1.0.0
+version: 1.0.1
 description: Design-level refactoring rules — extraction, decoupling, SRP, encapsulation, primitive obsession. Language-agnostic. Sits between logic-cleaner (expression-level) and improve-codebase-architecture (system-level). Use when restructuring existing code at the module/class/function level.
 ---
 
@@ -40,7 +40,8 @@ The most common move. Pull a coherent chunk into its own named thing.
 
 - **Extract function/method** — when a comment is needed to explain a block, the function name should *be* the comment. Name describes intent (`is_eligible_for_discount`), not mechanics (`check_status_and_total`).
 - **Extract class** — when a function takes 6+ arguments and several mean nothing without the others. The grouping is a class.
-- **Extract module/package** — when a folder's files have two clusters of responsibility that share nothing. Split.
+- **Extract module/package** — when a folder's files form **two clusters of responsibility that share nothing**, or the folder has stopped being scannable. The trigger is a conceptual seam plus navigability, **not a file count**: 40 cohesive, well-named files (`net/http`-style) are fine; 12 unrelated ones are not. Directory size is a *signal*, never a target — "the fewer the better" over-splits into one-concept folders and deep import paths, which is *less* navigable, not more.
+- **Directory size is language-dependent.** Where a directory *is* a namespace (Go: the directory is the package), splitting changes the import path, package name, and exported surface — pay for it only when the seam is real. Where it is not (Python packages, TS feature folders), splitting is cheaper, but deep nesting still costs discoverability. Either way: split on the seam, not the count.
 - **Stop extracting when** further splits produce things that exist only to be called from one place and nothing else. The extracted thing must earn its name.
 
 ## 5. Decouple

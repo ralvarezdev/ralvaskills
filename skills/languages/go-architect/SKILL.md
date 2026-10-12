@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.7.2
+version: 1.7.3
 description: Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -82,6 +82,7 @@ Prefer stdlib over hand-rolled or third-party when stdlib now covers it.
 
 - **Naming:** Short, lowercase, single-word. Never `util`, `common`, `helpers`.
 - **Layout:** Organize by domain/feature, not by technical layer.
+- **Directory = package.** Splitting a package to hit a file count changes the import path, package name, and exported surface — split on a real seam, not on size. Many well-named files in one package is normal (`net/http`, `go/types`); the folder's navigability, not the count, is the trigger. See [code-design-refactor §4](../../refactoring/code-design-refactor/SKILL.md#4-extract).
 - **Domain modeling & interface placement:** See [hexagonal-arch](../../design/hexagonal-arch/SKILL.md) for ports/adapters and [ddd-architect](../../design/ddd-architect/SKILL.md) for aggregates/bounded contexts. For `go.work` multi-module layout, see §16.
 
 ## 11. Dependencies & Logging

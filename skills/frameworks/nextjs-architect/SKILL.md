@@ -1,6 +1,6 @@
 ---
 name: nextjs-architect
-version: 1.0.1
+version: 1.0.2
 description: Next.js 16 standards — App Router only, server components by default with explicit `"use client"` boundaries, server actions for mutations, streaming Suspense, edge vs node runtime, Image/Font/Metadata APIs. Pairs with react-architect. Use when scaffolding or reviewing a Next.js app or auditing server/client boundaries.
 ---
 
@@ -19,6 +19,7 @@ Key conventions:
 - **`error.tsx`** is a client component that wraps the route in an ErrorBoundary.
 - **Route groups (`(name)`)** organize without adding URL segments.
 - **`@slot`** is a parallel route — independent loading/error states, rendered into named slots in the parent layout.
+- **Colocate, don't hoard.** Keep components next to the route that owns them and keep the route folder scannable; split into subfolders on a real responsibility seam, not a file count. See [code-design-refactor §4](../../refactoring/code-design-refactor/SKILL.md#4-extract).
 
 ## 2. Server components by default, client when needed
 

@@ -1,6 +1,6 @@
 ---
 name: python-architect
-version: 1.4.1
+version: 1.4.2
 description: Python 3.14 enterprise standards — modern typing (PEP 649), immutable dataclasses, Protocol-based DI, asyncio discipline, pytest 9, psycopg + .sql files via importlib.resources. Use when writing, reviewing, or scaffolding Python code.
 ---
 
@@ -55,6 +55,7 @@ Targets **Python 3.14**. See [STACK.md](STACK.md) for pinned dependency versions
 - **Imports:** Three groups separated by blank lines — stdlib, third-party, local. Prefer absolute imports.
 - **`__init__.py`:** Minimal. Use `__all__ = [...]` to declare the public API explicitly.
 - **Bundled resources:** Use `importlib.resources.files(__package__).joinpath("...").read_text()` for embedded files (SQL, templates). Survives wheel and zipapp packaging — never use `__file__`-relative paths for shipped assets.
+- **Package size:** split a package when its modules form two unrelated responsibilities or it stops being scannable — never to hit a file count. Deeper nesting costs import verbosity and discoverability. See [code-design-refactor §4](../../refactoring/code-design-refactor/SKILL.md#4-extract).
 
 ## 7. Errors & Testing
 
