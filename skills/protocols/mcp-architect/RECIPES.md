@@ -205,10 +205,10 @@ Keep schemas at the repo root beside the OpenAPI tree, with generated Go under t
 
 ```
 openapi/contexts/*.yaml    → backend/internal/api/handler/*.gen.go
-json/mcpserver/*/*.json    → backend/internal/mcpserver/schemas/*.gen.go
+schema/mcpserver/*/*.json    → backend/internal/mcpserver/schemas/*.gen.go
 ```
 
-Putting `json/` inside the module inverts the repo's own convention — no other schema tree lives
+Putting `schema/` inside the module inverts the repo's own convention — no other schema tree lives
 there.
 
 ### Arguments
@@ -342,10 +342,10 @@ The rest of this section details strategy 1.
 Put reusable definitions in one file and reference them:
 
 ```
-json/mcpserver/shared/enums.json
+schema/mcpserver/shared/enums.json
   $defs: movement_type_input, movement_type_output, currency, decimal, date
 
-json/mcpserver/movement/create_arguments.json
+schema/mcpserver/movement/create_arguments.json
   "type": { "$ref": "../shared/enums.json#/$defs/movement_type_input" }
 ```
 
