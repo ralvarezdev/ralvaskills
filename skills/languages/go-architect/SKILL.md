@@ -1,12 +1,12 @@
 ---
 name: go-architect
-version: 1.7.1
-description: Go 1.26 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
+version: 1.7.2
+description: Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
 # Go Architecture & Domain Modeling
 
-Targets **Go 1.26**. See [STACK.md](STACK.md) for pinned dependency versions.
+Targets **Go 1.27.1**. See [STACK.md](STACK.md) for pinned dependency versions.
 
 ## 1. Constants & Enums
 
@@ -169,8 +169,8 @@ internal/userrepo/
 
 - **Lint:** `golangci-lint` **v2** — a single binary that aggregates `staticcheck`, `govet`, `gofmt`, `goimports`, `revive`, and dozens more. Pin via `.golangci.yml` (v2 config schema). Run on every commit and in CI. Treat warnings as errors. Drop-in template: [`assets/golangci.yml`](assets/golangci.yml) — copy to your project root as `.golangci.yml` and set `goimports.local-prefixes` to your module path.
   - **Essential linters:** `govet`, `staticcheck`, `unused`, `gocritic`, `revive`, `errorlint`, `gosec`, `misspell`, `sloglint`, `godoclint`.
-  - **Code quality:** `nolintlint` validates that `//nolint` directives are specific and actually suppress something — enforces intentional, clean ignores. `varnamelen` enforces minimum variable name length (catches `x`, `i` outside loops; configure `max-distance: 5, min-name-length: 1`). `errname` ensures error types follow convention (`ErrFoo`, `FooError`) — complements §1's sentinel error pattern. `stylecheck` enforces naming conventions across the codebase (e.g., exported/unexported consistency).
-  - **Idiomatic patterns:** `prealloc` detects slices that could pre-allocate capacity — idiomatic Go performance practice. `reassign` flags package variable reassignment in favor of const/new-var idiom. `makezero` catches unintended zero-length slice declarations. `predeclared` prevents shadowing Go builtins. `looppointer` detects address-of-loop-variable bugs (memory safety). `recvcheck` ensures method receiver types are consistent within an interface. `dogsled` flags excessive blank identifiers (e.g., `_, _, _, v := ...` suggests destructuring instead). `mirror` catches bytes/strings type mismatches (e.g., comparing `[]byte` to `string` idiomatically). `exptostd` replaces `golang.org/x/exp` packages with stdlib equivalents — use stdlib for idiomatic Go. `modernize` suggests modern Go simplifications (range-over-int, slices API, etc.).
+  - **Code quality:** `nolintlint` validates that `//nolint` directives are specific and actually suppress something — enforces intentional, clean ignores. `varnamelen` enforces minimum variable name length (catches `x`, `i` outside loops; configure `max-distance: 5, min-name-length: 1`). `errname` ensures error types follow convention (`ErrFoo`, `FooError`) — complements §1's sentinel error pattern.
+  - **Idiomatic patterns:** `prealloc` detects slices that could pre-allocate capacity — idiomatic Go performance practice. `reassign` flags package variable reassignment in favor of const/new-var idiom. `makezero` catches unintended zero-length slice declarations. `predeclared` prevents shadowing Go builtins. `recvcheck` ensures method receiver types are consistent within an interface. `dogsled` flags excessive blank identifiers (e.g., `_, _, _, v := ...` suggests destructuring instead). `mirror` catches bytes/strings type mismatches (e.g., comparing `[]byte` to `string` idiomatically). `exptostd` replaces `golang.org/x/exp` packages with stdlib equivalents — use stdlib for idiomatic Go. `modernize` suggests modern Go simplifications (range-over-int, slices API, etc.).
   - **Duplication & magic values:** `dupl` (structural clones), `goconst` (repeated string literals), `mnd` (magic numbers) — all push toward named constants/enums (see §1).
   - **Complexity & size:** `nestif`, `gocognit` (cognitive complexity), `maintidx` (maintainability index), plus revive's `file-length-limit` and `argument-limit` rules — catch functions/files that should be split before they rot.
   - **Declaration structure:** `decorder` enforces file-level `type → const → var → func` ordering (decorder's default). Set `disable-dec-order-check: false` in your `.golangci.yml` to enable (see §1). `gochecknoinits` flags `init()` outright (see §11).

@@ -2,7 +2,7 @@
 
 | Dependency | Pinned version | Purpose |
 |---|---|---|
-| go | 1.26 | Language |
+| go | 1.27.1 | Language |
 | log/slog | stdlib (tracks Go) | Structured logging — **default** for new code |
 | spf13/viper | 1.21 | Layered config (env + file + flag) |
 | go-playground/validator | 10.30 | Struct-tag validation |
@@ -18,7 +18,7 @@
 | uber-go/fx | 1.24 | DI graph wiring |
 | golang-migrate/migrate | 4.19 | SQL migrations (versioned up/down) |
 | buf | 1.69 | Proto toolchain (linter, breaking-change detector) |
-| golangci-lint | 2.12.2 | Aggregated linter (staticcheck + govet + revive + goimports + dozens more); v2 config schema |
+| golangci-lint | 2.14.0 | Aggregated linter (staticcheck + govet + revive + goimports + dozens more); v2 config schema |
 
 ## Notes
 
@@ -26,5 +26,5 @@
 - **No ORM.** Database access defaults to `sqlc`-generated queries against the real migrated schema; `sqlx` with raw SQL in `.sql` files embedded via `//go:embed` is the alternative for runtime-composed queries sqlc can't express. This is an architectural opinion enforced by `go-architect`.
 - **Dependency injection:** `uber-go/fx` is the default for larger graphs. `google/wire` is acceptable when compile-time-only wiring is preferred.
 
-_Last reviewed: 2026-09-26_
-_Skill version at last review: 1.7.0_
+_Last reviewed: 2026-10-12_
+_Skill version at last review: 1.7.2_

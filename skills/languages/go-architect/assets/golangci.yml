@@ -13,7 +13,7 @@ run:
   concurrency: 0
   tests: true
   modules-download-mode: readonly
-  go: "1.26"
+  go: "1.27"
   relative-path-mode: gomod
 
 output:
@@ -119,7 +119,6 @@ linters:
     - reassign
     - makezero
     - predeclared
-    - looppointer
 
     # Test best practices
     - paralleltest
@@ -128,7 +127,6 @@ linters:
     - testifylint
 
     # Style & conventions
-    - stylecheck
     - recvcheck
     - nosprintfhostport
     - tagliatelle
