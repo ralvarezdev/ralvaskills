@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-12T22:00:08Z",
+  "generated_at": "2026-10-12T23:16:44Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -80,12 +80,17 @@
     "code-design-refactor": {
       "name": "code-design-refactor",
       "description": "Design-level refactoring rules — extraction, decoupling, SRP, encapsulation, primitive obsession. Language-agnostic. Sits between logic-cleaner (expression-level) and improve-codebase-architecture (system-level). Use when restructuring existing code at the module/class/function level.",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/code-design-refactor@v1.0.0/code-design-refactor-v1.0.0.tar.gz"
+        },
+        "1.0.1": {
+          "version": "1.0.1",
+          "published_at": "2026-10-12T23:16:44Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/code-design-refactor@v1.0.1/code-design-refactor-v1.0.1.tar.gz"
         }
       }
     },
@@ -198,7 +203,7 @@
     "fastapi-architect": {
       "name": "fastapi-architect",
       "description": "Framework-specific delta on rest-api-architect — FastAPI 0.136 on Python 3.14. Feature layout, Pydantic v2 request/response separation, async DI with lifespan, URL-prefix versioning, RFC 9457 errors, in-house OAuth2+JWT or external IdP. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a FastAPI service.",
-      "latest": "1.0.2",
+      "latest": "1.0.3",
       "versions": {
         "1.0.1": {
           "version": "1.0.1",
@@ -209,6 +214,11 @@
           "version": "1.0.2",
           "published_at": "2026-09-30T13:09:12Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/fastapi-architect@v1.0.2/fastapi-architect-v1.0.2.tar.gz"
+        },
+        "1.0.3": {
+          "version": "1.0.3",
+          "published_at": "2026-10-12T23:16:44Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/fastapi-architect@v1.0.3/fastapi-architect-v1.0.3.tar.gz"
         }
       }
     },
@@ -227,7 +237,7 @@
     "gin-architect": {
       "name": "gin-architect",
       "description": "Framework-specific delta on rest-api-architect — Gin 1.12 on Go 1.26. Feature layout, struct-tag validation, RFC 9457 errors, in-house JWT or external IdP, route groups for URL-prefix versioning, OpenAPI. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a Gin service.",
-      "latest": "1.0.2",
+      "latest": "1.0.3",
       "versions": {
         "1.0.1": {
           "version": "1.0.1",
@@ -238,13 +248,18 @@
           "version": "1.0.2",
           "published_at": "2026-09-30T13:09:12Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/gin-architect@v1.0.2/gin-architect-v1.0.2.tar.gz"
+        },
+        "1.0.3": {
+          "version": "1.0.3",
+          "published_at": "2026-10-12T23:16:44Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/gin-architect@v1.0.3/gin-architect-v1.0.3.tar.gz"
         }
       }
     },
     "go-architect": {
       "name": "go-architect",
       "description": "Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.",
-      "latest": "1.7.2",
+      "latest": "1.7.3",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -295,6 +310,11 @@
           "version": "1.7.2",
           "published_at": "2026-10-12T22:00:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.7.2/go-architect-v1.7.2.tar.gz"
+        },
+        "1.7.3": {
+          "version": "1.7.3",
+          "published_at": "2026-10-12T23:16:44Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.7.3/go-architect-v1.7.3.tar.gz"
         }
       }
     },
@@ -497,7 +517,7 @@
     "nethttp-architect": {
       "name": "nethttp-architect",
       "description": "Framework-specific delta on rest-api-architect — Go stdlib net/http (Go 1.22+ ServeMux, no router) on Go 1.26. Feature layout, struct-tag validation, RFC 9457 errors, JWT or IdP auth, graceful shutdown, OpenAPI via kin-openapi. Read rest-api-architect first for the cross-cutting REST conventions. Use when scaffolding or reviewing a stdlib net/http service.",
-      "latest": "1.0.2",
+      "latest": "1.0.3",
       "versions": {
         "1.0.1": {
           "version": "1.0.1",
@@ -508,13 +528,18 @@
           "version": "1.0.2",
           "published_at": "2026-09-30T13:09:12Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/nethttp-architect@v1.0.2/nethttp-architect-v1.0.2.tar.gz"
+        },
+        "1.0.3": {
+          "version": "1.0.3",
+          "published_at": "2026-10-12T23:16:44Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/nethttp-architect@v1.0.3/nethttp-architect-v1.0.3.tar.gz"
         }
       }
     },
     "nextjs-architect": {
       "name": "nextjs-architect",
       "description": "Next.js 16 standards — App Router only, server components by default with explicit `\"use client\"` boundaries, server actions for mutations, streaming Suspense, edge vs node runtime, Image/Font/Metadata APIs. Pairs with react-architect. Use when scaffolding or reviewing a Next.js app or auditing server/client boundaries.",
-      "latest": "1.0.1",
+      "latest": "1.0.2",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -525,6 +550,11 @@
           "version": "1.0.1",
           "published_at": "2026-09-30T13:09:12Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/nextjs-architect@v1.0.1/nextjs-architect-v1.0.1.tar.gz"
+        },
+        "1.0.2": {
+          "version": "1.0.2",
+          "published_at": "2026-10-12T23:16:44Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/nextjs-architect@v1.0.2/nextjs-architect-v1.0.2.tar.gz"
         }
       }
     },
@@ -580,7 +610,7 @@
     "python-architect": {
       "name": "python-architect",
       "description": "Python 3.14 enterprise standards — modern typing (PEP 649), immutable dataclasses, Protocol-based DI, asyncio discipline, pytest 9, psycopg + .sql files via importlib.resources. Use when writing, reviewing, or scaffolding Python code.",
-      "latest": "1.4.1",
+      "latest": "1.4.2",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -596,18 +626,28 @@
           "version": "1.4.1",
           "published_at": "2026-07-10T19:55:38Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/python-architect@v1.4.1/python-architect-v1.4.1.tar.gz"
+        },
+        "1.4.2": {
+          "version": "1.4.2",
+          "published_at": "2026-10-12T23:16:44Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/python-architect@v1.4.2/python-architect-v1.4.2.tar.gz"
         }
       }
     },
     "react-architect": {
       "name": "react-architect",
       "description": "React 19 standards — TypeScript strict, feature-based components, hooks-first composition, TanStack Query for server state, zustand for cross-tree client state, Suspense + ErrorBoundary at every async boundary, Radix for a11y. Use when writing or reviewing React components, hooks, or client-side state.",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/react-architect@v1.0.0/react-architect-v1.0.0.tar.gz"
+        },
+        "1.0.1": {
+          "version": "1.0.1",
+          "published_at": "2026-10-12T23:16:44Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/react-architect@v1.0.1/react-architect-v1.0.1.tar.gz"
         }
       }
     },
