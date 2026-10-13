@@ -1,7 +1,7 @@
 ---
 name: mcp-architect
-version: 2.2.0
-description: MCP (Model Context Protocol) 2026-07-28 server standards — tool/resource/prompt primitives, stateless protocol core (no initialize handshake, no Mcp-Session-Id), Mcp-Method/Mcp-Name header routing, Multi Round-Trip Requests (MRTR) for elicitation/sampling, cacheable list results (ttlMs/cacheScope), OAuth 2.1 + RFC 8707 resource indicators + RFC 9207 issuer validation, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server. Go schema-driven contracts — authoring JSON Schemas as the source of truth for tool inputs and outputs, and generating Go types with atombender/go-jsonschema, sharing enums through $defs, and the two traps (the SDK resolves OutputSchema with no loader; go-jsonschema does not follow $ref) that silently produce a wrong contract.
+version: 2.3.0
+description: MCP (Model Context Protocol) 2026-07-28 server standards — tool/resource/prompt primitives, stateless protocol core (no initialize handshake, no Mcp-Session-Id), Mcp-Method/Mcp-Name header routing, Multi Round-Trip Requests (MRTR) for elicitation/sampling, cacheable list results (ttlMs/cacheScope), OAuth 2.1 + RFC 8707 resource indicators + RFC 9207 issuer validation, tool annotations (readOnly/destructive/idempotent), structured output, JSON-RPC error mapping, prompt-injection and SSRF defenses, MCP Inspector testing. Python (FastMCP) and Go (official SDK) recipes. Use when designing, reviewing, or scaffolding an MCP server. Go schema-driven contracts — authoring JSON Schemas as the source of truth for tool inputs and outputs, and generating Go types with atombender/go-jsonschema, sharing enums through $defs, and the two traps (the SDK resolves OutputSchema with no loader; go-jsonschema does not follow $ref) that silently produce a wrong contract. MCP Apps panels as an addition to a complete text result — never the only path — with capability detection on stateless servers.
 ---
 
 # MCP Architecture
@@ -83,6 +83,20 @@ Every tool result carries `content[]` (always — the "unstructured" channel the
 When you declare `outputSchema`, the server **MUST** populate `structuredContent` AND **SHOULD** also emit a JSON-stringified copy as a `text` block in `content[]` — clients that don't yet render structured output (most chat UIs in 2026) need that fallback to show anything at all. Skeleton in [RECIPES §3](RECIPES.md#3-structured-tool-output).
 
 **Don't declare `outputSchema` for free-form prose tools.** A `summarize_text` tool returning a paragraph has no structure worth schematizing; one `text` block is the right answer.
+
+### 3b. MCP Apps panels — an addition, never the only path
+
+MCP Apps lets a tool point at an interactive HTML panel (`ui://` resource, MIME `text/html;profile=mcp-app`, linked by `_meta.ui.resourceUri` on the tool). Many hosts will never render one: terminal agents and agent libraries advertise no `io.modelcontextprotocol/ui`. Design so both kinds of host are served:
+
+1. **Without the extension the result is complete.** The `content[]` text says what the panel would show, and `structuredContent` carries every field. A host that ignores `_meta.ui` must still be able to act.
+2. **With it the panel adds value.** It does something the text cannot do well: a diagram, a trend, a scannable diff, a live value, one place for a guarded action. If you cannot name what it adds, do not build it.
+3. **The content does not depend on the host.** The text and structured output are byte-identical either way; the panel is a second view of the same result.
+4. **Every capability stays reachable by a model-visible tool.** `visibility: ["app"]` hides a tool from the model, so reserve it for polls and refreshes the model never needs. An action reachable only through such a tool is lost to a host without panels.
+5. **Guards belong to the server.** A confirm token or two-step flow lives in the tool, so the text path has it. The panel is the convenient way through the same guard, never the only one.
+6. **Detect support from the request, not the session.** Under the stateless core there is no session to hold the initialize capabilities; the client capabilities arrive with each request (2026-07-28). Attach the `_meta.ui` unconditionally — a host without support ignores it — and use detection only to log which hosts render panels.
+7. **Give a panel no network origin by default.** It talks to its server through the host; an empty `csp` is the norm, and a `connectDomains` entry needs a reason.
+
+Test both paths: call every tool with a client that advertises no extension and assert the result stands alone, then with one that does and assert the content is the same. Go skeleton in [RECIPES §13](RECIPES.md#13-mcp-apps-panel-go).
 
 ## 4. Tool annotations and safety hints
 

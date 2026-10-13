@@ -756,3 +756,79 @@ def assert_safe_url(url: str, *, allowed_hosts: set[str] | None = None) -> None:
 ```
 
 Same shape in Go: parse with `net/url`, resolve with `net.LookupIP`, check each result against `net.IPNet` instances built from the same CIDRs above. Use a dedicated `*http.Client` with `Transport.DialContext` that re-checks at dial time (defense against DNS rebinding).
+
+## 13. MCP Apps panel (Go)
+
+A tool linked to a panel that is an addition to a complete text result ([SKILL §3b](SKILL.md#3b-mcp-apps-panels--an-addition-never-the-only-path)).
+
+```go
+const (
+	extensionID = "io.modelcontextprotocol/ui"
+	panelMIME   = "text/html;profile=mcp-app"
+	panelURI    = "ui://gateway/report"
+)
+
+// The panel: HTML built to one file and embedded, served with the MCP Apps content type.
+//
+//go:embed panel/report.html
+var reportHTML string
+
+srv.AddResource(&mcp.Resource{URI: panelURI, Name: "report", MIMEType: panelMIME},
+	func(_ context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+		return &mcp.ReadResourceResult{Contents: []*mcp.ResourceContents{
+			{URI: req.Params.URI, MIMEType: panelMIME, Text: reportHTML},
+		}}, nil
+	})
+
+// The tool: _meta.ui.resourceUri points at it, set unconditionally. The handler returns the same text and
+// structured output whoever calls.
+mcp.AddTool(srv, &mcp.Tool{
+	Name: "get_report",
+	Meta: mcp.Meta{"ui": map[string]any{"resourceUri": panelURI}},
+}, getReport)
+
+// A poll only the panel needs: hidden from the model.
+mcp.AddTool(srv, &mcp.Tool{
+	Name: "poll_report",
+	Meta: mcp.Meta{"ui": map[string]any{"resourceUri": panelURI, "visibility": []string{"app"}}},
+}, pollReport)
+```
+
+Detecting a host, for a log line or a decision that is not the result: read the request's capabilities, not the session's.
+
+```go
+func hostRendersPanels[P mcp.Params](req *mcp.ServerRequest[P]) bool {
+	caps := req.ClientCapabilities() // per request on 2026-07-28; the session's initialize params before
+	if caps == nil {
+		return false
+	}
+	settings, _ := caps.Extensions[extensionID].(map[string]any)
+	types, _ := settings["mimeTypes"].([]any)
+	return slices.Contains(types, any(panelMIME))
+}
+```
+
+Test with and without the capability over the in-memory pair:
+
+```go
+func connect(t *testing.T, srv *mcp.Server, caps *mcp.ClientCapabilities) *mcp.ClientSession {
+	st, ct := mcp.NewInMemoryTransports()
+	_, _ = srv.Connect(t.Context(), st, nil)
+	cs, err := mcp.NewClient(&mcp.Implementation{Name: "c", Version: "0"},
+		&mcp.ClientOptions{Capabilities: caps}).Connect(t.Context(), ct, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cs
+}
+
+with := &mcp.ClientCapabilities{}
+with.AddExtension(extensionID, map[string]any{"mimeTypes": []string{panelMIME}})
+
+plain := callGetReport(t, connect(t, srv, &mcp.ClientCapabilities{}))
+rich := callGetReport(t, connect(t, srv, with))
+// assert: plain has non-empty text and structuredContent, and plain and rich carry the same content.
+```
+
+Also assert that no tool the model needs is `visibility: ["app"]`, that the panel resource reads with the MCP Apps MIME, and that its size stays under a budget.
+
