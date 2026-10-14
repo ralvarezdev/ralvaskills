@@ -6,6 +6,12 @@ vars:
   MODULE: github.com/ralvarezdev/CHANGEME
 
 tasks:
+  default:
+    desc: List available tasks
+    silent: true
+    cmds:
+      - task --list
+
   build:
     desc: Compile everything.
     cmds:
@@ -24,6 +30,19 @@ tasks:
   tidy:
     cmds:
       - go mod tidy
+      - go mod verify
+
+  # Verify every Go module resolves from an empty module cache. Downloads into a
+  # throwaway cache so a missing GOPRIVATE or git auth fails here, not on CI.
+  deps:check:
+    desc: Verify every Go module resolves from an empty module cache
+    env:
+      GOMODCACHE: '{{.ROOT_DIR}}/.task/modcheck'
+      GOFLAGS: -modcacherw
+    cmds:
+      - defer: go clean -modcache
+      - go clean -modcache
+      - go mod download
 
   fmt:
     desc: goimports with the module as local prefix, then gofmt.
@@ -58,10 +77,21 @@ tasks:
     cmds:
       - betteralign -apply ./...
 
-  scan:
-    desc: Trivy filesystem + secret scan.
+  scan:fs:
+    desc: Scan filesystem for vulnerabilities in dependencies
     cmds:
-      - trivy fs --scanners vuln,secret,misconfig .
+      - trivy fs --scanners vuln .
+
+  scan:secrets:
+    desc: Scan filesystem for leaked secrets
+    cmds:
+      - trivy fs --scanners secret .
+
+  scan:
+    desc: Run all Trivy security scans (vulnerabilities + secrets)
+    cmds:
+      - task: scan:fs
+      - task: scan:secrets
 
   tag:
     desc: 'Validate semver and tag: task tag VERSION=0.1.0'
