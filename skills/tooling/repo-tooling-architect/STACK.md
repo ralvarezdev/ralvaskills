@@ -15,7 +15,7 @@
 ## Notes
 
 - **Tool version manager:** `mise` is the default for broader adoption, `winget`/`brew`/`scoop` packaging, and asdf-legacy plugin compatibility. `proto` is the alternative when strict separation of concerns matters (Task owns env + scripts; tool manager only pins binaries).
-- **Task runner:** `Task` is the default for native cross-platform support (built-in POSIX sh on Windows), incremental builds via `sources:`/`generates:`, and `--watch` mode. `just` is the alternative when Makefile-style recipe brevity is preferred.
+- **Task runner:** `Task` is the default for native cross-platform support (built-in POSIX sh on Windows), incremental builds via `sources:`/`generates:`, and `--watch` mode. `just` is the alternative when Makefile-style recipe brevity is preferred. The canonical task naming grammar, verb/module vocabulary, aggregate rule, include rules and the standard Go-library task set live in [TASKFILE.md](TASKFILE.md).
 - **Env loading:** delegated to `Task`'s `dotenv:` for non-secrets; external secret manager (1Password CLI / doppler / cloud) for real secrets. **No `direnv`** in either default or alternative stack.
 - **Pre-commit hooks: minimal only.** Trailing whitespace, EOF fixer, large-files-check, merge-conflict, YAML / JSON validation, gitleaks. Language linters stay in editor (on save) and CI.
 - **Both `mise` and `proto` are committed:** the pinning file is the source of truth. CI uses the same tool, the same versions.
@@ -23,5 +23,5 @@
 - **`act` is opt-in, not default:** GitHub Actions stays the default CI target. `act` only enters the stack when Actions billing specifically becomes a blocker — see §8.
 - **A Docker-push job under `act`, against a registry on the same machine, needs two extra fixes** beyond the base act setup: a `REGISTRY_HOST` variable to bypass any tunnel in front of the registry for local runs, and `driver-opts: network=host` on `docker/setup-buildx-action` — see §8's numbered gotchas. Confirmed by an actual end-to-end local publish, not written speculatively.
 
-_Last reviewed: 2026-09-27_
-_Skill version at last review: 1.3.0_
+_Last reviewed: 2026-10-14_
+_Skill version at last review: 1.4.0_

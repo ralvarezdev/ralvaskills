@@ -1,7 +1,7 @@
 ---
 name: repo-tooling-architect
-version: 1.3.0
-description: Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), CI (GitHub Actions default, act for local/free runs), minimal pre-commit, env vars via dotenv + external secret manager, Renovate. Use when scaffolding or auditing a repo's tooling layer.
+version: 1.4.0
+description: Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), CI (GitHub Actions default, act for local/free runs), minimal pre-commit, env vars via dotenv + external secret manager, Renovate. Use when scaffolding or auditing a repo's tooling layer, or naming/renaming Taskfile tasks.
 ---
 
 # Repo Tooling Architecture
@@ -138,7 +138,9 @@ tasks:
 - **Why Task as default:** built-in `sources:` / `generates:` for incremental builds, `--watch` mode, first-class Windows support (ships its own POSIX-sh interpreter), built-in `dotenv:` loading.
 - **Discoverability:** `task --list` shows every task with its `desc`.
 
-**Naming: `module:verb`.** Name tasks after the thing they act on, then the action — `proto:generate`, `test:unit`, `test:race`, `docker:up`, `docker:down` — not the reverse (`generate-proto`, `run-tests`). `task --list` groups alphabetically, so this puts every task for a module next to its siblings and reads as a discoverable namespace even without splitting files. Reserve unprefixed names (`default`, `build`, `lint`) for repo-wide entry points that don't belong to a single module.
+**Naming: `module[:submodule…]:verb[:target|mode]`.** Name tasks after the thing they act on, then the action — `proto:generate`, `git:update:recursive`, `docker:up:dev` — not the reverse (`generate-proto`, `run-tests`). Environment and service are **targets after the verb** (`docker:up:dev`, not `docker:dev:up`). Cross-cutting actions use the inverse family, `verb:target` (`test:backend`, `scan:fs`). `task --list` groups alphabetically, so this puts every task for a module next to its siblings and reads as a discoverable namespace even without splitting files. Reserve unprefixed names (`default`, `build`, `lint`) for repo-wide entry points that don't belong to a single module.
+
+**The full grammar, the canonical verb/module vocabulary, the aggregate/atomic rule, include rules, and the standard Go-library task set are in [TASKFILE.md](TASKFILE.md).** Read it before adding or renaming a task — the audit of the active repos found the same drift (git submodule names, env ordering, `gen`/`generate`, `cover`/`coverage`, `be`/`fe`) everywhere, and TASKFILE.md is the single answer to it.
 
 For a large enough module to warrant its own file, promote the prefix to a real namespace with `includes:` — Task auto-prefixes every task in the included file, so `docker:up` becomes `task docker:up` whether it's a flat key or defined in `Taskfile.docker.yml`:
 
