@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.8.0
+version: 1.9.0
 description: Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -232,50 +232,16 @@ For repos where `go.work` ties together independently-versioned modules — one 
 
 ## 17. Layout at scale (large repos)
 
-§16 is the default. This section covers a repo that has outgrown it — many contexts, several binaries, one codebase. Everything here is a refinement, not a requirement.
+§16 is the default. For a repo that has outgrown it, **there is no single correct layout — only better fits for a project's shape.** [LAYOUTS.md](LAYOUTS.md) is the catalogue (library, flat by concept, feature-first, escalated, grouped at the root, multi-module, layer-first), each with its trade-off, plus a per-project review checklist. Review it per project and re-review when contexts, binaries or teams change.
 
-**There is no single correct layout** — only better fits for a project's shape. Pick from the signals, and revisit when they change:
+Principles that hold across them:
 
-| Project shape | Better fit |
-|---|---|
-| One binary, few concepts, CRUD-ish | Flat packages by concept under `internal/`; no layers |
-| Several features, one team, one deployable | Feature-first, flat roots, `<impl>/` siblings (below) |
-| Domain-rich contexts, real ports, 2+ adapters | Feature-first, escalated to `core/` + use cases + `adapters/` (§16) |
-| Many contexts, several deployables, separate teams | Grouped contexts, one module per context or group, strict module boundaries (§16) |
-| Tightly entangled contexts, one team, one binary | Layer-first can be acceptable; the rank rule is its main benefit |
-| Library or SDK | Root package is the public API; `internal/` for the rest; no layers |
-
-Default to the lightest row that fits and move down only when a concrete pain appears (god package, import cycles, a context that needs extracting).
-
-**Recommended shape when feature-first fits: feature on top, flat by default, layers earned.**
-
-```
-contexts/<group>/<feature>/   feature (bounded context) first; add <group>/ once there are ~7+
-    *.go                      model + rules + use cases + interfaces, flat, concept-named, file-prefixed
-    <impl>/                   implementations named by technology or variant (postgres, nats, docker)
-    <concern>/                a self-contained piece, extracted only when it earns it
-    internal/                 private helpers
-pkg/                          generic libraries, no domain meaning
-contracts/                    wire-only schemas (proto, JSON schema) + compatibility tests
-cmd/<binary>/                 main.go only
-internal/<binary>/            composition root per binary (DI graph, lifecycle) — avoids overloading `app`
-```
-
-- **Feature/context first, never layer first.** The unit of navigation, ownership and extraction is the feature. Top-level `models/`, `services/`, `handlers/` smear a feature across trees and turn the shared layers into catch-all packages.
-- **Flat by default.** A feature starts as one package: model, rules, use cases and the interfaces it consumes together, split into files by concept (`order.go`, `place.go`, `node_*.go`-style prefixes) before it is split into folders.
-- **Implementations are sibling subpackages named by technology** (`<feature>/postgres`, `<feature>/nats`) — the plugin pattern. Interfaces are declared next to their consumer; fakes live in a `fake/` or `testing/` subpackage or in `_test.go`.
-- **Escalate to `core/` + a use-case layer + `adapters/<tech>/`** only when a feature is domain-heavy: real invariants, ports with 2+ adapters, or a pure model that must be compile-time-isolated from use cases. Name the middle layer for what it holds (`operations`, `usecase`, `application`); skip layers a feature does not need.
-- **Enforce direction with a test, not prose.** Rank the layers (`pkg`/`contracts` < feature root or `core` < use-case layer < implementations/`adapters` < `internal/<binary>` < `cmd`); each may import its own rank or lower. Use `**/` path patterns so depth and grouping don't matter; add an import-level check where one package mixes layers, and record known exceptions in the test so they stay visible and shrink. Across contexts, import only another context's public API or contract package.
-- **No infrastructure in the model.** Clients, workers, queue consumers and SQL do not live in `domain/`, `core/` or the feature root. If they have crept in, move them to `<impl>/` or `adapters/` before adding more layers.
-- **Wire schemas get their own home** (`contracts/`), apart from `pkg/` libraries and from any domain; generated code and the Go libraries built around it are separate things.
-- **Avoid stutter.** `order/order`, `domain/order/domain`, `core/order/core` — name the inner package for what it holds (`model`) or flatten it.
-- **Define "context" tightly.** A real consistency boundary with its own model and language, not one folder per noun. Merge tiny ones into a neighbor.
-- **Grouping and extraction.** Past ~7 contexts nest them under `contexts/<group>/` so the repo root stays at a handful of folders. Promote a group to its own module (§16) past ~8–10 contexts or when it gets its own team; make a heavy or shared adapter its own module (`<feature>-<tech>`) when you want the compiler, not a test, to forbid the import.
-- **Layer-first alternative (`core/<ctx>`, `services/<ctx>`, `adapters/<ctx>` at the top).** Suggestive only. It makes a single rank rule trivial to enforce for tightly interdependent contexts owned by one team, but a context ends up in three trees and can no longer be lifted out as a module or deployable, and it cuts against §10. Prefer feature-first unless contexts are not really separate units — and then redraw the contexts first.
-
-**What large Go codebases tend to do.** Component- or subsystem-first with flat, concept-named packages, not a fixed per-context layer triplet: the component root holds model, logic and interfaces; implementations are sibling subpackages by variant; subpackages are split by concern only when self-contained; big packages are organized by file prefix before folders; `internal/` holds unstable helpers; shared types or APIs get their own package or module; `cmd/<binary>` stays thin; and import direction is checked mechanically (import-restriction files, `depguard`, custom `go list` tests). The failure mode of staying flat forever is a god package — that is the signal to extract a concern or escalate the feature, not a reason to adopt layers up front.
-
-**Migrating an existing tree** (e.g. a `domain/` that grew infrastructure): extract wire contracts and generic libraries first, rename layers mechanically second, and split domain from adapters context by context last — each stage behind its own guard test, with the rank rule recorded before any file moves.
+- **Default to the lightest layout that fits.** Feature/context first, flat by default; escalate to `core/` + use cases + `adapters/<tech>/` only when a feature is domain-heavy.
+- **Implementations are sibling subpackages named by technology**; interfaces are declared next to their consumer.
+- **Enforce the dependency direction with a test**, not prose — rank the layers, use `**/` path patterns, record exceptions.
+- **Group contexts at the root by area** (not a generic `contexts/`) past ~7; extract a group as a module past ~8–10 or with its own team.
+- **No infrastructure in the model; wire schemas in `contracts/`; no stutter; name the composition root for what it is, not `app`.**
+- **Layer-first (`core/<ctx>`, `services/<ctx>`, `adapters/<ctx>`) is a valid but suggestive option** — it trades context extractability for a trivial rank rule.
 
 ## Canonical libraries
 
