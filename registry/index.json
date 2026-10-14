@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-13T20:57:26Z",
+  "generated_at": "2026-10-14T02:27:26Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -259,7 +259,7 @@
     "go-architect": {
       "name": "go-architect",
       "description": "Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.",
-      "latest": "1.7.4",
+      "latest": "1.8.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -320,6 +320,11 @@
           "version": "1.7.4",
           "published_at": "2026-10-12T23:25:07Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.7.4/go-architect-v1.7.4.tar.gz"
+        },
+        "1.8.0": {
+          "version": "1.8.0",
+          "published_at": "2026-10-14T02:27:26Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.8.0/go-architect-v1.8.0.tar.gz"
         }
       }
     },
