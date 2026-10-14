@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.9.0
+version: 1.10.0
 description: Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -232,7 +232,7 @@ For repos where `go.work` ties together independently-versioned modules — one 
 
 ## 17. Layout at scale (large repos)
 
-§16 is the default. For a repo that has outgrown it, **there is no single correct layout — only better fits for a project's shape.** [LAYOUTS.md](LAYOUTS.md) is the catalogue (library, flat by concept, feature-first, escalated, grouped at the root, multi-module, layer-first), each with its trade-off, plus a per-project review checklist. Review it per project and re-review when contexts, binaries or teams change.
+§16 is the default. For a repo that has outgrown it, **there is no single correct layout — only better fits for a project's shape.** [LAYOUTS.md](LAYOUTS.md) is the catalogue (library, flat by concept, feature-first, escalated, grouped at the root, multi-module, layer-first), each with its trade-off, plus sections on module count, process types, generated code, cross-context communication, tests, ownership and layout smells, and a per-project review checklist. Review it per project and re-review when contexts, binaries or teams change.
 
 Principles that hold across them:
 

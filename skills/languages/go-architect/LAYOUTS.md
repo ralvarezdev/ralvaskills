@@ -24,6 +24,8 @@ catalogue to **review per project** and to revisit when the project changes. [SK
 | Several deployables, separate teams or release cadence | 6. Multi-module workspace (§16) |
 | Tightly entangled contexts, one team, one binary | 7. Layer-first |
 
+Module count, process types, generated code, tests and ownership are orthogonal to this choice — see the sections after the layouts.
+
 ## Layouts
 
 ### 1. Library
@@ -85,6 +87,69 @@ Costs: a context lives in three trees and cannot be lifted out as a module or de
 shared layers attract catch-all packages; it cuts against §10. If contexts are not really
 separate units, redraw the contexts before choosing this.
 
+## Module count and versioning
+
+One `go.mod` is the default. Add modules only for a concrete reason:
+
+| Reason to split | Cost to weigh |
+|---|---|
+| Independent release cadence or semver (a published library inside a service repo) | Tag per module (`<path>/v1.2.0`), `replace` directives for local dev, changelogs per module |
+| Different dependency sets that must not leak (a heavy adapter, a CLI vs a server) | More `go.mod`/`go.sum` to keep in step; Renovate/Dependabot noise |
+| Team boundary where `go.mod` should forbid imports | CI must build and test each module; tooling that assumes one module (some linters, coverage) needs `go.work` or loops |
+| Extractable context or group | Cross-module refactors become multi-step |
+
+A single module with many `cmd/*` binaries and an enforced rank rule covers most repos. Do not split only because the tree is big. Major-version directories (`v2/`) and versioned `api/` packages belong to libraries and wire contracts, not to internal layout.
+
+## Process types
+
+The layouts above describe the model. The process shape on top differs:
+
+- **HTTP/gRPC API:** `cmd/<api>/main.go` parses flags and env, `internal/<api>` wires the graph and server lifecycle, transports sit beside the use cases (`<feature>/http`, `<feature>/grpc`) or in `<feature>/<transport>/`.
+- **CLI:** `cmd/<cli>/main.go` calls `internal/cli`; one file per subcommand; commands call feature APIs and never hold business rules.
+- **Worker / consumer:** handlers per message type live in the feature (`<feature>/consumer`), the subscription and retry wiring lives in the composition root. Keep the outbox and idempotency logic with the feature that owns the event.
+- **Several processes, one codebase:** one `cmd/<binary>` and one `internal/<binary>` each; features are shared, wiring is not.
+
+## Generated code and SQL
+
+- **Where:** next to the consumer that owns the schema — `<feature>/<impl>/db` for sqlc output and `//go:embed` SQL, `contracts/<name>/gen` for proto/OpenAPI. A central `gen/` is fine when output is shared by many features.
+- **Committed or not:** commit generated code when consumers must build without the generator; otherwise generate in CI. Pick one rule per repo and write it down.
+- **Tooling:** exclude generated paths from the rank test, linters and coverage by pattern (`**/gen/**`, `*.pb.go`, `*.sql.go`), and mark files `// Code generated ... DO NOT EDIT.`
+- **Migrations:** per-service next to the schema owner, one numbered sequence per database, not per feature.
+
+## Cross-context communication
+
+- **Integration events and shared contract types** live in the publishing context's contract package (or `contracts/` when wire-only). Consumers depend on the contract, never on the publisher's model.
+- **Shared kernel** stays tiny and deliberate: value objects only, no behaviour that one context would want to change alone.
+- **Rule:** a context never imports another context's `core/`, feature root or adapters. If two contexts need the same type, either the kernel owns it or each defines its own and a translator sits at the boundary.
+
+## Test layout
+
+- Unit tests sit beside the code (`_test.go`); `testdata/` beside the package that reads it.
+- Integration and end-to-end tests that need Docker or a network live in the package they exercise behind a build tag (`//go:build integration`), or in `<feature>/integration` when they span implementations.
+- Shared helpers go in `internal/testutil` (or a `<feature>/fake` package when they are specific), never in `pkg/`.
+- The architecture test lives in one place (`internal/archtest`), may import anything to inspect it, and is itself exempt from the rank rule. Test code may import across layers; production code may not.
+
+## Ownership and CI scoping
+
+Layout follows team boundaries. Align top-level directories with `CODEOWNERS` entries and with path-filtered CI jobs, so a change to one group runs one group's checks. If a directory has no single owner, it is usually either a shared library that needs one, or two contexts that were never separate.
+
+## Non-Go parts of the repo
+
+- **Polyglot monorepo:** put Go under one subtree (`backend/`, `go/`) with `go.mod` or `go.work` at its root, so Go tooling and module paths are unambiguous.
+- **Ops and tooling:** `deploy/`, `scripts/`, `tools/` (build-time Go tools, pinned via `tools.go` or the `tool` directive), `docs/`. Keep them out of `cmd/` and `internal/`.
+- **The root** holds `go.mod`/`go.work`, the task runner file, `README`, `AGENTS.md`, CI config and `CODEOWNERS` — little else.
+
+## Smells that mean the layout needs review
+
+- Packages named `utils`, `common`, `helpers`, `models`, `types`, `shared`.
+- One global `domain/` or `models/` holding every context.
+- `pkg/` used as a dumping ground for anything "reusable" with a single consumer.
+- Directories nested deeper than about 3–4 levels, or one package per type.
+- A package with hundreds of files and no internal structure (god package), or two packages that always change together.
+- Import cycles worked around with interfaces in a third package instead of moving the code.
+- Rank-rule exceptions that only grow.
+- `app` (or any layer name) meaning two different things in two places.
+
 ## Cross-cutting rules (all layouts)
 
 - **Enforce direction with a test.** Rank the layers (`pkg`/`contracts` < feature root or `core`
@@ -128,4 +193,10 @@ reason to adopt layers up front.
 - [ ] Does anything need to be extracted as a module or service soon?
 - [ ] Is the dependency direction enforced by a test, or only by convention?
 - [ ] Which layout above is the lightest that fits? What pain would trigger moving down?
+- [ ] Does each module split have a concrete reason (release, deps, team, extraction)?
+- [ ] Which process types exist (API, CLI, worker), and is wiring per binary?
+- [ ] Where do generated code, SQL and migrations live, and are they committed?
+- [ ] How do contexts communicate; where do integration events and contracts live?
+- [ ] Are directories aligned with `CODEOWNERS` and path-filtered CI?
+- [ ] Which smells above are present today?
 - [ ] Where is the decision recorded, and when is it re-reviewed?
