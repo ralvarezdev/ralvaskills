@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-15T14:48:28Z",
+  "generated_at": "2026-10-15T22:17:52Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -108,6 +108,18 @@
           "version": "1.11.0",
           "published_at": "2026-10-08T20:55:07Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/commit-author@v1.11.0/commit-author-v1.11.0.tar.gz"
+        }
+      }
+    },
+    "connectrpc-architect": {
+      "name": "connectrpc-architect",
+      "description": "ConnectRPC standards — one .proto serving Connect, gRPC and gRPC-Web from a single http.Handler via protoc-gen-connect-go, connect.Code error mapping, the mandatory interceptor chain, streaming caveats (HTTP/2 for client/bidi, gRPC-Web server-stream only), browser callers with no proxy, generic typed clients and conformance testing. Use when designing or reviewing a Connect handler, choosing Connect over vanilla gRPC, or serving proto to browser callers.",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-10-15T22:17:52Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/connectrpc-architect@v1.0.0/connectrpc-architect-v1.0.0.tar.gz"
         }
       }
     },
@@ -335,9 +347,9 @@
     },
     "go-house-libs": {
       "name": "go-house-libs",
-      "description": "Maps a need to the ralvarezdev shared Go modules — restkit, ginkit, pgkit, mcpkit (REST envelope and problem details, gin, Postgres, MCP), identity and identitygin (accounts, auth, PATs), ratelimit, email, webpush, termkit (CLI UI), svckit (server lifecycle), tick (periodic jobs), sqlitekit (SQLite), resilience (retry, backoff, supervisor). Use when building or extending a Go API, MCP server, CLI, service or Postgres/SQLite store, before hand-writing envelopes, cursors, pgtype conversions, auth, rate limiting, mail, push, a server start/shutdown block, a ticker loop, a retry loop or a SQLite open.",
+      "description": "Maps a need to the ralvarezdev shared Go modules — restkit, ginkit, pgkit, mcpkit (REST envelope and problem details, gin, Postgres, MCP), protos and connectrpckit (shared protobuf contracts and platform-service stubs, ConnectRPC servers and clients), identity and identitygin (accounts, auth, PATs), ratelimit, email, webpush, termkit (CLI UI), svckit (server lifecycle), tick (periodic jobs), sqlitekit (SQLite), resilience (retry, backoff, supervisor). Use when building or extending a Go API, MCP server, gRPC or Connect service, CLI, service or Postgres/SQLite store, before hand-writing envelopes, cursors, protobuf contracts, Connect servers or clients, pgtype conversions, auth, rate limiting, mail, push, a server start/shutdown block, a ticker loop, a retry loop or a SQLite open.",
       "personal": true,
-      "latest": "0.5.1",
+      "latest": "0.6.0",
       "versions": {
         "0.3.0": {
           "version": "0.3.0",
@@ -353,6 +365,11 @@
           "version": "0.5.1",
           "published_at": "2026-10-01T02:35:09Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-house-libs@v0.5.1/go-house-libs-v0.5.1.tar.gz"
+        },
+        "0.6.0": {
+          "version": "0.6.0",
+          "published_at": "2026-10-15T22:17:52Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-house-libs@v0.6.0/go-house-libs-v0.6.0.tar.gz"
         }
       }
     },
