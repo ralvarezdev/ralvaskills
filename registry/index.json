@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-14T21:10:40Z",
+  "generated_at": "2026-10-15T14:48:28Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -846,6 +846,18 @@
           "version": "1.0.1",
           "published_at": "2026-07-13T19:06:11Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/sql-architect@v1.0.1/sql-architect-v1.0.1.tar.gz"
+        }
+      }
+    },
+    "study-artifact-builder": {
+      "name": "study-artifact-builder",
+      "description": "Build a single-file interactive HTML artifact to study a paper's pipeline or dataset until it can be defended from memory — source pinning, paper-versus-code separation, per-component notes, ablation toggles, detailed SVG diagram, verification. Use when asked to study, compare, or memorize a method, pipeline, benchmark or dataset, or to turn a diagram into an artifact.",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-10-15T14:48:28Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/study-artifact-builder@v1.0.0/study-artifact-builder-v1.0.0.tar.gz"
         }
       }
     },
