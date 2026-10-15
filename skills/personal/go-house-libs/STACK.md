@@ -10,7 +10,7 @@ Inherits the Go stack from [go-architect/STACK.md](../../languages/go-architect/
 | ginkit | v0.11.0 | 1.27.1 | released | gin 1.12, gin-contrib/cors 1.7, go-playground/validator 10, restkit, ratelimit |
 | pgkit | v0.7.0 | 1.27.1 | released | pgx v5, shopspring/decimal, restkit; `migrate`: goose 3; `pgmetrics`: prometheus client; `pgtest`: testcontainers-go |
 | mcpkit | v0.4.1 | 1.27.1 | released, stays v0.x until a second MCP server adopts it | modelcontextprotocol/go-sdk |
-| identity | v1.10.0 | 1.27.1 | released | pgx v5, goose 3, pquerna/otp, go-webauthn, golang-jwt v5, valkey-go, x/crypto, email, pgkit, ratelimit |
+| identity | v2.3.0 | 1.27.1 | released; module path `github.com/ralvarezdev/identity/v2` | pgx v5, goose 3, pquerna/otp, go-webauthn, golang-jwt v5, valkey-go, x/crypto, email, pgkit, ratelimit |
 | identitygin | v0.3.3 | 1.27.1 | released | gin 1.12, identity |
 | ratelimit | v0.4.0 | 1.27.1 | released | stdlib root; `valkey`: valkey-go; `valkeytest`: testcontainers valkey |
 | email | v0.4.0 | 1.27.1 | released | stdlib root; `smtp`: go-mail |
@@ -37,7 +37,7 @@ Each module pins the siblings it builds on at the version below (its `go.mod`, 2
 | ginkit | restkit v0.9.2, ratelimit v0.4.0 |
 | pgkit | restkit v0.10.0 |
 | identity | email v0.4.0, pgkit v0.7.0, ratelimit v0.4.0 |
-| identitygin | ginkit v0.11.0, identity v1.10.0, restkit v0.10.1, email v0.4.0, ratelimit v0.4.0 |
+| identitygin | ginkit v0.11.0, identity v2.0.0, restkit v0.10.1, email v0.4.0, ratelimit v0.4.0 |
 | webpush | pgkit v0.6.0 |
 | grpckit | corekit v0.3.0, resilience v0.2.0 |
 | corekit | none |
@@ -61,7 +61,7 @@ Every current tag needs Go 1.27.1 (`protos` and `connectrpckit` need Go 1.27.2),
 - **resilience v0.1.0 gaps** found against real call sites: no linear backoff (a CAS retry loop wanted one), no `OnStart`/`OnGiveUp` hooks or consecutive-failure budget (a supervisor that publishes state needed them). Planned for v0.2.0.
 - **sqlitekit** requires modernc v1.60.1; modernc v1.52.0 silently ignores mattn-style DSN options (a session recorder was affected and fixed with `_pragma=`).
 - **mcpkit v0.4.0 removed** `ToolOutput`, `ToolStatus`, `ToolError`, `ToolSuccess`, `BearerToken`, `RequireAPIKey` and `ErrEmptyAPIKey`; the repo README still lists them.
-- **identity v1.10.0** `App.EnableTOTP`/`GenerateTOTP` do not apply TOTP replay protection or secret sealing (the login second factor does); see [IDENTITY](references/IDENTITY.md).
+- **identity v1.10.0 behavior (unchanged in v2)** `App.EnableTOTP`/`GenerateTOTP` do not apply TOTP replay protection or secret sealing (the login second factor does); see [IDENTITY](references/IDENTITY.md).
 - **ginkit** carries `CORS`, so the earlier advice to use `gin-contrib/cors` directly is obsolete.
 
 _Last reviewed: 2026-10-15_

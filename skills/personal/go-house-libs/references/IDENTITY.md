@@ -1,5 +1,7 @@
 # identity
 
+> **v2.** The module path is `github.com/ralvarezdev/identity/v2`; `app.App` became `identity.Service` (`identity.New`, `identity.Config`, `identity.Deps`). The wiring below still reads as v1 names; map them with the rename table in the module's CHANGELOG (2.0.0). Pools, applications, service accounts and asymmetric tokens (2.1 to 2.3) are in [Tenancy and tokens](#tenancy-and-tokens-v21-to-v23).
+
 `github.com/ralvarezdev/identity` — one bounded context: who a user is and how they prove it. User accounts, authentication, sessions, TOTP/2FA, WebAuthn, RBAC and Personal Access Tokens. Do not write a users table, password hashing, JWT issuing or a session store in an app; wire this.
 
 ## Slices
@@ -98,3 +100,40 @@ cfg := identityapp.Config{
 ## Not here
 
 Response shapes, HTTP middleware, cookies (identitygin), throughput limiting (ratelimit), email delivery (email).
+
+## Tenancy and tokens (v2.1 to v2.3)
+
+Additive, with a default pool and a default application backfilled by the
+migrations, so a single-application consumer sees no change.
+
+- **`tenancy`** (`tenancy`, `tenancy/postgres`): user *pools* (users sharing
+  credentials and an email namespace; email is unique per pool),
+  *applications* (OIDC clients whose `code` is the token audience; each selects
+  exactly one pool, `RequireMembership` makes it invite-only) and memberships.
+  `tenancy.NewService(tenancypg.NewStore(pool))`; `CanEnter(user, userPool, app)`
+  is the admission check; `RepointApplication` drops the application's
+  memberships because the old pool's users do not carry over. Roles and
+  permissions are scoped to an application; unqualified lookups resolve in the
+  default one (`tenancy.DefaultApplicationID`).
+- **`serviceaccount`** (`serviceaccount`, `serviceaccount/postgres`): non-human
+  callers for OAuth2 `client_credentials`. `Create` returns the secret once and
+  stores only a digest; `Authenticate` answers every failure with one error and
+  compares in constant time; `RotateSecret` invalidates the old secret at once.
+- **`auth/jwt` asymmetric tokens**: `GenerateKey` / `ParsePrivateKeyPEM`
+  (Ed25519, `kid` is the RFC 7638 thumbprint), `NewKeyedIssuer` (signs EdDSA,
+  `Retired` keys keep verifying and stay in the JWKS, `LegacySecret` makes it
+  still *verify* old HS256 tokens and never sign one), `IssueServiceAccess` for a
+  per-audience service token, `NewJWKS` / `ParseJWKS`, and a verifier-only side:
+  `NewVerifier` with `NewStaticKeys` or a `JWKSClient` (cached, refreshes on an
+  unknown `kid`, falls back to the cache on an outage). A `Verifier` has no
+  signing method, so a service that holds one can check tokens and never mint
+  them; `ValidateAccessFor(ctx, raw, audience)` checks a per-request audience.
+- **Cutover from HS256** (refresh tokens are opaque and unaffected, so users stay
+  signed in): release the library first, switch issuers to `KeyedIssuer` with
+  `LegacySecret` set, move verifier-only services to `Verifier` + `JWKSClient`,
+  confirm each client refreshes on a 401, then drop `LegacySecret` and the shared
+  HMAC secret.
+- **Rules.** A token is valid for one audience: always configure the verifier's
+  audience (or use `ValidateAccessFor`) so a token minted for one application is
+  rejected by another. Never publish a private key in the JWKS or log a client
+  secret. A pool is chosen by the application, never by the caller.

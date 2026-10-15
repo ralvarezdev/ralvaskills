@@ -1,6 +1,6 @@
 ---
 name: go-house-libs
-version: 0.6.0
+version: 0.6.1
 description: Maps a need to the ralvarezdev shared Go modules — restkit, ginkit, pgkit, mcpkit (REST envelope and problem details, gin, Postgres, MCP), protos and connectrpckit (shared protobuf contracts and platform-service stubs, ConnectRPC servers and clients), identity and identitygin (accounts, auth, PATs), ratelimit, email, webpush, termkit (CLI UI), svckit (server lifecycle), tick (periodic jobs), sqlitekit (SQLite), resilience (retry, backoff, supervisor). Use when building or extending a Go API, MCP server, gRPC or Connect service, CLI, service or Postgres/SQLite store, before hand-writing envelopes, cursors, protobuf contracts, Connect servers or clients, pgtype conversions, auth, rate limiting, mail, push, a server start/shutdown block, a ticker loop, a retry loop or a SQLite open.
 ---
 
