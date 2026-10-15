@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-15T22:17:52Z",
+  "generated_at": "2026-10-15T23:04:23Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -349,7 +349,7 @@
       "name": "go-house-libs",
       "description": "Maps a need to the ralvarezdev shared Go modules — restkit, ginkit, pgkit, mcpkit (REST envelope and problem details, gin, Postgres, MCP), protos and connectrpckit (shared protobuf contracts and platform-service stubs, ConnectRPC servers and clients), identity and identitygin (accounts, auth, PATs), ratelimit, email, webpush, termkit (CLI UI), svckit (server lifecycle), tick (periodic jobs), sqlitekit (SQLite), resilience (retry, backoff, supervisor). Use when building or extending a Go API, MCP server, gRPC or Connect service, CLI, service or Postgres/SQLite store, before hand-writing envelopes, cursors, protobuf contracts, Connect servers or clients, pgtype conversions, auth, rate limiting, mail, push, a server start/shutdown block, a ticker loop, a retry loop or a SQLite open.",
       "personal": true,
-      "latest": "0.6.0",
+      "latest": "0.6.1",
       "versions": {
         "0.3.0": {
           "version": "0.3.0",
@@ -370,6 +370,11 @@
           "version": "0.6.0",
           "published_at": "2026-10-15T22:17:52Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-house-libs@v0.6.0/go-house-libs-v0.6.0.tar.gz"
+        },
+        "0.6.1": {
+          "version": "0.6.1",
+          "published_at": "2026-10-15T23:04:23Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-house-libs@v0.6.1/go-house-libs-v0.6.1.tar.gz"
         }
       }
     },
