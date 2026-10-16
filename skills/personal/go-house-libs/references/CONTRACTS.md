@@ -1,6 +1,6 @@
-# protos
+# contracts
 
-`github.com/ralvarezdev/protos` — the platform's protobuf contract module: the common message shapes every service and app speaks (cursor pagination, machine-readable error details, exact money, calendar dates) plus the APIs of the shared platform services (identity, notifier), kept in one reviewed place instead of drifting across repos. It is a Buf proto module and a Go module at once; generated Go (messages, gRPC and Connect stubs) is committed and imported directly, so there is no registry. Reach for it before re-declaring a `PageRequest`, an `ErrorDetail` or a `Money` in your own proto, and to get a platform service's client stubs without importing the service module.
+`github.com/ralvarezdev/contracts` — the platform's protobuf contract module: the common message shapes every service and app speaks (cursor pagination, machine-readable error details, exact money, calendar dates) plus the APIs of the shared platform services (identity, notifier), kept in one reviewed place instead of drifting across repos. It is a Buf proto module and a Go module at once; generated Go (messages, gRPC and Connect stubs) is committed and imported directly, so there is no registry. Reach for it before re-declaring a `PageRequest`, an `ErrorDetail` or a `Money` in your own proto, and to get a platform service's client stubs without importing the service module.
 
 ## Packages
 
@@ -22,7 +22,7 @@ Instants and spans are not redefined: use `google.protobuf.Timestamp` and `googl
 ## Recipe
 
 ```go
-import commonv1 "github.com/ralvarezdev/protos/gen/go/ralvarezdev/common/v1"
+import commonv1 "github.com/ralvarezdev/contracts/gen/go/ralvarezdev/common/v1"
 
 // server: read the page request, answer a page info
 in := &commonv1.PageRequest{PageSize: req.GetPageSize(), Cursor: req.GetCursor()}
@@ -51,7 +51,7 @@ Regenerate with `task proto:generate` (Buf, remote plugins; needs network) and c
 ## Rules
 
 - **Generated code is generated and committed.** Never hand-edit `gen/**`; edit `proto/` and run `task proto:generate`. CI gates drift with `task proto:check`.
-- **Consume it as a Go module, not through a registry.** `go get github.com/ralvarezdev/protos@<tag>` with `GOPRIVATE=github.com/ralvarezdev/*`; a consumer's own `.proto` never needs the source, because the generated packages are imported directly. Never point a consumer at an untagged version.
+- **Consume it as a Go module, not through a registry.** `go get github.com/ralvarezdev/contracts@<tag>` with `GOPRIVATE=github.com/ralvarezdev/*`; a consumer's own `.proto` never needs the source, because the generated packages are imported directly. Never point a consumer at an untagged version.
 - **A contract lands here when a platform service owns it or two or more repos consume it.** App-private contracts stay with the app; do not add one app's shapes here.
 - **Field numbers are reserved, never reused** (`buf breaking` `FILE`): a removal or renumber is a breaking change even when the wire format still decodes.
 - **Cursors are opaque.** A client echoes `PageInfo.next_cursor` back and never parses or builds one; there is no offset variant, because offset drifts under concurrent writes.

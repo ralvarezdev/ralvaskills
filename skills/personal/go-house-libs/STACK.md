@@ -23,10 +23,10 @@ Inherits the Go stack from [go-architect/STACK.md](../../languages/go-architect/
 | viperkit | v0.1.0 | 1.27.1 | released 2026-10-10, private | stdlib root; `viperconfig`: viper 1.21 |
 | grpckit | v0.8.2 | 1.27.1 | released | corekit v0.3.0, resilience v0.2.0 (`grpcretry`), google.golang.org/grpc 1.84, google.golang.org/protobuf 1.36.11, google.golang.org/genproto/googleapis/rpc |
 | corekit | v0.3.0 | 1.27.1 | released | stdlib root; `xconv`: shopspring/decimal 1.4.0 |
-| protos | v0.1.0 | 1.27.2 | released 2026-10-15, private; Go is generated and committed | google.golang.org/protobuf 1.36.12, connectrpc.com/connect 1.21, google.golang.org/grpc 1.84; buf 1.71 (generation) |
+| contracts | v0.1.0 | 1.27.2 | released 2026-10-15, private; Go is generated and committed | google.golang.org/protobuf 1.36.12, connectrpc.com/connect 1.21, google.golang.org/grpc 1.84; buf 1.71 (generation) |
 | connectrpckit | v0.1.0 | 1.27.2 | released 2026-10-15, private | connectrpc.com/connect 1.21, connectrpc.com/grpchealth, connectrpc.com/grpcreflect, corekit 0.3.0, google.golang.org/genproto/googleapis/rpc |
 
-`protos` and `connectrpckit` are on Go 1.27.2, so a consumer must be on 1.27.2 before importing them.
+`contracts` and `connectrpckit` are on Go 1.27.2, so a consumer must be on 1.27.2 before importing them.
 
 ## Sibling pins
 
@@ -42,21 +42,21 @@ Each module pins the siblings it builds on at the version below (its `go.mod`, 2
 | grpckit | corekit v0.3.0, resilience v0.2.0 |
 | corekit | none |
 | connectrpckit | corekit v0.3.0 |
-| protos | none |
+| contracts | none |
 | svckit, tick, sqlitekit, resilience | none |
 
 ## Consumers
 
 Consumers are tracked in each project's own `go.mod`, not here. A "second consumer" for the promotion rule means another project that needs the same code; check with a `go.mod` and code search across your projects before promoting.
 
-Every current tag needs Go 1.27.1 (`protos` and `connectrpckit` need Go 1.27.2), so a project still on an older `go` directive must bump it before importing any module here. `grpckit` and `connectrpckit` are the gRPC and Connect transports (both map `corekit.Kind` to their own code), and `corekit` is consumed by both and by every service that returns `*corekit.Error` from its handlers. `protos` carries the shared contracts and platform-service stubs; `connectrpckit` is the Connect transport.
+Every current tag needs Go 1.27.1 (`contracts` and `connectrpckit` need Go 1.27.2), so a project still on an older `go` directive must bump it before importing any module here. `grpckit` and `connectrpckit` are the gRPC and Connect transports (both map `corekit.Kind` to their own code), and `corekit` is consumed by both and by every service that returns `*corekit.Error` from its handlers. `contracts` carries the shared contracts and platform-service stubs; `connectrpckit` is the Connect transport.
 
 ## Notes
 
 - Tags as of 2026-10-15. Update this file whenever a module is tagged.
-- **Go policy:** every module is on Go 1.27.1 (golangci-lint 2.14.0), except `protos` and `connectrpckit` on Go 1.27.2; a consumer still on 1.26 must bump its `go` directive before it can import any current tag.
+- **Go policy:** every module is on Go 1.27.1 (golangci-lint 2.14.0), except `contracts` and `connectrpckit` on Go 1.27.2; a consumer still on 1.26 must bump its `go` directive before it can import any current tag.
 - **corekit v0.3.0** is the transport-neutral error vocabulary (`Kind`, `Issue`, `Classifier`); its root is stdlib-only and only `xconv` carries a dependency (`shopspring/decimal`). `grpckit` and `connectrpckit` both pin v0.3.0 and render its `Kind` as their own code.
-- **protos** is also a Buf proto module (`buf build`/`buf generate`, remote plugins, buf 1.71, `breaking` `FILE`); generated Go is committed under `gen/go/` and drift-gated by `task proto:check`. It is consumed as a Go module; there is no registry dependency.
+- **contracts** is also a Buf proto module (`buf build`/`buf generate`, remote plugins, buf 1.71, `breaking` `FILE`); generated Go is committed under `gen/go/` and drift-gated by `task proto:check`. It is consumed as a Go module; there is no registry dependency.
 - **connectrpckit** is the Connect sibling of `grpckit` over the same `corekit` vocabulary; `NewClient` takes the full procedure URL, not a base URL.
 - **resilience v0.1.0 gaps** found against real call sites: no linear backoff (a CAS retry loop wanted one), no `OnStart`/`OnGiveUp` hooks or consecutive-failure budget (a supervisor that publishes state needed them). Planned for v0.2.0.
 - **sqlitekit** requires modernc v1.60.1; modernc v1.52.0 silently ignores mattn-style DSN options (a session recorder was affected and fixed with `_pragma=`).

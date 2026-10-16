@@ -85,7 +85,7 @@ Same key-value shape, file named `.prototools`, install with `proto install`. Pi
 
 ## 4. Task runner — Task (default) or just (alternative)
 
-The problem: every project has 5–15 commands a contributor needs to know (`go build`, `go test --race`, `docker compose up -d db`, `task generate-protos`, etc.). Without a runner, they live in stale README sections.
+The problem: every project has 5–15 commands a contributor needs to know (`go build`, `go test --race`, `docker compose up -d db`, `task generate-contracts`, etc.). Without a runner, they live in stale README sections.
 
 **Default: skip a task runner for single-language projects.** `go build`, `uv run`, `npm` are enough. Don't wrap them in `task build:` aliases — that's ceremony.
 

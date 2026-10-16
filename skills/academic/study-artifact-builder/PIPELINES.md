@@ -113,3 +113,50 @@ A weak ablation (few tasks, one model) is a finding in itself; do not rank compo
 | Cap table | Every source of the cap with its value |
 | Failure taxonomy | Paired bars per category with attribution |
 | Not verified list | One line per gap, at the bottom |
+
+## 10. The explanation form for one stage
+
+Use this form for each component in the artifact, in this order. The same shape for every stage is what lets a reader compare them and see what is missing.
+
+| Part | Content | Source |
+|---|---|---|
+| Why it exists | The problem, in one paragraph, and the design priority | Paper, motivation and method sections |
+| Inputs and outputs | What enters and leaves, exactly | Paper figure and the function signature |
+| Steps | Per step, a paper line and a code line; the code line is a numbered list of mechanics | Paper, then the function, with `file:line` |
+| Real example | An actual record, plan or match | The data |
+| Measured | Counts and distributions with the method and its limits in one line | Your probe |
+| Non-obvious details | What surprises | Code and probe |
+| Consequence for the evaluation or the system | Parameter not to copy, check to add, arm to run | Your judgement, stated as such |
+| Not verified | Gaps, including the probe's own limits | Honest list |
+
+A skeleton for one step of a lexical retrieval component:
+
+```
+Step: recall by similarity
+Paper: each plan step is a query against the three-field index.
+Code:
+  1. The task text and the plan are split into sentences with this regular expression: <regex>.
+  2. Each sentence is tokenized and stopwords are removed.
+  3. It is scored against each index separately.
+  4. From each index the top K are kept, and only if the score passes T.
+  5. All names are merged.
+Measured (method: index rebuilt with the same library on N items, description only):
+  sentences per item, tokens per sentence, highest score per item, items with at least one hit at T, and at 2 or 3 lower values of T.
+Non-obvious: the score is a sum over query terms, so T selects long queries; the separator does not split on the period of the language the text is written in.
+```
+
+Write the "Non-obvious" lines last, after the numbers: they usually come from a number that surprised you.
+
+## 11. Probing a stage on real data
+
+A probe answers "what does this stage actually do on my data" in minutes. Use it for lexical and rule-based stages. Do not use it for stages that call a model or a remote service.
+
+1. **Copy the construction exactly**: same tokenizer, same stopwords, same index class, same parameters. A different tokenizer is a different experiment.
+2. **Feed it real inputs** from the benchmark, with the same preprocessing the pipeline does. If an input the pipeline uses is missing (a plan that a model would write), say so and run without it.
+3. **Print distributions, not examples**: counts per input, the score maxima, how many inputs get no result.
+4. **Sweep the parameter** that looks arbitrary (a threshold, a cutoff, a group size) at two or three values around the paper's.
+5. **Probe the odd lookups** with the worst case: a type or keyword that could match everything.
+6. **Record the environment**: library versions and the script path. The numbers are the probe's, not the system's.
+7. **State the limits next to the numbers** in the artifact.
+
+Skeleton in [RECIPES.md](RECIPES.md#8-probe-skeleton).

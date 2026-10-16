@@ -104,3 +104,27 @@ Re-scoring published outputs is the cheapest independent check available. It tes
 | A ranking built on a few items | Subset too small | Noise note |
 | Two datasets compared as equals | Different oracles | Compare the §2 cards first |
 | Counts that do not add up | Subsets overlap or filters differ | Recompute totals from the item list |
+
+## 10. Derived reference sets
+
+Many studies lean on a map built by a script: item to the things it uses (functions, types, variables), item to its plan, item to its tags. Before it is used as ground truth or as a retrieval source, check it.
+
+| Check | How | What it catches |
+|---|---|---|
+| Whole-word presence | For each (item, entry) pair, does the entry appear as a whole word in the item's source | Matches by substring ("tan" inside "instance") |
+| Frequency outliers | List the most frequent entries and check one against the source | An entry listed for most items and used by one |
+| Language keywords | Count entries that are keywords of the language | Noise that the consumer may drop silently |
+| Coverage | How many benchmark items have an entry | A reference that exists for some subsets only |
+| Consumer behavior | What happens to an entry the dictionary does not have | Silent drops that hide the noise from the output |
+
+Report the share of pairs that pass the whole-word check per subset. A reference set below the level you need (for a recall score, a high share) is rebuilt by parsing the source, not patched by hand.
+
+## 11. Numeric audit of a results table
+
+1. For each rate of a count, find an integer k such that k over the stated n gives the printed value at its precision. Report the cells that do not, and the other n that does fit.
+2. If no common denominator exists across a column, say so; averaged runs or exclusions are possible, and a typo is too.
+3. Recompute each cited percentage from the table. State the base the text used.
+4. Compare the table across tables: the full configuration of an ablation should equal the corresponding row of the main table; the denominators of an efficiency table should equal the compile counts of the main one.
+5. Compare the definitions of a same-named metric in the code of both papers before comparing numbers.
+
+Script in [RECIPES.md](RECIPES.md#9-numeric-audit).

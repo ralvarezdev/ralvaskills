@@ -191,3 +191,94 @@ def table_rows(page, caption):
 - [ ] Rendered with no script errors, one interaction tested per control
 - [ ] Screenshot reviewed for clipped lanes and overlapping labels
 - [ ] Not-verified list at the bottom is complete
+
+## 8. Probe skeleton
+
+Run it from a scratch directory, not from the repository under study, with the libraries installed for the run only.
+
+```bash
+mkdir -p /tmp/probe && cd /tmp/probe
+uv run --with rank_bm25 --with jieba python probe.py
+```
+
+```python
+import json
+import pathlib
+import re
+import statistics
+
+import jieba
+from rank_bm25 import BM25Okapi
+
+DATA = pathlib.Path("/path/to/data")
+THRESHOLDS = (50, 20, 5)
+TOP_K = 2
+SPLIT = re.compile(r"[；;。\n]+")
+
+stopwords = set((DATA / "stopwords.txt").read_text(encoding="utf-8").splitlines())
+
+
+def tokenize(text):
+    tokens = jieba.cut(text.lower())
+    return [t for t in tokens if t not in stopwords]
+
+
+def load_records(path):
+    lines = path.read_text(encoding="utf-8").splitlines()
+    return [json.loads(line) for line in lines if line.strip()]
+
+
+records = load_records(DATA / "index.jsonl")
+names = [r["name"] for r in records]
+channels = {
+    "keywords": BM25Okapi([tokenize(r["keywords"]) for r in records]),
+    "summary": BM25Okapi([tokenize(r["summary"]) for r in records]),
+}
+items = load_records(DATA / "benchmark.jsonl")
+
+hits = {t: [] for t in THRESHOLDS}
+for item in items:
+    found = {t: set() for t in THRESHOLDS}
+    for sentence in SPLIT.split(item["description"]):
+        query = tokenize(sentence)
+        if not query:
+            continue
+        for index in channels.values():
+            scores = index.get_scores(query)
+            ranked = sorted(zip(names, scores), key=lambda p: -p[1])
+            for t in THRESHOLDS:
+                found[t].update(n for n, s in ranked[:TOP_K] if s > t)
+    for t in THRESHOLDS:
+        hits[t].append(len(found[t]))
+
+for t in THRESHOLDS:
+    with_hit = sum(1 for n in hits[t] if n)
+    mean = statistics.mean(hits[t])
+    print(f"threshold {t}: items with a hit {with_hit}/{len(items)}, mean {mean:.2f}")
+```
+
+Print the library versions next to the output and keep the script path in the artifact's provenance table.
+
+## 9. Numeric audit
+
+```python
+def fits(percent, n, places=2):
+    for k in range(n + 1):
+        if abs(round(100 * k / n, places) - percent) < 10 ** -places / 2 + 1e-9:
+            return k
+    return None
+
+
+def common_denominators(values, limit=3000):
+    found = []
+    for n in range(2, limit + 1):
+        if all(fits(v, n) is not None for v in values):
+            found.append(n)
+    return found
+
+
+def relative_change(new, base):
+    return (new / base - 1) * 100
+```
+
+Use `fits` per cell against the nominal n, then against a short list of other plausible n. Use `common_denominators` for a column to tell "one odd cell" from "no single denominator".
