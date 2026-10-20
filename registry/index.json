@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-15T23:04:23Z",
+  "generated_at": "2026-10-20T13:33:14Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -197,6 +197,18 @@
           "version": "1.3.0",
           "published_at": "2026-10-11T03:18:44Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/docker-architect@v1.3.0/docker-architect-v1.3.0.tar.gz"
+        }
+      }
+    },
+    "docs-architect": {
+      "name": "docs-architect",
+      "description": "Project documentation system — a folder-per-doc-type docs/ tree (ADRs, backlog, ideas, plans, designs, reviews, changes, guides), mandatory frontmatter, lifecycle by moving files, weekly/monthly routine, and a stdlib linter. Scaffold, write-doc and migrate modes. Use when setting up docs/, writing a plan/design/ADR/review, triaging a backlog, or reorganizing an existing docs folder.",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-10-20T13:33:14Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/docs-architect@v1.0.0/docs-architect-v1.0.0.tar.gz"
         }
       }
     },
@@ -873,13 +885,18 @@
     },
     "study-artifact-builder": {
       "name": "study-artifact-builder",
-      "description": "Build a single-file interactive HTML artifact to study a paper's pipeline or dataset until it can be defended from memory — source pinning, paper-versus-code separation, per-component notes, ablation toggles, detailed SVG diagram, verification. Use when asked to study, compare, or memorize a method, pipeline, benchmark or dataset, or to turn a diagram into an artifact.",
-      "latest": "1.0.0",
+      "description": "Build a single-file interactive HTML artifact to study a paper's pipeline or dataset until it can be defended from memory — source pinning, paper-versus-code separation, per-component explanation (mechanics, real example, measured on the data, non-obvious details), ablation toggles, SVG diagram, numeric audit. Use when asked to study, compare, explain or memorize a method, pipeline, benchmark or dataset, or to turn a diagram into an artifact.",
+      "latest": "1.1.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-10-15T14:48:28Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/study-artifact-builder@v1.0.0/study-artifact-builder-v1.0.0.tar.gz"
+        },
+        "1.1.0": {
+          "version": "1.1.0",
+          "published_at": "2026-10-20T13:33:14Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/study-artifact-builder@v1.1.0/study-artifact-builder-v1.1.0.tar.gz"
         }
       }
     },
