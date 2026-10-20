@@ -177,7 +177,8 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   │   ├── commit-author/            # ✅ exists
 │   │   ├── tdd/                      # ✅ exists
 │   │   ├── grill-with-docs/          # ✅ exists (formerly grill-me; absorbed ubiquitous-language)
-│   │   └── feature-planner/          # ✅ exists (v1.0.0 — requirement → constraints → design → vertical-slice tasks)
+│   │   ├── feature-planner/          # ✅ exists (v1.0.0 — requirement → constraints → design → vertical-slice tasks)
+│   │   └── docs-architect/           # ✅ exists (v1.0.0 — docs/ tree convention: folder-per-type, mandatory frontmatter, ADR supersede mechanics, backlog rules, migrate mode, stdlib linter in scripts/; no STACK.md)
 │   ├── refactoring/                  # ✅ category — code cleanup ladder (expression → design → system) plus pattern catalog
 │   │   ├── logic-cleaner/            # ✅ exists (expression-level rung)
 │   │   ├── code-design-refactor/     # ✅ exists (v1.0.0 — design-level rung; sits between logic-cleaner and improve-codebase-architecture)
@@ -1252,6 +1253,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | `tdd` | ✅ | |
 | `grill-with-docs` | ✅ | Stress-tests plans through relentless questioning; absorbed the former `ubiquitous-language` skill (domain glossary extraction into `CONTEXT.md`) |
 | `feature-planner` | ✅ | v1.0.0 — upstream planning pipeline. Requirement → constraints → design outline → vertical-slice task breakdown ordered by risk (tracer bullet first, riskiest assumption next). Hands off to `grill-with-docs` and `tdd`. When NOT to plan: trivial changes, spikes, bug fixes with reproductions |
+| `docs-architect` | ✅ | v1.0.0 — project documentation system. Folder is the doc type, frontmatter `status` is the state, moving a file changes state. Lazy folder creation; ADRs reuse `grill-with-docs/ADR_FORMAT.md` for the threshold and add mandatory frontmatter + supersede symmetry (body immutable, only `status`/`superseded_by` change); relative markdown links; backlog with Doing/Next limits and monthly pruning; scaffold / write-doc / migrate modes (propose-then-move, evidence-based backlog cleanup); `scripts/docs_lint.py` (stdlib) checks schema, links, orphans, stale drafts. Standalone (not in a bundle yet); no STACK.md |
 
 #### Refactoring
 | Skill | Status | Notes |
