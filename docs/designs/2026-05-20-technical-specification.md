@@ -1,3 +1,10 @@
+---
+status: active
+project: ralvaskills
+date: 2026-05-20
+related: []
+---
+
 # ralvaskills — Technical Specification
 
 > Personal, ever-growing collection of Staff-level AI skills for Claude Code and OpenCode.  

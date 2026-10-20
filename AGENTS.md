@@ -49,7 +49,7 @@ Run `task lint` (and the registry/token checks when those areas change) before d
 - **Publishing:** bump the skill's version in its frontmatter, push to `main`; CI diffs against
   `registry/index.json`, builds a tarball per new/changed skill, cuts a
   `<skill>@v<version>` release, backs it up to R2 and commits the updated index
-  (`docs/REGISTRY_FLOW.md`).
+  (`docs/guides/registry-flow.md`).
 - **`.rsk/` per project:** `rsk.mod` (version, `tools` scope, skills, pinned) and `rsk.lock`
   (resolved versions + cache paths). `rsk new`/`pin` regenerate the adapter files; a second run is
   idempotent. The Claude adapter writes `.rsk/CLAUDE.md` (skill imports) and appends
@@ -68,7 +68,7 @@ Run `task lint` (and the registry/token checks when those areas change) before d
   `install_skills` (destructive; `_meta["anthropic/requiresUserInteraction"] = true`),
   `project_profile` (read-only), plus the `rsk://catalog` resource. Read-only tools carry
   `readOnlyHint`; `install_skills` carries `destructiveHint`. In progress (design approved
-  2026-10-02); see `docs/MCP_SERVER_PLAN.md`.
+  2026-10-02); see `docs/plans/2026-10-02-mcp-server-plan.md`.
 - **`rsk` CLI** — the human-facing surface; `rsk <subcommand> --help`. Skills pinned for this repo
   itself (via `rsk`): cli-tool-architect, go-architect, logic-cleaner, repo-tooling-architect,
   skill-builder.
@@ -88,8 +88,15 @@ Run `task lint` (and the registry/token checks when those areas change) before d
 ## Reference
 
 - `README.md` — what rsk is and how to install it
-- `docs/MCP_SERVER_PLAN.md` — the `rsk mcp` design
-- `docs/REGISTRY_FLOW.md` and `docs/REGISTRY_SETUP.md` — publishing pipeline
-- `docs/SPECS.md` — skill/catalogue specification
+- `docs/plans/2026-10-02-mcp-server-plan.md` — the `rsk mcp` design
+- `docs/guides/registry-flow.md` and `docs/guides/registry-setup.md` — publishing pipeline
+- `docs/designs/2026-05-20-technical-specification.md` — skill/catalogue specification
 - The AGENTS.md ↔ rsk design: `2026-10-12-ralvaskills-rsk-agents-plan.md` §7 (kept in the
   `finance-platform` repo's `docs/`)
+
+## Documentación
+- Structure and conventions: `docs/README.md`
+- Architecture decisions: `docs/adr/` — read before structural changes; never edit the body of an accepted ADR
+- Pending work: `docs/backlog/<project>.md`; loose ideas go to `docs/backlog/inbox.md`
+- New docs start from `docs/templates/` and carry frontmatter
+- On a relevant change: update `CHANGELOG.md` and, if warranted, add `docs/changes/`
