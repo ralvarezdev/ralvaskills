@@ -29,3 +29,9 @@ version = 1
   version = "1.3.0"
   source = "registry"
   path = "/home/ralvarezdev/.config/rsk/cache/registry/repo-tooling-architect/1.3.0"
+
+[[skills]]
+  name = "docs-architect"
+  version = "1.0.0"
+  source = "registry"
+  path = "/home/ralvarezdev/.config/rsk/cache/registry/docs-architect/1.0.0"
