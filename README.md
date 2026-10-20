@@ -6,7 +6,7 @@ A growing collection of opinionated, Staff-level skills for Claude Code and Open
 
 By default, AI coding agents produce functional but generic code. They nest logic too deeply, ignore architectural patterns, and write verbose commit messages. These skills enforce strict standards — functioning as an automated Senior Engineer that demands clean, maintainable, and highly optimized code.
 
-See [`docs/SPECS.md`](docs/SPECS.md) for the full technical specification, authoring guide, and roadmap.
+See [`docs/designs/2026-05-20-technical-specification.md`](docs/designs/2026-05-20-technical-specification.md) for the full technical specification, authoring guide, and roadmap.
 
 ---
 
@@ -122,7 +122,7 @@ These are personal to me and excluded from bundle installs. Listed here for tran
 
 ## `rsk` CLI
 
-A Go CLI that manages skill installation across projects without copy-pasting folders. Tracked in [`docs/SPECS.md`](docs/SPECS.md). Latest release: [`v3.3.0`](https://github.com/ralvarezdev/ralvaskills/releases/tag/v3.3.0).
+A Go CLI that manages skill installation across projects without copy-pasting folders. Tracked in [`docs/designs/2026-05-20-technical-specification.md`](docs/designs/2026-05-20-technical-specification.md). Latest release: [`v3.3.0`](https://github.com/ralvarezdev/ralvaskills/releases/tag/v3.3.0).
 
 ```
 go install github.com/ralvarezdev/ralvaskills/v3/cmd/rsk@latest

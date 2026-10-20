@@ -1,3 +1,10 @@
+---
+status: active
+project: ralvaskills
+date: 2026-05-22
+related: [guides/registry-flow.md]
+---
+
 # Registry Setup
 
 This document walks through the one-time setup for the skill registry.

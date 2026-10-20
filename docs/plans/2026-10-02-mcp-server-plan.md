@@ -1,3 +1,10 @@
+---
+status: active
+project: ralvaskills
+date: 2026-10-02
+related: []
+---
+
 # MCP Server Plan — `rsk mcp`
 
 Diseño e implementación de un servidor MCP que permite al agente **descubrir skills por proyecto** e **instalarlas**, expuesto como subcomando del binario `rsk`.
@@ -706,9 +713,9 @@ Tests **in-process**, no HTTP real — el SDK Go trae transporte en memoria (`mc
 
 ## Referencias internas
 
-- [`skills/protocols/mcp-architect/`](../skills/protocols/mcp-architect/SKILL.md) — primitivas, tool design, annotations, transporte, auth, errores, testing
-- [`docs/REGISTRY_FLOW.md`](REGISTRY_FLOW.md) — cómo se publica el índice que consume el server
-- [`skills/meta/rsk-guide/`](../skills/meta/rsk-guide/SKILL.md) — política de consentimiento y workflows del CLI
+- [`skills/protocols/mcp-architect/`](../../skills/protocols/mcp-architect/SKILL.md) — primitivas, tool design, annotations, transporte, auth, errores, testing
+- [`docs/REGISTRY_FLOW.md`](../guides/registry-flow.md) — cómo se publica el índice que consume el server
+- [`skills/meta/rsk-guide/`](../../skills/meta/rsk-guide/SKILL.md) — política de consentimiento y workflows del CLI
 - `internal/source/registry.go` — `Index()`, `All()`, `Find()`, `ensureCached()`
 - `internal/tool/` — escritura de config de Claude Code y opencode
 - `github.com/ralvarezdev/mcpkit` — `RecoverWith`, `ErrorMsg.ToolError`; helpers genéricos sobre el go-sdk

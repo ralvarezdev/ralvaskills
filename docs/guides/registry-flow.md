@@ -1,3 +1,10 @@
+---
+status: active
+project: ralvaskills
+date: 2026-05-22
+related: [guides/registry-setup.md]
+---
+
 # Registry Flow
 
 End-to-end flow from editing a skill to a user installing it.
