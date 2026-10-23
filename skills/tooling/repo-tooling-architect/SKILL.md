@@ -1,7 +1,7 @@
 ---
 name: repo-tooling-architect
-version: 1.4.0
-description: Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), CI (GitHub Actions default, act for local/free runs), minimal pre-commit, env vars via dotenv + external secret manager, Renovate. Use when scaffolding or auditing a repo's tooling layer, or naming/renaming Taskfile tasks.
+version: 1.5.0
+description: Repo-root developer tooling — .editorconfig, .gitignore, version pinning (mise default, proto alt), task runner (Task default, just alt), CI (GitHub Actions default, act for local/free runs), minimal pre-commit, env vars via dotenv + external secret manager, Renovate, AGENTS.md / CLAUDE.md agent-instruction files. Use when scaffolding or auditing a repo's tooling layer, or naming/renaming Taskfile tasks.
 ---
 
 # Repo Tooling Architecture
@@ -368,7 +368,29 @@ invocation:
   the *actual* workflow file — no second definition to drift out of sync
   with the first.
 
-## 9. When to skip the whole thing
+## 9. Agent instructions — `AGENTS.md` (source), `CLAUDE.md` (thin)
+
+Files that brief coding agents on the repo. Add them once the repo has commands or conventions an agent cannot infer from the code.
+
+- **`AGENTS.md` is the single source.** Tool-neutral (Codex, OpenCode, Cursor, Claude Code via import). Lives at the repo root.
+- **`CLAUDE.md` stays thin:** `@AGENTS.md` plus only Claude-specific lines (hooks, slash commands, memory notes). Never duplicate content between the two.
+- **Nested `AGENTS.md`** in a subdirectory only when that package has its own commands or rules; the closest file wins.
+- **Generated blocks** (e.g. skill imports from a tool like `rsk`) go in their own file or a delimited section, never hand-edited.
+
+What belongs, in this order:
+
+1. One-paragraph purpose of the repo.
+2. **Commands** — build, test, lint, run, using the task runner names from section 4.
+3. **Layout** — top-level directories and what each owns.
+4. **Conventions that are non-obvious** — what a good engineer would still get wrong.
+5. **Boundaries** — always / ask first / never (publishing, migrations, secrets, generated files).
+6. **Pointers** to `docs/` (ADRs, backlog) instead of copying them; see `docs-architect` for the snippet.
+
+What does not belong: anything derivable from the code or `git log`, tutorials, full API docs, secrets, private details of other projects.
+
+Keep it short (aim under ~150 lines). Every line should prevent a mistake; when an instruction stops earning its place, delete it. Treat it as code: review changes, and fix it when an agent gets something wrong because of it.
+
+## 10. When to skip the whole thing
 
 This skill is opinionated about *adding* tools, but the strongest opinion is **don't add what you don't need.**
 
@@ -376,6 +398,6 @@ This skill is opinionated about *adding* tools, but the strongest opinion is **d
 - **Solo throwaway project:** `.editorconfig` and `.gitignore`. That's it.
 - **Documentation-only repo:** `.editorconfig`, `.gitignore`, optional pre-commit for trailing whitespace.
 - **Library / SDK with one entry point:** language-native tooling + Renovate. No Task, no mise needed.
-- **Multi-language monorepo / multi-service compose stack:** the full stack — `.editorconfig`, `.gitignore`, `mise.toml` (or `.prototools`), `Taskfile.yml`, `pre-commit-config.yaml`, `renovate.json`, `docker-compose.yaml`.
+- **Multi-language monorepo / multi-service compose stack:** the full stack — `.editorconfig`, `.gitignore`, `mise.toml` (or `.prototools`), `Taskfile.yml`, `pre-commit-config.yaml`, `renovate.json`, `docker-compose.yaml`, `AGENTS.md`.
 
 Default to less. Add when the friction is real.
