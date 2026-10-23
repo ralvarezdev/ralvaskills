@@ -1,6 +1,6 @@
 ---
 name: improve-codebase-architecture
-version: 1.0.0
+version: 1.1.0
 description: Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.
 ---
 
@@ -47,6 +47,8 @@ Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't
 - Where have pure functions been extracted just for testability, but the real bugs hide in how they're called (no **locality**)?
 - Where do tightly-coupled modules leak across their seams?
 - Which parts of the codebase are untested, or hard to test through their current interface?
+
+For measured evidence (dead code, unused exports, duplication, oversized files), run [codebase-hygiene-reviewer](../../quality/codebase-hygiene-reviewer/SKILL.md) first and treat its report as input, not as a verdict.
 
 Apply the **deletion test** to anything you suspect is shallow: would deleting it concentrate complexity, or just move it? A "yes, concentrates" is the signal you want.
 

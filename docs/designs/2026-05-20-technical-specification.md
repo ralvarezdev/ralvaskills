@@ -175,7 +175,8 @@ ralvaskills/                          # current state — (📋) marks planned a
 │   ├── quality/
 │   │   ├── security-reviewer/        # ✅ exists (v1.0.0 — injection, auth, secrets, insecure defaults, OWASP-flavored)
 │   │   ├── api-contract-reviewer/    # ✅ exists (v1.0.0 — REST + gRPC contract stability, buf breaking + openapi-diff)
-│   │   └── performance-reviewer/     # ✅ exists (v1.0.0 — N+1, blocking I/O, allocation hot paths; measurement-grounded)
+│   │   ├── performance-reviewer/     # ✅ exists (v1.0.0 — N+1, blocking I/O, allocation hot paths; measurement-grounded)
+│   │   └── codebase-hygiene-reviewer/ # ✅ exists (v1.0.0 — dead code, unused exports, duplication, size; propose-only, evidence-based)
 │   ├── frontend/
 │   │   └── ui-ux-architect/          # ✅ exists (v1.0.0 — WCAG 2.2 AA, Radix + Tailwind 4, design tokens, four-state UI discipline)
 │   ├── academic/                     # ✅ category — research-publication formats (venue-specific, not institution-specific)
@@ -1046,6 +1047,7 @@ Cross-language review pass: security, API contract stability, performance.
 | `security-reviewer` | local |
 | `api-contract-reviewer` | local |
 | `performance-reviewer` | local |
+| `codebase-hygiene-reviewer` | local |
 
 ---
 
@@ -1242,6 +1244,7 @@ Status legend: ✅ exists · 🔨 in progress · 📋 planned
 | `security-reviewer` | ✅ | v1.0.0 — cross-language code-level security review. Critical/High/Medium/Low findings on injection, auth, secrets, insecure defaults, deserialization, CSRF/SSRF/IDOR, rate limiting, dependency hygiene. Tool pass (gitleaks, semgrep, gosec, bandit, Trivy) + read pass. Penetration testing & threat modeling explicitly out of scope |
 | `api-contract-reviewer` | ✅ | v1.0.0 — REST + gRPC contract stability. Versioning (URL prefix, package path), field/method hygiene (no reuse, no type changes), error shape (RFC 9457, gRPC codes), idempotency, ETag, OpenAPI completeness. Mechanical pass via `buf breaking` + `openapi-diff`, then conventions vs `rest-api-architect` / `protobuf-architect` / `grpc-architect` |
 | `performance-reviewer` | ✅ | v1.0.0 — measurement-grounded perf review. N+1, missing indexes, blocking I/O in async, allocation hot paths, unbounded memory, missing timeouts, high-cardinality labels. Every finding cites `EXPLAIN ANALYZE` / `pprof` / `py-spy` / `hyperfine` / dashboard signal. Load testing & capacity planning out of scope |
+| `codebase-hygiene-reviewer` | ✅ | v1.0.0 — evidence-based declutter audit. Dead code, unused exports (per-consumer for shared libraries), duplication, oversized files/functions, split candidates. Uses `deadcode -test`/`-filter`, `go list -deps`, `knip`, `tsc --noEmit`. Propose-only; report written to the temp dir. Executing splits is `code-design-refactor` |
 
 #### Frontend
 | Skill | Status | Notes |

@@ -1,6 +1,6 @@
 ---
 name: go-architect
-version: 1.10.0
+version: 1.11.0
 description: Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.
 ---
 
@@ -203,7 +203,7 @@ internal/userrepo/
     - `funcorder`: Enforces consistent function/method/constructor ordering within types.
     - `modernize`: Suggests modern Go simplifications (range-over-int, slices API, maps functions, etc.) — complement to `copyloopvar` + `perfsprint`.
   - **Template:** The [`assets/golangci.yml`](assets/golangci.yml) template includes sane defaults for all recommended linters with tested configuration values for `linters.settings`. Copy it to `.golangci.yml` and customize thresholds (e.g., `gocognit.max` for cognitive complexity) to match your project's complexity profile.
-- **Dead code (`deadcode`, opt-in, not golangci-lint):** `unused` only flags unused *unexported* symbols, so an exported function no `main` reaches passes the lint gate forever. Run `deadcode -test ./...` (`golang.org/x/tools/cmd/deadcode`) so tests count as roots — without `-test` every test helper looks dead. It does not follow dynamic dispatch (cobra `RunE`, handler funcs stored in maps), so confirm each hit before deleting. Re-run after a deletion pass: removing one function can be the last use of another. Wire it into its own task target rather than the lint gate, since it needs a `main` to root from.
+- **Dead code (`deadcode`, opt-in, not golangci-lint):** `unused` only flags unused *unexported* symbols, so an exported function no `main` reaches passes the lint gate forever. Run `deadcode -test ./...` (`golang.org/x/tools/cmd/deadcode`) so tests count as roots — without `-test` every test helper looks dead. It does not follow dynamic dispatch (cobra `RunE`, handler funcs stored in maps), so confirm each hit before deleting. Re-run after a deletion pass: removing one function can be the last use of another. Wire it into its own task target rather than the lint gate, since it needs a `main` to root from. For a shared library with several consumers, run it per consumer with `-filter` and cross-check with `go list -deps`; see [codebase-hygiene-reviewer](../../quality/codebase-hygiene-reviewer/SKILL.md).
 
 - **Doc-comment coverage (opt-in):** the main config disables revive's `exported`/`package-comments` rules — doc coverage isn't part of the standard gate (see §15). Run it on demand with the secondary config [`assets/golangci.doccheck.yml`](assets/golangci.doccheck.yml): `golangci-lint run -c golangci.doccheck.yml ./...`.
 - **Repo-level style guards (opt-in, not golangci-lint):** two conventions golangci-lint has no linter for — no one-line function bodies, no decorative separator comments (`// ──`, `# ═══`). Ship as shell scripts, not lint rules, since existing codebases likely have violations needing a separate cleanup pass first: [`assets/check-no-oneline-functions.sh`](assets/check-no-oneline-functions.sh), [`assets/check-no-separator-comments.sh`](assets/check-no-separator-comments.sh). Wire each into its own task-runner target (see `repo-tooling-architect` §4 for Task/just setup) rather than the main lint gate, so a legacy-codebase failure doesn't block unrelated CI.

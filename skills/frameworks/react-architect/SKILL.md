@@ -1,6 +1,6 @@
 ---
 name: react-architect
-version: 1.0.1
+version: 1.1.0
 description: React 19 standards — TypeScript strict, feature-based components, hooks-first composition, TanStack Query for server state, zustand for cross-tree client state, Suspense + ErrorBoundary at every async boundary, Radix for a11y. Use when writing or reviewing React components, hooks, or client-side state.
 ---
 
@@ -145,6 +145,7 @@ Route components live in `src/routes/` (or framework-specific path); they orches
 - **Playwright** for end-to-end browser tests. Headless on CI, headed for debugging.
 - **`axe-core` for accessibility tests** in unit + e2e — see [ui-ux-architect](../../frontend/ui-ux-architect/SKILL.md).
 - **Test what users do**, not what implementation does. `screen.getByRole("button", { name: /submit/i })` over `container.querySelector("[data-testid=submit]")`.
+- **Static checks:** `tsc --noEmit` is the health gate. `knip` finds unused files, exports and dependencies; exclude generated output (`*.gen.ts`, `schema.d.ts`) in its config. For a full audit, see [codebase-hygiene-reviewer](../../quality/codebase-hygiene-reviewer/SKILL.md).
 
 ## 11. Performance
 
