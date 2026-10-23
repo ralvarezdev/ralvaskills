@@ -19,16 +19,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## v3.3.0 (2026-10-02)
 ### Added
-- `rsk mcp` runs a stdio MCP server. It has a skill search tool, a project profile tool that detects project signals and proposes skills, and an `install_skills` tool that requires user approval. The skill catalogue is exposed as a resource.
+- `rsk mcp` runs a stdio MCP server for agent clients. It offers a skill search tool, a project profile tool that detects project signals (citing the file that proves each one) and proposes skills, and an `install_skills` tool that always requires user approval and never installs personal skills. The skill catalogue is exposed as the `rsk://catalog` resource, and the index is cached so the server starts without network.
 - `rsk new` registers the MCP server in `.mcp.json` and `opencode.json`, and adds a workflow pointer to `CLAUDE.md`. Existing config is merged, writes are idempotent, and registration is skipped with a warning if `rsk` is not on `PATH`. `rsk destroy` removes both.
-- `rsk new` offers to install and pin the rsk-guide skill (`--guide`).
-- Skill descriptions are now parsed and shown in the catalog.
+- `rsk new` offers to install and pin the rsk-guide skill (`--guide`). It is best-effort: a missing config or an unresolvable skill warns instead of failing.
+- Skill descriptions are now read for local and official skills too, not only registry ones, and shown in the catalog.
 
 ### Changed
-- Re-running `rsk new` on a configured project now proceeds, so the MCP registration can be refreshed.
-
-### Fixed
-- Install approval for the MCP `install_skills` tool is enforced, and the search result shape was corrected.
+- Re-running `rsk new` on an already configured project now proceeds instead of returning early, so the MCP registration can be refreshed.
 
 ## v3.2.1 (2026-10-01)
 Maintenance release.
@@ -36,11 +33,8 @@ Maintenance release.
 ## v3.2.0 (2026-10-01)
 ### Fixed
 - `rsk` refuses to write `CLAUDE.md` when it is a symlink. This avoids an import loop with `.rsk/CLAUDE.md` and avoids silently replacing the link. It fails with an error and leaves the link alone.
-- Atomic file writes keep the existing file's permissions.
+- Atomic file writes keep the existing file's permissions. Before, overwriting a 0644 file (manifest, lock, config, registry files) left it at 0600.
 - SIGINT and SIGTERM cancel in-flight work: downloads abort and temp directories are removed. rsk exits silently with code 130.
-
-### Changed
-- go-house-libs skill references were updated to current tags and now cover svckit, tick, sqlitekit and resilience.
 
 ### Breaking
 - Go module path changed to `.../ralvaskills/v3`. The previous `/v2` path made the v3 releases uninstallable, because `go install` resolved to v2.0.5. Migration: install with `go install github.com/ralvarezdev/ralvaskills/v3/cmd/rsk@latest`, and update any imports.
@@ -49,32 +43,28 @@ Maintenance release.
 Maintenance release.
 
 ## v3.1.0 (2026-09-29)
-### Added
-- go-library-builder skill covers the toolkit and adapter shapes. The go-house-libs references were renamed from house-kits.
+Maintenance release.
 
 ## v3.0.0 (2026-09-29)
 ### Added
-- Global flags: `--config` (overrides the config directory, takes precedence over `RSK_CONFIG_HOME`), `--verbose`, `--quiet` and `--no-color` (overrides `NO_COLOR` and TTY detection).
+- Global flags: `--config` (overrides the config directory, takes precedence over `RSK_CONFIG_HOME`), `--verbose` (also prints the resolved config directory), `--quiet` (suppresses informational lines; warnings, results and errors still print) and `--no-color` (overrides `NO_COLOR` and TTY detection).
 - `--yes`/`-y` on `install`, `update`, `uninstall` and `destroy` to skip confirmation in scripts.
-- `rsk tools <allow|deny|list|remove>` with `--for` (default `claude-code`).
-- `pin --remove`, plus `--include personal|official` on `install`, `uninstall`, `update`, `list`, `status` and `catalog`.
+- `pin --remove` replaces `unpin`, and `--include personal|official` (repeatable) on `install`, `uninstall`, `update`, `list`, `status` and `catalog` replaces the separate scope flags. `--personal` and `--official` still work as hidden aliases.
 - `rsk catalog bundles` and `rsk catalog bundle <name>`.
-- `--for`, `--source` and `--output` values are validated up front, with usage text and shell completion drawn from the same list. Pin and unpin actions were added to `list` rows.
-- Help is grouped by command category, with `help` and `completion` under "Other". The interactive session confirms destructive commands, remembers recent commands and form values, and has Markdown help.
+- `--for`, `--source` and `--output` values are validated up front, with usage text and shell completion drawn from the same list.
+- In the interactive session, `list` rows get pin (`p`) and unpin (`n`) actions. Destructive commands show a confirm screen, invalid form input is reported on the field with the other values kept, recent commands and form values are remembered, and help renders as Markdown. Help is grouped by command category, with `help` and `completion` under "Other".
 
 ### Changed
-- Terminal handling in the session now relies on termkit, and destructive prompts use its confirm dialog.
-
-### Fixed
-- `task tag` can now run unattended.
+- `rsk claude tools` is now `rsk tools <allow|deny|list|remove>`, with `--for` (default `claude-code`).
+- The unused `catalog --stack` flag was removed.
 
 ### Breaking
-- `rsk catalog --bundle` and `rsk catalog <name>` are removed. Use `rsk catalog bundles` and `rsk catalog bundle <name>`.
-- Legacy aliases removed: `rsk unpin` (use `rsk pin --remove`), `rsk claude tools` (use `rsk tools`) and `--bundles`. The `--personal` and `--official` flags are replaced by `--include`, and the unused `catalog --stack` flag is gone.
+- `rsk catalog --bundle` and `rsk catalog <name>` are removed. Migration: use `rsk catalog bundles` and `rsk catalog bundle <name>`.
+- The legacy aliases `rsk unpin`, `rsk claude tools` and `catalog --bundles` are removed. Migration: use `rsk pin --remove`, `rsk tools` and `rsk catalog bundles`.
 
 ## v2.0.5 (2026-09-28)
 ### Added
-- In the interactive session, `list`, `status`, `catalog` and the Claude tools view render as read-only tables. Rows have actions: install or uninstall from `catalog` and `list`, uninstall from `status`, and allow, deny or remove a tool.
+- In the interactive session, `list`, `status`, `catalog` and the Claude tools view render as read-only tables. Rows have actions: install or uninstall from `catalog` and `list`, uninstall from `status` (scoped to the section the row is in), and allow, deny or remove a tool.
 - `-o json` in the session shows the raw payload of the result view.
 
 ### Changed
@@ -93,7 +83,7 @@ Maintenance release.
 
 ## v2.0.2 (2026-09-26)
 ### Added
-- go-architect skill defaults to sqlc, with sqlx as the alternative (see v2.0.0).
+- `registry-remove` maintainer tool for pruning skills or versions from the registry.
 
 ### Changed
 - Go toolchain requirement raised to 1.27.1.
@@ -104,46 +94,45 @@ Maintenance release.
 
 ## v2.0.0 (2026-09-22)
 ### Added
-- Running `rsk` with no arguments shows a themed welcome banner and an interactive command picker. Picked commands run inline, with nested pickers and parameter forms, instead of exiting to the shell.
-- A notice such as "N updates available" appears on bare `rsk` runs. It is read from a cache that is refreshed in the background at most daily, so commands are never delayed.
-- `--output` is now enforced on read commands.
-- New skills: latex-architect, ml-conference-paper-architect, go-library-builder, reveal-js-architect and a Spanish-language thesis defense slide skill, among others. The go-architect skill now defaults to sqlc for database access, with sqlx as the alternative.
-- `registry-remove` helper tool for pruning skills or versions from the registry. The work-report-generator skill was removed from the registry.
+- Running `rsk` with no arguments shows a themed welcome banner and an interactive command picker (outside a terminal it prints the banner and help). Picked commands run inline, with nested pickers and parameter forms, instead of exiting to the shell. `q`/`esc` quit cleanly; `ctrl+c` aborts with exit code 130.
+- A notice such as "N updates available" appears on bare `rsk` runs. It is read from a cache that is refreshed in the background at most daily, so commands are never delayed; `rsk update` also refreshes it.
+- `-o`/`--output text|json` on `rsk status` and `rsk claude tools list`, so every read command supports it.
+
+### Changed
+- `rsk list --global` now has a Tool column, so a skill installed for several tools shows one labelled row per tool.
 
 ### Fixed
-- `list`, `catalog`, `uninstall` and `update` no longer panic with "flag not registered".
+- `list`, `catalog`, `uninstall`, `update` and `new` no longer panic with "flag not registered".
 - `claude` no longer appears twice in `--help`, and `rsk new` success messages now name the target tool.
 - `rsk status --global` now works outside a project.
-- The official-skills cache and the version fallback were repaired.
+- The official-skills cache is cloned on demand instead of failing with "cache not found", and `rsk update --official` now works in registry mode instead of being ignored.
+- `rsk --version` no longer shows "dev (rev none, built unknown)" for `go install` builds or release builds.
 
 ## v1.4.3 (2026-07-04)
 ### Added
 - `RSK_CONFIG_HOME` environment variable to point rsk at a separate config and cache directory, useful for sandboxed testing.
-- `rsk new` supports incremental tool initialization, so tools can be added to an already-initialized project.
+- `rsk new` supports incremental tool initialization: on an already-initialized project it adds the missing tools instead of failing, and new tools inherit the existing pins.
 
 ### Fixed
 - `rsk install <bundle> --pin` now pins every skill the bundle resolves to, not just the bundle entry.
 
 ## v1.4.2 (2026-07-04)
 ### Fixed
-- `rsk update` in registry mode now refreshes `rsk.lock`; previously the update succeeded but left the lock stale.
-- `rsk update` with no arguments in local mode now refreshes every local skill listed in `rsk.mod` and updates the lock.
-- `rsk update --official` now warns when it is used in registry mode, where the flag has no effect.
+- `rsk update` now refreshes `rsk.lock` in registry mode (previously the update succeeded but left the lock stale), and a bare `rsk update` in local mode refreshes every local skill in `rsk.mod` and the lock.
 
 ## v1.4.1 (2026-07-04)
 
 ### Fixed
-- `rsk destroy` now reports errors that it previously discarded silently.
+- `rsk destroy` now warns when a skill link cannot be removed instead of silently ignoring the failure.
 
 ## v1.4.0 (2026-07-04)
 
-### Changed
-- `rsk new` on an existing project now adds newly requested tools to `rsk.mod` instead of failing, and applies the already pinned skills to them. It reports "updated" when it changes something and does nothing when already in sync.
-
-### Fixed
-- Interrupted or partial installs no longer leave an empty registry cache folder that is treated as valid. The cache is now checked for `SKILL.md` and extracted atomically.
+Maintenance release. No change to the `rsk` binary's behaviour.
 
 ## v1.3.2 (2026-06-10)
+
+### Changed
+- `rsk new` on an existing project now adds newly requested tools to `rsk.mod` instead of failing with "project already exists", and applies the already pinned skills to the new tools. It reports "updated" when it changes something and "already configured" when nothing needed changing.
 
 ### Fixed
 - Interrupted or partial installs no longer leave an empty registry cache folder that is treated as valid, which left skill links pointing at empty directories. The cache is now checked for `SKILL.md` and extracted atomically.
@@ -159,11 +148,11 @@ Maintenance release.
 ## v1.2.0 (2026-05-23)
 
 ### Added
-- Interactive prompts: when a required argument is missing, `install`, `uninstall`, `pin`, `unpin`, `new` and `claude tools` ask for it instead of aborting. Prompts use rich widgets in a terminal and plain-text input in non-interactive environments such as CI.
-- `rsk destroy` shows the skills it will remove and asks for confirmation first.
+- Interactive prompts: when a required argument is missing, `install`, `uninstall`, `pin`, `unpin`, `claude tools allow|deny|remove` and `new` (which tools to configure, when `--for` is not given) ask for it instead of aborting. Prompts use rich widgets in a terminal and plain-text input in non-interactive environments such as CI.
+- `rsk destroy` lists what it will remove (the `.rsk/` folder, pinned skill imports and skill links) and asks for confirmation first.
 
 ### Changed
-- `rsk init` uses the shared prompt components. Aborting a prompt exits with status 130.
+- `rsk init` now uses the shared prompt components, with a multi-select for the AI tools. Cancelling a prompt (Ctrl+C) exits silently with status 130.
 
 ## v1.1.0 (2026-05-23)
 
@@ -171,7 +160,8 @@ Maintenance release.
 - `rsk claude tools [list|allow|deny|remove]` manages tool permissions in a project's `.claude/settings.json`. It marks each tool as allowed, denied or not configured, and cleans up empty settings.
 
 ### Changed
-- Project skill links now go directly into `<project>/.claude/skills/` instead of an intermediate `.rsk/skills/` folder. OpenCode reads the same folder.
+- Project skill links now go directly into `<project>/.claude/skills/` instead of an intermediate `.rsk/skills/` folder, and `rsk new` no longer creates `.rsk/skills/`. OpenCode reads the same folder. The generated `.rsk/CLAUDE.md` imports now point to `../.claude/skills/<name>/SKILL.md`; projects created with 1.0.x need their skills reinstalled to move the links.
+- `rsk destroy` now also removes the skill links it installed in the project.
 
 ### Fixed
 - `rsk status` no longer misses Windows junction links.
@@ -185,43 +175,33 @@ Maintenance release.
 
 ### Fixed
 - `rsk new` no longer fails with an empty `.rsk` directory path when the project folder cannot be resolved.
-- Unpinning a skill now removes its import from the project's `CLAUDE.md` correctly.
+- `rsk destroy` now removes the `@.rsk/CLAUDE.md` import from the project's `CLAUDE.md` using the project path rather than the current working directory.
 
 ## v1.0.3 (2026-05-23)
 
 ### Fixed
-- Corrected the global Claude skills folder path.
+- The global Claude Code skills folder is `~/.claude/skills` again; v1.0.2 had moved it under `~/.config`.
 
 ## v1.0.2 (2026-05-23)
 
 ### Fixed
-- Windows config home now falls back to `~/.config` instead of `%APPDATA%`, so it matches the other platforms.
+- On Windows, the rsk config home now falls back to `~/.config` instead of `%APPDATA%`, so it matches the other platforms. A config created by an earlier version under `%APPDATA%` is no longer found; run `rsk init` again or move it.
 
 ## v1.0.1 (2026-05-23)
 
-### Fixed
-- Task-based build and registry steps now run natively on Windows (PowerShell) as well as POSIX shells.
-- Release builds can be started manually if the tag-triggered run does not fire.
+Maintenance release (build and release automation only).
 
 ## v1.0.0 (2026-05-23)
 
 ### Added
-- Initial release of `rsk`, with a skill catalogue covering backend, frontend, language, protocol, observability, design and workflow skills, plus bundles that group them.
-- Declarative project manifest: `.rsk/rsk.mod` records the desired skills and pinned skills, and `.rsk/rsk.lock` records resolved versions, sources and cache paths.
-- Claude and OpenCode adapters: pinned skills are imported into Claude Code through Markdown imports and into OpenCode through `opencode.json`.
-- Coloured terminal output: the `rsk` name, source labels, bundle tags, versions and status marks are styled, and table columns stay aligned.
-- `rsk status` reports installation state, and bundle listings show a full, partial or none status that also appears in JSON output.
-- Token-count reporting for the catalogue now estimates the context cost of each install profile and bundle.
-
-### Changed
-- Reorganised the command surface into top-level commands: `rsk new` and `rsk destroy` manage the project, `rsk pin` and `rsk unpin` manage pinned skills, and `rsk install`, `rsk uninstall` and `rsk update` act on the project or on `--global`.
-- `rsk catalog` now shows the published catalogue, and `rsk list` shows only what is installed.
-- Config and manifest files are written atomically, and registry archive extraction rejects symlinks and paths that escape the cache directory.
-- The skill catalogue was regrouped into domain folders.
-
-### Breaking
-- The `rsk skill` and `rsk project` command groups were removed. Use `rsk install`, `rsk pin` and `rsk unpin` instead of `rsk skill ...`, and `rsk new` and `rsk destroy` instead of `rsk project ...`.
-- `rsk list` no longer shows the catalogue. Use `rsk catalog`.
+- Initial release of `rsk`, a CLI that installs Ralvaskills skills into Claude Code and OpenCode, with a built-in catalogue of 15 bundles (for example `global`, `docs`, `design`, `go-grpc`) that group skills from the local repo, the hosted registry and the official Anthropic skills.
+- Commands: `init` (machine setup, writes `~/.config/rsk/config.json`; `--force` overwrites), `new` (create a project, `--for claude-code|opencode|all`), `destroy`, `install`, `uninstall`, `update`, `pin`, `unpin`, `list`, `catalog` and `status`.
+- `install`, `uninstall` and `update` accept bundle or skill names and share `--global` (machine-wide, with `--for <tool>`), `--dry-run` and `--personal`; `install` also has `--pin` and `--version`, and `update --official` refreshes the official skills cache.
+- Skills come from a local clone, the hosted registry (`skills.ralvarez.dev`) or the official Anthropic skills repo. Custom bundles can be added in `~/.config/rsk/catalog.toml`.
+- Declarative project manifest: `.rsk/rsk.mod` records the tools, skills and pinned skills, and `.rsk/rsk.lock` records resolved versions, sources and paths. `rsk install` with no arguments reinstalls everything in `rsk.mod`.
+- Claude and OpenCode adapters: pinned skills are imported into Claude Code through `.rsk/CLAUDE.md` (referenced from `CLAUDE.md`) and into OpenCode through `opencode.json`.
+- `rsk catalog` lists skills (or bundles with `--bundles`, `--bundle <name>`, `--source`), showing a full, partial or none install status for bundles. `rsk list` and `rsk catalog` support `-o json`. `rsk status` combines project and global installs (`--project`, `--global`); `--stack` is not implemented yet.
+- Coloured terminal output with aligned tables.
 
 # Skill releases
 
@@ -311,8 +291,7 @@ First release. Starts from bounded contexts and context mapping, then codifies t
 Designs slide-deck specifications as a slide-by-slide markdown file, never HTML, PDF or PPTX.
 
 ### 1.1.0 (2026-05-22)
-#### Changed
-- Slimmed the skill by moving the layout catalog, word budgets and narrative arcs into a more compact form, cutting its size by about a third while keeping the interview-first workflow and per-slide layout choices.
+First tagged release (no earlier tag exists; the skill was already at version 1.1.0 when it was first committed). An interview-first workflow (deck language, then topic, audience, goal and duration) that proposes an outline for approval before writing slides. It sets a slide budget from the talk length, picks one of five narrative arcs, applies a one-idea-per-slide splitting rule with takeaway-led titles, and specifies each slide with a layout from a fixed catalog of primitive blocks and 14 layouts, plus per-layout word budgets and a review checklist.
 
 ## demo-script-architect
 
@@ -334,17 +313,17 @@ Docker standards for Dockerfiles and Compose files: multi-stage builds, non-root
 
 ### 1.3.0 (2026-10-10)
 #### Added
-- Build secrets must come from the environment, never from a file outside the build context (BuildKit and Bake sandbox file reads), with the build-time versus runtime secret rule spelled out.
-- A gotcha: copy `.npmrc` and `pnpm-workspace.yaml` before running `pnpm install`.
+- Build secrets must come from the environment, never from a `file:` outside the build context (BuildKit and Bake sandbox file reads), with the build-time versus runtime secret rule spelled out.
+- A secret read by a non-root container is a direct bind mount, so the host file needs mode 644 rather than 600.
+- A gotcha: a frontend stage that fetches from a private registry must copy `.npmrc` and `pnpm-workspace.yaml` before `pnpm install`.
 
 ### 1.2.0 (2026-07-07)
-#### Changed
-- Version bump made alongside a task-naming convention update (`module:verb`) in the sibling repo-tooling skill; the Docker guidance itself only gained a version reference.
+#### Added
+- `CHECKLIST.md`, the new-project Docker checklist that 1.1.0 already referenced: Dockerfile and base image, Compose, runtime configuration (restart policy, resource limits, logging, healthchecks), security, scanning and registry, and dev-versus-prod Compose split.
 
 ### 1.1.0 (2026-07-07)
 #### Added
-- A lifecycle checklist for bootstrapping new services, covering Dockerfile structure, Compose, runtime networking, container security contexts and vulnerability scanning.
-- Explicit restart-policy rules: `unless-stopped` for long-running services, `no` for batch or sync jobs, and `on-failure` for transient workers.
+- A "new project checklist" section in SKILL.md pointing at the checklist and calling out the restart-policy rule (`unless-stopped` for long-running services, `no` for batch jobs). The checklist file itself shipped in 1.2.0.
 
 ### 1.0.0 (2026-05-22)
 First release. Covers multi-stage builds, per-language base image defaults, BuildKit cache mounts, non-root users, multi-arch builds, digest-pinned bases, Trivy scanning and Compose v2.
@@ -676,14 +655,22 @@ Covers Buf-style hierarchical package naming, explicit `optional` for patch sema
 
 Python 3.14 enterprise standards for writing, reviewing and scaffolding code.
 
+### 1.4.2 (2026-10-12)
+#### Added
+- A rule to split a package on cohesion (two unrelated responsibilities, or no longer scannable) rather than to hit a file count, linking to the code-design refactor guidance.
+
+### 1.4.1 (2026-07-10)
+#### Added
+- `testcontainers-python` for container-backed integration tests (real Postgres, Redis, Kafka and similar instead of mocked drivers), with a dedicated pytest marker excluded by default; pinned in the stack notes.
+
+Note: there is no 1.4.0 release. The testcontainers change was committed as version 1.4.0 but never tagged or published, and 1.4.1 was a later patch bump that triggered the registry workflow without content changes. The tags are 1.0.0, 1.3.0, 1.4.1, 1.4.2.
+
 ### 1.3.0 (2026-07-08)
 #### Added
 - A strict `mypy.ini` template (strict baseline, extra checks, targeted overrides) and a curated `ruff.toml` for Python 3.14 whose rule families are mapped to the skill's sections, with carve-outs for Pydantic and FastAPI.
 - Tooling section now categorizes ruff rule families, including the pytest-style family, and specifies mandatory CI gates.
 - Guidance on `Enum`/`StrEnum`/`IntEnum` and on typed models (`dataclass`, `NamedTuple`, `TypedDict`) in place of raw dicts and tuples.
 - Sections on generators versus iterators, mutable default arguments, ordering, and PEP 654 exception groups.
-
-Patch releases 1.4.1-1.4.2: added testcontainers-python for container-backed integration tests (pinned in the stack notes) and a rule to split folders on cohesion rather than file count.
 
 ### 1.0.0 (2026-05-22)
 Covers modern typing, immutable dataclasses, Protocol-based dependency injection, asyncio discipline, pytest, and psycopg with SQL kept in `.sql` files.
@@ -799,26 +786,21 @@ Introduces the skill: one secret store consumed by reference, a decision matrix 
 Cross-language security review covering injection, authn/authz, secrets, insecure defaults and dependency vulnerabilities, reported by severity with file and line references and fixes.
 
 ### 1.0.0 (2026-05-22)
-
-Initial release: an audit pipeline that combines static scanners (semgrep, gitleaks, trivy) with focused contextual review for injection flaws and token leakage, producing a Critical/High/Medium/Low report with concrete fixes.
+First release. A two-pass security review (static analyzers first, then a read of the diff) that checks injection, authn/authz, secrets, insecure defaults, unsafe deserialization, CSRF/SSRF/IDOR, rate limiting and dependency hygiene. Findings go into a Critical/High/Medium/Low table with location, evidence and fix, and the skill states what it does not cover (penetration testing, threat modelling, compliance audits).
 
 ## skill-builder
 
 Scaffolds a new ralvaskills skill from the spec, interview-first, without guessing.
 
 ### 1.0.0 (2026-05-22)
-
-Initial release: scaffolds a skill skeleton (with optional STACK and RECIPES side files), places it in the right folder and validates it against lean-description and token-budget rules. Single-line descriptions and recipe extraction are part of the scaffold.
+First release. An interview-first scaffolder for new skills: it asks about topic, category, version targets, bundle membership and cross-skill ties before writing anything, then generates the frontmatter and a section skeleton, decides whether STACK and RECIPES files are needed, lists the atomic SPECS.md edits, and ends with a validation checklist. Content authoring is handed back to the user.
 
 ## sql-architect
 
 SQL standards for schema design, queries and migrations, with PostgreSQL as the primary engine and MySQL and SQLite differences noted.
 
 ### 1.0.0 (2026-05-22)
-
-Initial release: UUID v7 primary keys, snake_case naming, soft delete, opaque JSON columns, forward-only migrations that are safe on large tables, parameter-bound queries kept in raw `.sql` files, and engine-specific behaviour split into separate reference files.
-
-Patch release 1.0.1: index naming now follows each engine's idiom (PostgreSQL `_idx`/`_key` suffixes, with MySQL omitting the table name and SQLite keeping it).
+First release. Covers schema design (UUID v7 primary keys, declared foreign keys, NOT NULL by default, soft delete), naming, indexing, parameter-bound queries, N+1 prevention, transactions, forward-only migrations that stay safe on large tables, security, EXPLAIN-driven tuning and when to use JSON columns. PostgreSQL 18 is the primary engine, with PostgreSQL-specific and MySQL/SQLite notes split into separate reference files.
 
 ## study-artifact-builder
 
@@ -843,18 +825,14 @@ Initial release: an artifact workflow covering source pinning, paper-versus-code
 Test-driven development with a red-green-refactor loop, integration-style tests and test-first feature and bug work.
 
 ### 1.0.0 (2026-05-22)
-
-Initial release as part of the shared catalogue, with supporting guides on deep modules, interface design, mocking, refactoring and writing good tests. Frontmatter gained a version and author, and the guidance was made language-agnostic.
+First release. A language-agnostic red-green-refactor workflow built on vertical slices (one test, then one implementation, repeated, starting with a tracer bullet) rather than writing all tests first, with a per-cycle checklist. It favours integration-style tests through public interfaces and ships supporting guides on deep modules, interface design, mocking, refactoring and writing good tests.
 
 ## ui-ux-architect
 
 UI/UX standards for building components, design systems and accessible interfaces.
 
 ### 1.0.0 (2026-05-22)
-
-Initial release: a mandatory WCAG 2.2 AA accessibility floor, Radix headless primitives with Tailwind 4 and shadcn/ui, design-token theming, four required async view states (loading, error, empty, success), mobile-first layout and keyboard parity.
-
-Patch release 1.0.1: error-format references now cite RFC 9457 instead of the obsolete RFC 7807.
+First release. A UI/UX standard built on a WCAG 2.2 AA accessibility floor, Radix primitives with Tailwind 4 and shadcn/ui, design-token theming, four required async states (loading, error, empty, success), mobile-first layout, forms, motion, icons, internationalization and accessibility testing, with a design-system maturity ladder and reference implementations in a recipes file.
 
 ## uru-scientific-paper-architect
 
@@ -907,5 +885,4 @@ Patch release 0.1.1: generated output files now use lowercase, accent-free kebab
 Walks through designing a website concept before any code is written.
 
 ### 1.0.0 (2026-05-22)
-
-Initial release: a six-stage interview (purpose, audience, content, tone, visual, synthesis) that produces two or three distinct concept directions and an ASCII homepage wireframe, then hands off to ui-ux-architect for implementation.
+First release. A six-stage interactive walk (purpose, audience, content inventory, tone, visual direction, synthesis) that ends in two or three genuinely distinct concept documents, each with an information architecture, homepage strategy, sample copy voice, an explicit list of what it sacrifices and an ASCII homepage wireframe, then hands off to ui-ux-architect.
