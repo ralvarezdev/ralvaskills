@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-23T03:05:11Z",
+  "generated_at": "2026-10-23T03:11:24Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -1031,12 +1031,17 @@
     "website-concept-architect": {
       "name": "website-concept-architect",
       "description": "Walk the user through designing a website concept before any code — purpose, audience, content inventory, tone, visual archetype, structure — and output 2-3 distinct concept directions plus an ASCII homepage wireframe. Use when planning a new personal site, portfolio, or marketing page upstream of implementation. Hands off to ui-ux-architect / frontend-design.",
-      "latest": "1.0.0",
+      "latest": "1.0.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/website-concept-architect@v1.0.0/website-concept-architect-v1.0.0.tar.gz"
+        },
+        "1.0.1": {
+          "version": "1.0.1",
+          "published_at": "2026-10-23T03:11:24Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/website-concept-architect@v1.0.1/website-concept-architect-v1.0.1.tar.gz"
         }
       }
     }
