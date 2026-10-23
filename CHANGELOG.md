@@ -13,6 +13,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **website-concept-architect** (1.0.1): the sample wireframe now uses a generic example instead of personal project details.
 
 ### Changed
+- **codebase-hygiene-reviewer** (1.1.0): adds a `jscpd` recipe for duplication across modules and in non-code files; `dupl` stays the single-module Go tool.
 - **go-architect** (1.11.0): the dead-code guidance now covers shared libraries with several consumers.
 - **react-architect** (1.1.0): adds `tsc --noEmit` and `knip` as static checks.
 - **improve-codebase-architecture** (1.1.0): gathers hygiene evidence before exploring.

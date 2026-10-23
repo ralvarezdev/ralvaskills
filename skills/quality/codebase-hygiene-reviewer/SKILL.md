@@ -1,6 +1,6 @@
 ---
 name: codebase-hygiene-reviewer
-version: 1.0.0
+version: 1.1.0
 description: Evidence-based declutter audit — dead code, unused exports, duplication, oversized files/functions, modularization candidates; shared libraries with several consumers. Proposes, never edits. Use when cleaning up a repo or library, hunting dead code, or sizing a split.
 ---
 
@@ -40,7 +40,7 @@ Prefer the language's own graph over grep. Concrete commands per ecosystem in [R
 
 - **Go:** `deadcode -test` for reachability; `-filter` and `go list -deps` to measure per-consumer usage. `unused` only sees unexported symbols — see [go-architect § 14](../../languages/go-architect/SKILL.md#14-tooling).
 - **TypeScript/React:** `knip` for unused files, exports and duplicate exports; `tsc --noEmit` as the health gate first. See [react-architect § 10](../../frameworks/react-architect/SKILL.md#10-testing).
-- **Any:** `git ls-files`, `wc -l`, `md5sum` (byte-identical generated files across modules).
+- **Any:** `git ls-files`, `wc -l`, `md5sum` (byte-identical generated files across modules), `jscpd` for clones across modules and non-code files ([RECIPES § 5](RECIPES.md#5-cross-module-duplication-with-jscpd)).
 
 ## 5. False-positive rules
 
@@ -58,7 +58,7 @@ Report LOC, files per package, files over ~400 lines, functions over ~60 lines, 
 
 ## 7. Output
 
-One report per run, written to the OS temp dir (`$TMPDIR` or `/tmp`) as `hygiene-report-<timestamp>.md`, not into the repo unless asked. Sections: repo table, dead code with evidence, unused exports with consumer search, duplication, split candidates with their seam, quick wins, **do not touch**, and a priority split of `now / later / won't do`. Template in [RECIPES § 2](RECIPES.md#2-report-template).
+One report per run, written to the OS temp dir (`$TMPDIR` or `/tmp`) as `hygiene-report-<timestamp>.md`, not into the repo unless asked. Sections: repo table, dead code with evidence, unused exports with consumer search, duplication, split candidates with their seam, quick wins, **do not touch**, and a priority split of `now / later / won't do`. Template in [RECIPES § 6](RECIPES.md#6-report-template).
 
 ## 8. Guardrails
 

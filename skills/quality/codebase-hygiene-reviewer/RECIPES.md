@@ -12,7 +12,8 @@ Commands and the report template. Loaded on demand.
 | Duplicate exports | | `knip --include duplicates` |
 | Unused deps | `go mod tidy -diff` | `knip --include dependencies` |
 | Unexported unused | `golangci-lint run --enable-only=unused ./...` | `tsc --noEmit` with `noUnusedLocals` |
-| Structural clones | `golangci-lint run --enable-only=dupl ./...` | `knip` does not cover; use `jscpd` |
+| Structural clones (one module) | `golangci-lint run --enable-only=dupl ./...` | `jscpd` (see § 5) |
+| Clones across modules / repos, non-code files | `jscpd` (see § 5) | `jscpd` (see § 5) |
 | Size / complexity | `funlen`, `gocognit`, `maintidx`, revive `file-length-limit` | ESLint `max-lines`, `complexity` |
 | Files tracked | `git ls-files '*.go'` | `git ls-files '*.ts' '*.tsx'` |
 
@@ -57,7 +58,19 @@ git ls-files '*.sql.go' | xargs md5sum | sort | uniq -w32 -D
 
 Identical hashes across modules mean duplicated generation (for example the same sqlc models in several services). Report as duplication; the fix is a shared module or one generator input, never a manual edit.
 
-## 5. Report template
+## 5. Cross-module duplication with jscpd
+
+`jscpd` (respects `.gitignore` by default) is a token-based copy/paste detector that treats Go, TypeScript, SQL, proto, YAML and Dockerfiles alike. Use it where `dupl` cannot reach: clones between modules or services, and duplication in non-code files. Inside a single Go module prefer `dupl`, which already runs in the lint gate.
+
+```sh
+npx jscpd --min-tokens 70 --min-lines 8 \
+  --ignore '**/*.pb.go,**/*.sql.go,**/*.gen.ts,**/schema.d.ts,**/dist/**,**/vendor/**' \
+  --reporters console,json --output "${TMPDIR:-/tmp}/jscpd" <path-to-workspace>
+```
+
+Raise `--min-tokens` if the output is mostly boilerplate (error handling, struct tags). Every clone pair still needs a human check: repeated shapes that are intentionally separate (per-service config, adapters) are not findings. Report results as duplication with both locations, never as a delete instruction.
+
+## 6. Report template
 
 ```markdown
 # Hygiene report — <repo> — <date>
