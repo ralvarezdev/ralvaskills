@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-20T13:33:14Z",
+  "generated_at": "2026-10-23T03:05:11Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -91,6 +91,18 @@
           "version": "1.0.1",
           "published_at": "2026-10-12T23:16:44Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/code-design-refactor@v1.0.1/code-design-refactor-v1.0.1.tar.gz"
+        }
+      }
+    },
+    "codebase-hygiene-reviewer": {
+      "name": "codebase-hygiene-reviewer",
+      "description": "Evidence-based declutter audit — dead code, unused exports, duplication, oversized files/functions, modularization candidates; shared libraries with several consumers. Proposes, never edits. Use when cleaning up a repo or library, hunting dead code, or sizing a split.",
+      "latest": "1.0.0",
+      "versions": {
+        "1.0.0": {
+          "version": "1.0.0",
+          "published_at": "2026-10-23T03:05:11Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/codebase-hygiene-reviewer@v1.0.0/codebase-hygiene-reviewer-v1.0.0.tar.gz"
         }
       }
     },
@@ -283,7 +295,7 @@
     "go-architect": {
       "name": "go-architect",
       "description": "Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout. Use when writing, reviewing, or scaffolding Go code.",
-      "latest": "1.10.0",
+      "latest": "1.11.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -299,6 +311,11 @@
           "version": "1.10.0",
           "published_at": "2026-10-14T02:39:32Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.10.0/go-architect-v1.10.0.tar.gz"
+        },
+        "1.11.0": {
+          "version": "1.11.0",
+          "published_at": "2026-10-23T03:05:11Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.11.0/go-architect-v1.11.0.tar.gz"
         },
         "1.2.0": {
           "version": "1.2.0",
@@ -486,12 +503,17 @@
     "improve-codebase-architecture": {
       "name": "improve-codebase-architecture",
       "description": "Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.",
-      "latest": "1.0.0",
+      "latest": "1.1.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
           "published_at": "2026-05-23T03:34:08Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/improve-codebase-architecture@v1.0.0/improve-codebase-architecture-v1.0.0.tar.gz"
+        },
+        "1.1.0": {
+          "version": "1.1.0",
+          "published_at": "2026-10-23T03:05:11Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/improve-codebase-architecture@v1.1.0/improve-codebase-architecture-v1.1.0.tar.gz"
         }
       }
     },
@@ -696,7 +718,7 @@
     "react-architect": {
       "name": "react-architect",
       "description": "React 19 standards — TypeScript strict, feature-based components, hooks-first composition, TanStack Query for server state, zustand for cross-tree client state, Suspense + ErrorBoundary at every async boundary, Radix for a11y. Use when writing or reviewing React components, hooks, or client-side state.",
-      "latest": "1.0.1",
+      "latest": "1.1.0",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -707,6 +729,11 @@
           "version": "1.0.1",
           "published_at": "2026-10-12T23:16:44Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/react-architect@v1.0.1/react-architect-v1.0.1.tar.gz"
+        },
+        "1.1.0": {
+          "version": "1.1.0",
+          "published_at": "2026-10-23T03:05:11Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/react-architect@v1.1.0/react-architect-v1.1.0.tar.gz"
         }
       }
     },
