@@ -1,6 +1,6 @@
 ---
 name: website-concept-architect
-version: 1.0.0
+version: 1.0.1
 description: Walk the user through designing a website concept before any code — purpose, audience, content inventory, tone, visual archetype, structure — and output 2-3 distinct concept directions plus an ASCII homepage wireframe. Use when planning a new personal site, portfolio, or marketing page upstream of implementation. Hands off to ui-ux-architect / frontend-design.
 ---
 
@@ -163,22 +163,22 @@ Example for a terminal/CLI portfolio:
 
 ```
 +------------------------------------------------------------------------------+
-| ~ ramon.dev                                              [now] [writing] [/] |
+| ~ example.dev                                            [now] [writing] [/] |
 +------------------------------------------------------------------------------+
 |                                                                              |
-|  ramon alvarez                                                               |
-|  go developer · tooling · personal CLIs                                      |
+|  jane doe                                                                    |
+|  backend developer · tooling · open-source CLIs                              |
 |                                                                              |
-|  > currently building rsk, a skill management CLI for claude code            |
+|  > currently building a small build-cache tool in Go                         |
 |                                                                              |
 |  --- recent ----------------------------------------------------------       |
-|  2026-05-18  shipped: ralvaskills v0.3                                       |
-|  2026-05-02  essay:   why I bundle skills as one repo                        |
-|  2026-04-21  project: rsk cli infrastructure                                 |
+|  2026-05-18  shipped: cachetool v0.3                                         |
+|  2026-05-02  essay:   why I keep my tools in one repo                        |
+|  2026-04-21  project: build-cache internals                                  |
 |                                                                              |
 |  --- projects --------------------------------------------------------       |
-|  ralvaskills        personal AI skills toolkit            [→]                |
-|  rsk                cli for managing skills               [→]                |
+|  cachetool           incremental build cache               [→]               |
+|  notes               short write-ups on tooling            [→]               |
 |                                                                              |
 +------------------------------------------------------------------------------+
 | email · github · rss                                                         |

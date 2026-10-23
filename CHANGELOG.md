@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - **codebase-hygiene-reviewer:** new skill (1.0.0) for evidence-based declutter audits: dead code, unused exports per consumer, duplication and oversized files. It only proposes changes and writes its report outside the repo.
 
+### Fixed
+- **website-concept-architect** (1.0.1): the sample wireframe now uses a generic example instead of personal project details.
+
 ### Changed
 - **go-architect** (1.11.0): the dead-code guidance now covers shared libraries with several consumers.
 - **react-architect** (1.1.0): adds `tsc --noEmit` and `knip` as static checks.
@@ -883,6 +886,10 @@ Patch release 0.1.1: generated output files now use lowercase, accent-free kebab
 ## website-concept-architect
 
 Walks through designing a website concept before any code is written.
+
+### 1.0.1 (2026-10-22)
+#### Fixed
+- The sample homepage wireframe uses a generic example instead of personal project details.
 
 ### 1.0.0 (2026-05-22)
 First release. A six-stage interactive walk (purpose, audience, content inventory, tone, visual direction, synthesis) that ends in two or three genuinely distinct concept documents, each with an information architecture, homepage strategy, sample copy voice, an explicit list of what it sacrifices and an ASCII homepage wireframe, then hands off to ui-ux-architect.
