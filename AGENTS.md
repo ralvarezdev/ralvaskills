@@ -52,11 +52,14 @@ Run `task lint` (and the registry/token checks when those areas change) before d
   (`docs/guides/registry-flow.md`).
 - **`.rsk/` per project:** `rsk.mod` (version, `tools` scope, skills, pinned) and `rsk.lock`
   (resolved versions + cache paths). `rsk new`/`pin` regenerate the adapter files; a second run is
-  idempotent. The Claude adapter writes `.rsk/CLAUDE.md` (skill imports) and appends
-  `@.rsk/CLAUDE.md` to the project's `CLAUDE.md`; the OpenCode adapter writes `opencode.json`'s
-  `instructions` array. **rsk does not generate or manage AGENTS.md today** — that is a P6 design
-  (a delimited, generated skills block in AGENTS.md or `.rsk/AGENTS.md`), see the rsk↔AGENTS.md
-  design in the finance-platform repo's `docs/2026-10-12-ralvaskills-rsk-agents-plan.md` §7.
+  idempotent. The Claude adapter writes `.rsk/CLAUDE.md` (skill imports), keeps `@AGENTS.md` as the
+  first line of the project's `CLAUDE.md` (creating a skeleton `AGENTS.md` when the project has
+  none, never editing an existing one) and appends `@.rsk/CLAUDE.md`; the OpenCode adapter writes
+  `opencode.json`'s `instructions` array. `AGENTS.md` stays the human-written source of truth — rsk
+  only seeds it once and imports it, and `destroy`/`uninstall` leave it in place. The broader
+  generated-block design (`.rsk/AGENTS.md`, skills index) is still just a proposal, see the
+  rsk↔AGENTS.md design in the finance-platform repo's
+  `docs/2026-10-12-ralvaskills-rsk-agents-plan.md` §7.
 - **Skill sources:** `registry` (published), `local`, `official` (Anthropic). `source` resolves
   and caches under `~/.config/rsk/cache/`.
 - Keep the CLI's data-on-stdout / logs-on-stderr contract and `--output json` where present.

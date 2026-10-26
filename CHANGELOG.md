@@ -7,10 +7,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## Unreleased
 
 ### Added
+- `rsk new` bootstraps the `CLAUDE.md` → `@AGENTS.md` pattern: it writes a short `AGENTS.md` skeleton when the project has none, keeps `@AGENTS.md` as the first line of `CLAUDE.md` above `@.rsk/CLAUDE.md`, and leaves an existing `AGENTS.md` and later imports untouched. `uninstall`/`destroy` keep the import, since other tools read `AGENTS.md` directly.
 - **codebase-hygiene-reviewer:** new skill (1.0.0) for evidence-based declutter audits: dead code, unused exports per consumer, duplication and oversized files. It only proposes changes and writes its report outside the repo.
 
 ### Fixed
 - **website-concept-architect** (1.0.1): the sample wireframe now uses a generic example instead of personal project details.
+- `rsk new` no longer glues `@.rsk/CLAUDE.md` onto the last line of a `CLAUDE.md` that lacks a trailing newline.
 
 ### Changed
 - **codebase-hygiene-reviewer** (1.1.0): adds a `jscpd` recipe for duplication across modules and in non-code files; `dupl` stays the single-module Go tool.

@@ -73,14 +73,24 @@ func (*ClaudeTool) ProjectSkillsDir(projectRoot string) string {
 }
 
 // SyncPinned writes .rsk/CLAUDE.md atomically with one import line per pinned
-// skill and appends the import marker to the project's CLAUDE.md (idempotent).
-// projectDir is the project root (parent of .rsk/).
+// skill, bootstraps the project's AGENTS.md, and imports it from CLAUDE.md
+// ahead of the generated pin file (idempotent). projectDir is the project root
+// (parent of .rsk/).
 func (*ClaudeTool) SyncPinned(projectDir string, pinnedNames []string) error {
+	if err := ensureAgentsFile(projectDir); err != nil {
+		return fmt.Errorf("sync agent guide: %w", err)
+	}
+
 	rskDir := filepath.Join(projectDir, internal.ProjectFolderName)
 	if err := writePinnedClaude(rskDir, pinnedNames); err != nil {
 		return fmt.Errorf("sync claude-code pins: %w", err)
 	}
-	if err := appendClaudeImport(filepath.Join(projectDir, ClaudeFileName)); err != nil {
+
+	claudeMD := filepath.Join(projectDir, ClaudeFileName)
+	if err := ensureAgentsImport(claudeMD); err != nil {
+		return fmt.Errorf("sync agent guide import: %w", err)
+	}
+	if err := appendClaudeImport(claudeMD); err != nil {
 		return fmt.Errorf("sync claude-code import: %w", err)
 	}
 	return nil
@@ -125,7 +135,14 @@ func appendClaudeImport(claudeMDPath string) error {
 		return fmt.Errorf("open %s: %w", claudeMDPath, err)
 	}
 
-	_, writeErr := fmt.Fprintln(f, claudeImportLine)
+	// A file that does not end in a newline would otherwise get the import
+	// glued onto its last line.
+	prefix := ""
+	if len(data) > 0 && !strings.HasSuffix(string(data), "\n") {
+		prefix = "\n"
+	}
+
+	_, writeErr := fmt.Fprintf(f, "%s%s\n", prefix, claudeImportLine)
 	closeErr := f.Close()
 	if writeErr != nil {
 		return writeErr

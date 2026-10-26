@@ -31,8 +31,12 @@ var newCmd = &cobra.Command{
 this folder becomes an rsk project. The .claude/skills/ directory is created
 lazily the first time a skill is installed.
 
+Claude Code also gets an agent guide: AGENTS.md is created from a short
+skeleton when the project has none, and CLAUDE.md imports it (@AGENTS.md) above
+the generated pin file. An existing AGENTS.md is never modified.
+
 Use --for to select which tools to configure:
-  --for claude-code  (default) Appends @.rsk/CLAUDE.md to ./CLAUDE.md
+  --for claude-code  (default) AGENTS.md + CLAUDE.md (imports it and .rsk/CLAUDE.md)
   --for opencode               Writes pinned skills to opencode.json instructions
   --for all                    Both tools
 
