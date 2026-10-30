@@ -151,6 +151,18 @@ tasks:
     desc: Report functions unreachable from any main or test
     cmd: deadcode -test ./...
 
+  deadcode:check:
+    desc: Fail if any Go function is unreachable from any main or test (CI gate)
+    cmds:
+      - |
+        set -e
+        out=$(deadcode -test ./...)
+        if [ -n "$out" ]; then
+          printf '%s\n' "$out"
+          echo "deadcode: unreachable function(s) found" >&2
+          exit 1
+        fi
+
   lint:doccheck:
     desc: "Check exported doc-comment coverage (revive exported & package-comments rules)"
     cmds:
