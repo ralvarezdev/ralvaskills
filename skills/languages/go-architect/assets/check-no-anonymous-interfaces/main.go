@@ -35,6 +35,14 @@ import (
 // with many methods does not flood the terminal.
 const MaxSnippet = 110
 
+// generatedMarkerWindow is how many leading bytes of a file are searched for a
+// "Code generated" marker before the parser runs.
+const generatedMarkerWindow = 1024
+
+// anonymousHint is printed (on stderr) when at least one inline interface was
+// found, with the count as its only argument.
+const anonymousHint = "\n%d anonymous interface(s): declare each with `type Name interface { ... }` next to its consumer.\n"
+
 // finding is one anonymous interface in the tree.
 type finding struct {
 	file string
@@ -45,6 +53,7 @@ type finding struct {
 
 func main() {
 	tests := flag.Bool("tests", false, "also scan _test.go files")
+	//nolint:reassign // flag.Usage is the documented way to customize usage output
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "usage: check-no-anonymous-interfaces [-tests] [dir]\n")
 		flag.PrintDefaults()
@@ -78,7 +87,7 @@ func main() {
 
 		return
 	}
-	fmt.Fprintf(os.Stderr, "\n%d anonymous interface(s): declare each with `type Name interface { ... }` next to its consumer.\n", len(findings))
+	fmt.Fprintf(os.Stderr, anonymousHint, len(findings))
 	os.Exit(1)
 }
 
@@ -117,7 +126,7 @@ func scanFile(path string) ([]finding, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	if bytes.Contains(src[:min(len(src), 1024)], []byte("Code generated")) {
+	if bytes.Contains(src[:min(len(src), generatedMarkerWindow)], []byte("Code generated")) {
 		return nil, nil
 	}
 	lines := strings.Split(string(src), "\n")
@@ -135,8 +144,8 @@ func scanFile(path string) ([]finding, error) {
 		if !ok {
 			return true
 		}
-		if it, ok := ts.Type.(*ast.InterfaceType); ok {
-			named[it.Pos()] = true
+		if iface, isIface := ts.Type.(*ast.InterfaceType); isIface {
+			named[iface.Pos()] = true
 		}
 
 		return true

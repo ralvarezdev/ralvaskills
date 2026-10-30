@@ -14,6 +14,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **website-concept-architect** (1.0.1): the sample wireframe now uses a generic example instead of personal project details.
 - `rsk new` no longer glues `@.rsk/CLAUDE.md` onto the last line of a `CLAUDE.md` that lacks a trailing newline.
 
+### Fixed
+- **go-architect** (1.13.3): `assets/check-no-anonymous-interfaces/main.go` now passes the repo's own `task lint` — named constant instead of the magic `1024`, no shadowed `ok`, an explicit `//nolint:reassign` for `flag.Usage`, and a named hint string so `golines` can format it. The checker's output and exit codes are unchanged.
+
 ### Changed
 - **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - **go-architect** (1.13.1): the app-repo rule for binaries no longer requires `internal/<binary>` to exist for every `cmd/<binary>` — a shared `internal/bootstrap` (or a named root such as `internal/api`) is allowed, matching the cross-cutting composition-root rule. The review checklist asks the same.
@@ -32,6 +35,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `rsk new` registers the MCP server in `.mcp.json` and `opencode.json`, and adds a workflow pointer to `CLAUDE.md`. Existing config is merged, writes are idempotent, and registration is skipped with a warning if `rsk` is not on `PATH`. `rsk destroy` removes both.
 - `rsk new` offers to install and pin the rsk-guide skill (`--guide`). It is best-effort: a missing config or an unresolvable skill warns instead of failing.
 - Skill descriptions are now read for local and official skills too, not only registry ones, and shown in the catalog.
+
+### Fixed
+- **go-architect** (1.13.3): `assets/check-no-anonymous-interfaces/main.go` now passes the repo's own `task lint` — named constant instead of the magic `1024`, no shadowed `ok`, an explicit `//nolint:reassign` for `flag.Usage`, and a named hint string so `golines` can format it. The checker's output and exit codes are unchanged.
 
 ### Changed
 - **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
@@ -64,6 +70,9 @@ Maintenance release.
 - `--for`, `--source` and `--output` values are validated up front, with usage text and shell completion drawn from the same list.
 - In the interactive session, `list` rows get pin (`p`) and unpin (`n`) actions. Destructive commands show a confirm screen, invalid form input is reported on the field with the other values kept, recent commands and form values are remembered, and help renders as Markdown. Help is grouped by command category, with `help` and `completion` under "Other".
 
+### Fixed
+- **go-architect** (1.13.3): `assets/check-no-anonymous-interfaces/main.go` now passes the repo's own `task lint` — named constant instead of the magic `1024`, no shadowed `ok`, an explicit `//nolint:reassign` for `flag.Usage`, and a named hint string so `golines` can format it. The checker's output and exit codes are unchanged.
+
 ### Changed
 - **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - `rsk claude tools` is now `rsk tools <allow|deny|list|remove>`, with `--for` (default `claude-code`).
@@ -77,6 +86,9 @@ Maintenance release.
 ### Added
 - In the interactive session, `list`, `status`, `catalog` and the Claude tools view render as read-only tables. Rows have actions: install or uninstall from `catalog` and `list`, uninstall from `status` (scoped to the section the row is in), and allow, deny or remove a tool.
 - `-o json` in the session shows the raw payload of the result view.
+
+### Fixed
+- **go-architect** (1.13.3): `assets/check-no-anonymous-interfaces/main.go` now passes the repo's own `task lint` — named constant instead of the magic `1024`, no shadowed `ok`, an explicit `//nolint:reassign` for `flag.Usage`, and a named hint string so `golines` can format it. The checker's output and exit codes are unchanged.
 
 ### Changed
 - **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
@@ -97,6 +109,9 @@ Maintenance release.
 ### Added
 - `registry-remove` maintainer tool for pruning skills or versions from the registry.
 
+### Fixed
+- **go-architect** (1.13.3): `assets/check-no-anonymous-interfaces/main.go` now passes the repo's own `task lint` — named constant instead of the magic `1024`, no shadowed `ok`, an explicit `//nolint:reassign` for `flag.Usage`, and a named hint string so `golines` can format it. The checker's output and exit codes are unchanged.
+
 ### Changed
 - **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - Go toolchain requirement raised to 1.27.1.
@@ -110,6 +125,9 @@ Maintenance release.
 - Running `rsk` with no arguments shows a themed welcome banner and an interactive command picker (outside a terminal it prints the banner and help). Picked commands run inline, with nested pickers and parameter forms, instead of exiting to the shell. `q`/`esc` quit cleanly; `ctrl+c` aborts with exit code 130.
 - A notice such as "N updates available" appears on bare `rsk` runs. It is read from a cache that is refreshed in the background at most daily, so commands are never delayed; `rsk update` also refreshes it.
 - `-o`/`--output text|json` on `rsk status` and `rsk claude tools list`, so every read command supports it.
+
+### Fixed
+- **go-architect** (1.13.3): `assets/check-no-anonymous-interfaces/main.go` now passes the repo's own `task lint` — named constant instead of the magic `1024`, no shadowed `ok`, an explicit `//nolint:reassign` for `flag.Usage`, and a named hint string so `golines` can format it. The checker's output and exit codes are unchanged.
 
 ### Changed
 - **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
@@ -145,6 +163,9 @@ Maintenance release. No change to the `rsk` binary's behaviour.
 
 ## v1.3.2 (2026-06-10)
 
+### Fixed
+- **go-architect** (1.13.3): `assets/check-no-anonymous-interfaces/main.go` now passes the repo's own `task lint` — named constant instead of the magic `1024`, no shadowed `ok`, an explicit `//nolint:reassign` for `flag.Usage`, and a named hint string so `golines` can format it. The checker's output and exit codes are unchanged.
+
 ### Changed
 - **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - `rsk new` on an existing project now adds newly requested tools to `rsk.mod` instead of failing with "project already exists", and applies the already pinned skills to the new tools. It reports "updated" when it changes something and "already configured" when nothing needed changing.
@@ -166,6 +187,9 @@ Maintenance release.
 - Interactive prompts: when a required argument is missing, `install`, `uninstall`, `pin`, `unpin`, `claude tools allow|deny|remove` and `new` (which tools to configure, when `--for` is not given) ask for it instead of aborting. Prompts use rich widgets in a terminal and plain-text input in non-interactive environments such as CI.
 - `rsk destroy` lists what it will remove (the `.rsk/` folder, pinned skill imports and skill links) and asks for confirmation first.
 
+### Fixed
+- **go-architect** (1.13.3): `assets/check-no-anonymous-interfaces/main.go` now passes the repo's own `task lint` — named constant instead of the magic `1024`, no shadowed `ok`, an explicit `//nolint:reassign` for `flag.Usage`, and a named hint string so `golines` can format it. The checker's output and exit codes are unchanged.
+
 ### Changed
 - **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - `rsk init` now uses the shared prompt components, with a multi-select for the AI tools. Cancelling a prompt (Ctrl+C) exits silently with status 130.
@@ -174,6 +198,9 @@ Maintenance release.
 
 ### Added
 - `rsk claude tools [list|allow|deny|remove]` manages tool permissions in a project's `.claude/settings.json`. It marks each tool as allowed, denied or not configured, and cleans up empty settings.
+
+### Fixed
+- **go-architect** (1.13.3): `assets/check-no-anonymous-interfaces/main.go` now passes the repo's own `task lint` — named constant instead of the magic `1024`, no shadowed `ok`, an explicit `//nolint:reassign` for `flag.Usage`, and a named hint string so `golines` can format it. The checker's output and exit codes are unchanged.
 
 ### Changed
 - **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
