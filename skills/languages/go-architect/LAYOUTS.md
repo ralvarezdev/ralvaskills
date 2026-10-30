@@ -139,6 +139,75 @@ Layout follows team boundaries. Align top-level directories with `CODEOWNERS` en
 - **Ops and tooling:** `deploy/`, `scripts/`, `tools/` (build-time Go tools, pinned via `tools.go` or the `tool` directive), `docs/`. Keep them out of `cmd/` and `internal/`.
 - **The root** holds `go.mod`/`go.work`, the task runner file, `README`, `AGENTS.md`, CI config and `CODEOWNERS` — little else.
 
+### App repo with a SPA — the recommended shape
+
+Most app repos pair a Go module with a JavaScript/TypeScript single-page app. Default to the
+shape below when that is the case: one Go module, one SPA, wire contracts beside them.
+
+```
+repo/
+├── backend/                 the Go module: go.mod lives here, nothing above it
+│   ├── go.mod  go.sum  sqlc.yaml  .air.toml
+│   ├── Dockerfile[.…]
+│   ├── cmd/<binary>/        main.go only: flags/env, then internal/<binary>
+│   ├── internal/<binary>/   composition root per binary, plus private helpers
+│   ├── <ctx>/               bounded contexts, flat; postgres/, transport/<proto> as siblings
+│   ├── kernel/              tiny shared kernel (value objects only)
+│   ├── pkg/                 only code another repo could import
+│   └── db/                  migrations
+├── frontend/                the SPA; its build output is copied into the Go embed dir
+├── contracts/               source of truth: openapi/, proto/, schema/
+├── config/  bin/  scripts/  docs/  deploy/  mockups/
+└── AGENTS.md  README.md  CHANGELOG.md  Taskfile.yml  mise.toml
+```
+
+Rules, in the order they bite:
+
+1. **One module, rooted at the subtree that holds only Go.** `backend/` when the repo has another
+   toolchain, the repo root when it is Go only. Add a second module only for one of the reasons in
+   *Module count and versioning*; a big tree is not one.
+2. **The module path names the directory that holds `go.mod`**
+   (`github.com/<owner>/<repo>/backend`, not `github.com/<owner>/<repo>` or a bare `myapp`). A path
+   that points above its own `go.mod` makes `go install`/`go get` resolve to a directory with no
+   module, and every import path lies about where the file is.
+3. **`cmd/<binary>` and `internal/<binary>` come in pairs.** `main.go` holds wiring only; the
+   composition root of the same name is where the graph and the lifecycle live.
+4. **Contexts stay flat** at the module root, implementations as sibling subpackages
+   (`postgres/`, `transport/mcp/`, `remote/grpc/`). Group under `ledger/`, `billing/` only past
+   ~7 contexts — see layout 5.
+5. **Operational directories exist once, at the repo root:** `config/`, `bin/`, `scripts/`,
+   `docs/`, `deploy/`. A `backend/scripts/` next to a root `scripts/` is two homes for one concern,
+   and `backend/config/` splits configuration by language instead of by scope.
+6. **Contracts are the source of truth; generated code lives inside the module; embedded assets
+   live under `internal/`.** Do not mirror `contracts/openapi/` as a second `openapi/` at the
+   module root: put the merged artefact and its `embed.go` in `internal/<name>/` so the two are not
+   mistaken for each other.
+7. **A frontend build is copied, never reached with `..`.** `//go:embed` cannot escape its
+   package directory, so a sibling `frontend/` needs an explicit copy step
+   (`cp -r frontend/dist internal/static/dist`) in the task runner, CI and the Dockerfile. That
+   step is deliberate; do not "simplify" it away, and do not put a Go package inside `frontend/`
+   to avoid it.
+8. **An adapter never imports another adapter's SDK.** A REST client used by a CLI or a worker must
+   not depend on the MCP SDK (or any other transport's) for a helper: the caller owns token
+   resolution and passes it in. Otherwise every binary in the repo links every transport.
+
+#### Naming the frontend directory
+
+There is no ecosystem winner: among ~30 active Go repos with a SPA, `web/`, `ui/` and `frontend/`
+are used by about a third each, and the rest name the product (`site/`, `console/`, `portal/`,
+`dashboard/`, `client/`). Pick by the rule that makes the tree read as one thing:
+
+| Directory | Reads as | Use when |
+|---|---|---|
+| `frontend/` | the other toolchain | the Go module is under `backend/` — the pair is the point |
+| `web/` | the web face of the product | the module is at the repo root and the SPA is a compiled asset |
+| `ui/` | the UI of this tool | the SPA is embedded with `//go:embed` (desktop-ish or single-binary tools) |
+| `site/` `console/` `portal/` `dashboard/` | a product surface with its own name | the product has several, or the name is part of the vocabulary |
+| `web_src/` | sources only, build at the root | the build system must own the root (no `package.json` inside) |
+
+`frontend/` without a `backend/` reads as a leftover; `backend/` + `web/` reads as a rename in
+progress. Keep the pair consistent, and rename the *pair*, not one half.
+
 ## Smells that mean the layout needs review
 
 - Packages named `utils`, `common`, `helpers`, `models`, `types`, `shared`.
@@ -183,6 +252,9 @@ reason to adopt layers up front.
 3. Rename layers mechanically (one stage, one guard).
 4. Split domain from adapters context by context, last, each behind its own guard test, and
    outside windows where other sessions are editing the same files.
+5. Normalize the module boundary last: module root, module path, and the operational directories
+   (`config/`, `bin/`, `scripts/`) at the repo root. It touches CI, Docker files and every doc, so
+   do it in one window with no functional change, and land no other refactor in it.
 
 ## Per-project review checklist
 
@@ -196,6 +268,12 @@ reason to adopt layers up front.
 - [ ] Does each module split have a concrete reason (release, deps, team, extraction)?
 - [ ] Which process types exist (API, CLI, worker), and is wiring per binary?
 - [ ] Where do generated code, SQL and migrations live, and are they committed?
+- [ ] Is the module rooted at the subtree that holds only Go, and does the module path name that
+      directory?
+- [ ] Do `cmd/<binary>` and `internal/<binary>` pair up, one per process?
+- [ ] Do `config/`, `bin/`, `scripts/`, `docs/` and `deploy/` exist once, at the repo root?
+- [ ] Does the frontend build get copied into the embed directory, and is that step documented?
+- [ ] Does any adapter import another transport's SDK?
 - [ ] How do contexts communicate; where do integration events and contracts live?
 - [ ] Are directories aligned with `CODEOWNERS` and path-filtered CI?
 - [ ] Which smells above are present today?
