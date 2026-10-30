@@ -170,8 +170,10 @@ Rules, in the order they bite:
    (`github.com/<owner>/<repo>/backend`, not `github.com/<owner>/<repo>` or a bare `myapp`). A path
    that points above its own `go.mod` makes `go install`/`go get` resolve to a directory with no
    module, and every import path lies about where the file is.
-3. **`cmd/<binary>` and `internal/<binary>` come in pairs.** `main.go` holds wiring only; the
-   composition root of the same name is where the graph and the lifecycle live.
+3. **Each binary owns a composition root; `main.go` holds wiring only.** The root is named for
+   the binary (`internal/<binary>`) or for what it is (`internal/bootstrap`, `internal/api`) — the
+   same list as the cross-cutting rule below. With one binary a single shared root is enough;
+   with two or more, give each binary its own so a change to one lifecycle cannot disturb another.
 4. **Contexts stay flat** at the module root, implementations as sibling subpackages
    (`postgres/`, `transport/mcp/`, `remote/grpc/`). Group under `ledger/`, `billing/` only past
    ~7 contexts — see layout 5.
@@ -270,7 +272,7 @@ reason to adopt layers up front.
 - [ ] Where do generated code, SQL and migrations live, and are they committed?
 - [ ] Is the module rooted at the subtree that holds only Go, and does the module path name that
       directory?
-- [ ] Do `cmd/<binary>` and `internal/<binary>` pair up, one per process?
+- [ ] Does each binary have a wiring-only `main.go` and its own composition root (`internal/<binary>` or a named one)?
 - [ ] Do `config/`, `bin/`, `scripts/`, `docs/` and `deploy/` exist once, at the repo root?
 - [ ] Does the frontend build get copied into the embed directory, and is that step documented?
 - [ ] Does any adapter import another transport's SDK?

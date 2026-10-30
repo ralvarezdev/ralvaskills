@@ -15,6 +15,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `rsk new` no longer glues `@.rsk/CLAUDE.md` onto the last line of a `CLAUDE.md` that lacks a trailing newline.
 
 ### Changed
+- **go-architect** (1.13.1): the app-repo rule for binaries no longer requires `internal/<binary>` to exist for every `cmd/<binary>` — a shared `internal/bootstrap` (or a named root such as `internal/api`) is allowed, matching the cross-cutting composition-root rule. The review checklist asks the same.
 - **go-architect** (1.13.0): adds the app-repo shape for a Go module with a SPA to `LAYOUTS.md` — `backend/` module root, module path matching its directory, `cmd/<binary>` paired with `internal/<binary>`, operational dirs at the root only, contracts as the source of truth with generated artefacts under `internal/`, the deliberate copy of the frontend build into the embed dir, and the adapter-never-imports-another-adapter's-SDK rule — plus the frontend-directory naming table (`frontend/`, `web/`, `ui/`, product-named, `web_src/`), five review-checklist items and the module-boundary step in the migration order. The new description mentions the repo-shape case so the skill triggers on layout questions.
 - **codebase-hygiene-reviewer** (1.1.0): adds a `jscpd` recipe for duplication across modules and in non-code files; `dupl` stays the single-module Go tool.
 - **go-architect** (1.11.0): the dead-code guidance now covers shared libraries with several consumers.
