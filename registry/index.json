@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at": "2026-10-30T18:53:14Z",
+  "generated_at": "2026-10-30T18:54:34Z",
   "skills": {
     "api-contract-reviewer": {
       "name": "api-contract-reviewer",
@@ -300,7 +300,7 @@
     "go-architect": {
       "name": "go-architect",
       "description": "Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout, and the app-repo shape for a Go module with a SPA (backend/ + frontend/, module path, cmd/internal pairing). Use when writing, reviewing, or scaffolding Go code, or deciding where a Go module and its frontend live in a repo.",
-      "latest": "1.13.0",
+      "latest": "1.13.1",
       "versions": {
         "1.0.0": {
           "version": "1.0.0",
@@ -331,6 +331,11 @@
           "version": "1.13.0",
           "published_at": "2026-10-30T18:53:14Z",
           "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.13.0/go-architect-v1.13.0.tar.gz"
+        },
+        "1.13.1": {
+          "version": "1.13.1",
+          "published_at": "2026-10-30T18:54:34Z",
+          "archive_url": "https://github.com/ralvarezdev/ralvaskills/releases/download/go-architect@v1.13.1/go-architect-v1.13.1.tar.gz"
         },
         "1.2.0": {
           "version": "1.2.0",
