@@ -1,7 +1,7 @@
 ---
 name: go-architect
-version: 1.13.3
-description: Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout, and the app-repo shape for a Go module with a SPA (backend/ + frontend/, module path, cmd/internal pairing). Use when writing, reviewing, or scaffolding Go code, or deciding where a Go module and its frontend live in a repo.
+version: 1.14.0
+description: Go 1.27.1 architectural standards — memory-aligned structs, typed enums, interface design, goroutine safety, iterators, idiomatic errors, sqlx + //go:embed SQL pattern, go.work multi-module layout, and the two app-repo shapes for a Go module with a SPA (module at the root + web/, or backend/ + frontend/, module path, cmd/internal pairing). Use when writing, reviewing, or scaffolding Go code, or deciding where a Go module and its frontend live in a repo.
 ---
 
 # Go Architecture & Domain Modeling
@@ -243,7 +243,7 @@ Principles that hold across them:
 - **Group contexts at the root by area** (not a generic `contexts/`) past ~7; extract a group as a module past ~8–10 or with its own team.
 - **No infrastructure in the model; wire schemas in `contracts/`; no stutter; name the composition root for what it is, not `app`.**
 - **Layer-first (`core/<ctx>`, `services/<ctx>`, `adapters/<ctx>`) is a valid but suggestive option** — it trades context extractability for a trivial rank rule.
-- **App repo with a SPA: one module under `backend/`, path matching that directory, SPA as a sibling `frontend/`, each binary with a wiring-only `main.go` and its own composition root, operational dirs (`config/`, `bin/`, `scripts/`) only at the root.** The canonical tree, the frontend-directory naming rule and the copy step for the embedded build are in [LAYOUTS.md](LAYOUTS.md#app-repo-with-a-spa--the-recommended-shape).
+- **App repo with a SPA: two shapes, pick one per repo and record it.** (A) the module at the repo root with the SPA in `web/`, the ecosystem majority; (B) `backend/` with a sibling `frontend/`, for monorepos where the SPA is the product. Both: the module path names the directory that holds `go.mod`, one composition root per binary with a wiring-only `main.go`, operational dirs (`config/`, `bin/`, `scripts/`) only at the root, `go.work` only for real second modules (never a single `use .`), binaries named for the process, and a `.gitkeep` for every directory an embed or a bind mount needs. Trees, the choice table, the frontend-directory naming rule and the embed routes are in [LAYOUTS.md](LAYOUTS.md#app-repo-with-a-spa--two-shapes).
 - **An adapter never imports another adapter's SDK** — a REST client shared with a CLI must not pull the MCP SDK for a helper; the caller owns credential resolution.
 
 ## Canonical libraries

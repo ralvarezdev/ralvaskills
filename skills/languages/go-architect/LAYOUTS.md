@@ -135,68 +135,127 @@ Layout follows team boundaries. Align top-level directories with `CODEOWNERS` en
 
 ## Non-Go parts of the repo
 
-- **Polyglot monorepo:** put Go under one subtree (`backend/`, `go/`) with `go.mod` or `go.work` at its root, so Go tooling and module paths are unambiguous.
+- **Polyglot monorepo:** keep the Go module in one place with `go.mod` (or `go.work`) at its root, so Go tooling and module paths are unambiguous. The repo root (shape A) and a `backend/` subtree (shape B) both do — see *App repo with a SPA* below.
 - **Ops and tooling:** `deploy/`, `scripts/`, `tools/` (build-time Go tools, pinned via `tools.go` or the `tool` directive), `docs/`. Keep them out of `cmd/` and `internal/`.
 - **The root** holds `go.mod`/`go.work`, the task runner file, `README`, `AGENTS.md`, CI config and `CODEOWNERS` — little else.
 
-### App repo with a SPA — the recommended shape
+### App repo with a SPA — two shapes
 
-Most app repos pair a Go module with a JavaScript/TypeScript single-page app. Default to the
-shape below when that is the case: one Go module, one SPA, wire contracts beside them.
+Most app repos pair a Go module with a JavaScript/TypeScript single-page app. Two shapes fit that;
+neither is universal, and the ecosystem does not settle it: of ~30 active Go repos with a SPA
+checked, roughly nine in ten put the module at the repo root, and the rest use a `backend/`-style
+subtree. Pick per repo from the signals below and **write the choice down** (an ADR or the repo's
+`AGENTS.md`).
+
+#### Shape A — the module at the repo root
 
 ```
 repo/
-├── backend/                 the Go module: go.mod lives here, nothing above it
-│   ├── go.mod  go.sum  sqlc.yaml  .air.toml
-│   ├── Dockerfile[.…]
-│   ├── cmd/<binary>/        main.go only: flags/env, then internal/<binary>
-│   ├── internal/<binary>/   composition root per binary, plus private helpers
-│   ├── <ctx>/               bounded contexts, flat; postgres/, transport/<proto> as siblings
-│   ├── kernel/              tiny shared kernel (value objects only)
-│   ├── pkg/                 only code another repo could import
-│   └── db/                  migrations
-├── frontend/                the SPA; its build reaches the binary by copy or a local module
-├── contracts/               source of truth: openapi/, proto/, schema/
-├── config/  bin/  scripts/  docs/  deploy/  mockups/
+├── go.mod  go.sum  sqlc.yaml  .air.toml  .golangci.yml
+├── Dockerfile[.worker|.mcp]
+├── cmd/<binary>/            main.go only: flags/env, then internal/<binary>
+├── internal/<binary>/       composition root per binary, plus private helpers
+├── internal/webui/          //go:embed all:dist + the SPA handler
+├── <ctx>/                   bounded contexts, flat; postgres/, transport/<proto> as siblings
+├── kernel/  pkg/  db/
+├── contracts/{openapi,proto,schema}/
+├── web/                     the SPA; its build is copied into internal/webui/dist
+├── config/  bin/  scripts/  docs/  deploy/
 └── AGENTS.md  README.md  CHANGELOG.md  Taskfile.yml  mise.toml
 ```
 
-Rules, in the order they bite:
+Reads as: the repo *is* the Go project and the web UI is one of its faces. `go build ./...`,
+`go test ./...` and `go list ./...` cover everything that matters, the module path is the repo
+path, and no segment exists only to separate toolchains.
 
-1. **One module, rooted at the subtree that holds only Go.** `backend/` when the repo has another
-   toolchain, the repo root when it is Go only. Add a second module only for one of the reasons in
-   *Module count and versioning*; a big tree is not one.
-2. **The module path names the directory that holds `go.mod`**
-   (`github.com/<owner>/<repo>/backend`, not `github.com/<owner>/<repo>` or a bare `myapp`). A path
-   that points above its own `go.mod` makes `go install`/`go get` resolve to a directory with no
-   module, and every import path lies about where the file is.
-3. **Each binary owns a composition root; `main.go` holds wiring only.** The root is named for
-   the binary (`internal/<binary>`) or for what it is (`internal/bootstrap`, `internal/api`) — the
-   same list as the cross-cutting rule below. With one binary a single shared root is enough;
-   with two or more, give each binary its own so a change to one lifecycle cannot disturb another.
-4. **Contexts stay flat** at the module root, implementations as sibling subpackages
-   (`postgres/`, `transport/mcp/`, `remote/grpc/`). Group under `ledger/`, `billing/` only past
-   ~7 contexts — see layout 5.
-5. **Operational directories exist once, at the repo root:** `config/`, `bin/`, `scripts/`,
-   `docs/`, `deploy/`. A `backend/scripts/` next to a root `scripts/` is two homes for one concern,
-   and `backend/config/` splits configuration by language instead of by scope.
-6. **Contracts are the source of truth; generated code lives inside the module; embedded assets
-   live under `internal/`.** Do not mirror `contracts/openapi/` as a second `openapi/` at the
-   module root: put the merged artefact and its `embed.go` in `internal/<name>/` so the two are not
+Choose it when the Go binary is the product (API, CLI, worker, MCP server), one team owns the
+repo, and the SPA is a compiled asset the binary serves. Costs: a browser-facing directory (`web/`)
+sits beside `cmd/` and `internal/`; a large repo needs its contexts grouped (layout 5) so the root
+stays readable.
+
+#### Shape B — `backend/` with a sibling `frontend/`
+
+```
+repo/
+├── backend/                 the Go module: go.mod lives here
+│   ├── cmd/  internal/  <ctx>/  kernel/  pkg/  db/
+│   └── go.mod  go.sum  sqlc.yaml
+├── frontend/                the SPA, its own toolchain
+├── contracts/  config/  bin/  scripts/  docs/  deploy/
+└── AGENTS.md  README.md  CHANGELOG.md  Taskfile.yml  mise.toml
+```
+
+Reads as: two toolchains side by side, each with its own root. Choose it when the frontend is the
+primary product or another team owns it, when the root already holds several non-Go trees
+(`contracts/`, mobile, infra) and the Go side should not add to the top level, or when the Go code
+is a service consumed from outside the repo and the subtree name is part of its vocabulary.
+
+Costs: every Go path carries `backend/` (imports, CI working directories, Docker `COPY`, ignore
+files, docs), the module path must include it, and a reader crosses one more level. Rename the
+pair, never one half.
+
+#### Choose between them
+
+| Question | Shape A | Shape B |
+|---|---|---|
+| Module path | `github.com/<owner>/<repo>` | `github.com/<owner>/<repo>/backend` |
+| SPA directory | `web/` | `frontend/` |
+| Embed route | `web/dist → internal/webui/dist` | `frontend/dist → backend/internal/static/dist` |
+| `go build ./...` covers | everything | the module only (plus a `go.work` if other modules exist) |
+| Reads as | a Go project with a UI | two projects in one repo |
+| Ecosystem | the majority of flagship Go+SPA repos | monorepos where the SPA is the product |
+
+Moving from one to the other is a mechanical window (module root, module path, ignore files, CI,
+Docker, docs) and changes no behaviour.
+
+#### Rules that hold in both shapes
+
+1. **One module, rooted at the directory that holds only Go.** Shape A: the repo root. Shape B:
+   `backend/`. Add a second module only for one of the reasons in *Module count and versioning*; a
+   big tree is not one.
+2. **`go.work` only for real second modules, never for a single entry.** A workspace whose only
+   line is `use .` (or `use ./backend`) is friction: it changes how versions resolve, can hide a
+   missing `go.sum` entry, and buys nothing. Delete it and keep the module's own `go.mod`. A
+   `go.work.sum` is meaningful only next to a `go.work`; without one, remove it.
+3. **The module path names the directory that holds `go.mod`**
+   (`github.com/<owner>/<repo>` in shape A, `github.com/<owner>/<repo>/backend` in shape B, never a
+   bare `myapp`). A path that points above its own `go.mod` makes `go install`/`go get` resolve to
+   a directory with no module, and every import path lies about where the file is.
+4. **Each binary owns a composition root; `main.go` holds wiring only.** The root is named for the
+   binary (`internal/<binary>`) or for what it is (`internal/bootstrap`, `internal/api`). With one
+   binary a shared root is enough; with two or more, give each its own so one lifecycle cannot
+   disturb another.
+5. **Contexts stay flat** at the module root, implementations as sibling subpackages (`postgres/`,
+   `transport/mcp/`, `remote/grpc/`). Group under `ledger/`, `billing/` only past ~7 contexts — see
+   layout 5.
+6. **Operational directories exist once, at the repo root:** `config/`, `bin/`, `scripts/`, `docs/`,
+   `deploy/`. A `backend/scripts/` next to a root `scripts/` is two homes for one concern, and
+   `backend/config/` splits configuration by language instead of by scope.
+7. **Contracts are the source of truth; generated code lives inside the module; embedded assets
+   live under `internal/`.** Do not mirror `contracts/openapi/` as a second `openapi/` at the module
+   root: put the merged artefact and its `embed.go` in `internal/<name>/` so the two are not
    mistaken for each other.
-7. **The frontend build reaches the binary one of two ways — pick one and record it.** `//go:embed`
-   cannot escape its package directory, so a sibling `frontend/` has two valid options:
-   - **Copy (single module):** `cp -r frontend/dist internal/static/dist` in the task runner, CI
-     and the Dockerfile. Simple, but the step lives in three places that must stay in step.
-   - **Frontend-local module:** a `go.mod` + `embed.go` inside `frontend/` embedding `all:dist`.
-     No copy step, and the extra module keeps `go build ./...` from walking `node_modules` (Go
-     skips `.`/`_`/`testdata`, not `node_modules`).
+8. **The frontend build reaches the binary one of two ways — pick one and record it.** `//go:embed`
+   cannot escape its package directory, so the SPA has two valid routes:
+   - **Copy:** `cp -r web/dist internal/webui/dist` in the task runner, CI and the Dockerfile.
+     Simple, but the step lives in three places that must stay in step.
+   - **Frontend-local module:** a `go.mod` + `embed.go` inside `web/` embedding `all:dist`. No copy
+     step, and the extra module keeps `go build ./...` from walking `node_modules` (Go skips
+     `.`/`_`/`testdata`, not `node_modules`).
 
    Either is fine; write the choice down and do not mix them. Never embed a mutable build directory
-   from the module root, and never let the *backend* module reach into `frontend/`.
-8. **An adapter never imports another adapter's SDK.** A REST client used by a CLI or a worker must
-   not depend on the MCP SDK (or any other transport's) for a helper: the caller owns token
-   resolution and passes it in. Otherwise every binary in the repo links every transport.
+   from the module root, and never let the Go module reach into the SPA's sources.
+9. **Name the binaries for the process**, not for the repo: `server`, `api`, `worker`, `mcp`,
+   `<tool>`. A CLI called `app` beside a server called `app-server` costs a paragraph in every doc;
+   `server` + `finance` + `mcp` needs none. Task namespaces (`bench:*`, `devtrack:*`) may name the
+   runs; the executable takes the process name.
+10. **Keep the directories that must exist.** `//go:embed` fails at compile time on a missing
+    directory, and Docker creates a root-owned bind mount from one, so track the directory and
+    ignore its contents: `internal/webui/dist/.gitkeep`, `data/.gitkeep`, `jobs/.gitkeep`,
+    `backups/.gitkeep`.
+11. **An adapter never imports another adapter's SDK.** A REST client used by a CLI or a worker must
+    not depend on the MCP SDK (or any other transport's) for a helper: the caller owns token
+    resolution and passes it in. Otherwise every binary in the repo links every transport.
 
 #### Naming the frontend directory
 
