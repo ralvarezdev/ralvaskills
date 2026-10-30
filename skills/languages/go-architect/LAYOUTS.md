@@ -155,7 +155,7 @@ repo/
 │   ├── kernel/              tiny shared kernel (value objects only)
 │   ├── pkg/                 only code another repo could import
 │   └── db/                  migrations
-├── frontend/                the SPA; its build output is copied into the Go embed dir
+├── frontend/                the SPA; its build reaches the binary by copy or a local module
 ├── contracts/               source of truth: openapi/, proto/, schema/
 ├── config/  bin/  scripts/  docs/  deploy/  mockups/
 └── AGENTS.md  README.md  CHANGELOG.md  Taskfile.yml  mise.toml
@@ -184,11 +184,16 @@ Rules, in the order they bite:
    live under `internal/`.** Do not mirror `contracts/openapi/` as a second `openapi/` at the
    module root: put the merged artefact and its `embed.go` in `internal/<name>/` so the two are not
    mistaken for each other.
-7. **A frontend build is copied, never reached with `..`.** `//go:embed` cannot escape its
-   package directory, so a sibling `frontend/` needs an explicit copy step
-   (`cp -r frontend/dist internal/static/dist`) in the task runner, CI and the Dockerfile. That
-   step is deliberate; do not "simplify" it away, and do not put a Go package inside `frontend/`
-   to avoid it.
+7. **The frontend build reaches the binary one of two ways — pick one and record it.** `//go:embed`
+   cannot escape its package directory, so a sibling `frontend/` has two valid options:
+   - **Copy (single module):** `cp -r frontend/dist internal/static/dist` in the task runner, CI
+     and the Dockerfile. Simple, but the step lives in three places that must stay in step.
+   - **Frontend-local module:** a `go.mod` + `embed.go` inside `frontend/` embedding `all:dist`.
+     No copy step, and the extra module keeps `go build ./...` from walking `node_modules` (Go
+     skips `.`/`_`/`testdata`, not `node_modules`).
+
+   Either is fine; write the choice down and do not mix them. Never embed a mutable build directory
+   from the module root, and never let the *backend* module reach into `frontend/`.
 8. **An adapter never imports another adapter's SDK.** A REST client used by a CLI or a worker must
    not depend on the MCP SDK (or any other transport's) for a helper: the caller owns token
    resolution and passes it in. Otherwise every binary in the repo links every transport.
@@ -274,7 +279,7 @@ reason to adopt layers up front.
       directory?
 - [ ] Does each binary have a wiring-only `main.go` and its own composition root (`internal/<binary>` or a named one)?
 - [ ] Do `config/`, `bin/`, `scripts/`, `docs/` and `deploy/` exist once, at the repo root?
-- [ ] Does the frontend build get copied into the embed directory, and is that step documented?
+- [ ] Does the frontend build reach the binary by the documented route (copy into the embed dir, or a frontend-local module)?
 - [ ] Does any adapter import another transport's SDK?
 - [ ] How do contexts communicate; where do integration events and contracts live?
 - [ ] Are directories aligned with `CODEOWNERS` and path-filtered CI?

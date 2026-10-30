@@ -15,8 +15,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `rsk new` no longer glues `@.rsk/CLAUDE.md` onto the last line of a `CLAUDE.md` that lacks a trailing newline.
 
 ### Changed
+- **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - **go-architect** (1.13.1): the app-repo rule for binaries no longer requires `internal/<binary>` to exist for every `cmd/<binary>` — a shared `internal/bootstrap` (or a named root such as `internal/api`) is allowed, matching the cross-cutting composition-root rule. The review checklist asks the same.
-- **go-architect** (1.13.0): adds the app-repo shape for a Go module with a SPA to `LAYOUTS.md` — `backend/` module root, module path matching its directory, `cmd/<binary>` paired with `internal/<binary>`, operational dirs at the root only, contracts as the source of truth with generated artefacts under `internal/`, the deliberate copy of the frontend build into the embed dir, and the adapter-never-imports-another-adapter's-SDK rule — plus the frontend-directory naming table (`frontend/`, `web/`, `ui/`, product-named, `web_src/`), five review-checklist items and the module-boundary step in the migration order. The new description mentions the repo-shape case so the skill triggers on layout questions.
+- **go-architect** (1.13.0): adds the app-repo shape for a Go module with a SPA to `LAYOUTS.md` — `backend/` module root, module path matching its directory, `cmd/<binary>` paired with `internal/<binary>`, operational dirs at the root only, contracts as the source of truth with generated artefacts under `internal/`, the documented route from the frontend build to the binary, and the adapter-never-imports-another-adapter's-SDK rule — plus the frontend-directory naming table (`frontend/`, `web/`, `ui/`, product-named, `web_src/`), five review-checklist items and the module-boundary step in the migration order. The new description mentions the repo-shape case so the skill triggers on layout questions.
 - **codebase-hygiene-reviewer** (1.1.0): adds a `jscpd` recipe for duplication across modules and in non-code files; `dupl` stays the single-module Go tool.
 - **go-architect** (1.11.0): the dead-code guidance now covers shared libraries with several consumers.
 - **react-architect** (1.1.0): adds `tsc --noEmit` and `knip` as static checks.
@@ -33,6 +34,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Skill descriptions are now read for local and official skills too, not only registry ones, and shown in the catalog.
 
 ### Changed
+- **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - Re-running `rsk new` on an already configured project now proceeds instead of returning early, so the MCP registration can be refreshed.
 
 ## v3.2.1 (2026-10-01)
@@ -63,6 +65,7 @@ Maintenance release.
 - In the interactive session, `list` rows get pin (`p`) and unpin (`n`) actions. Destructive commands show a confirm screen, invalid form input is reported on the field with the other values kept, recent commands and form values are remembered, and help renders as Markdown. Help is grouped by command category, with `help` and `completion` under "Other".
 
 ### Changed
+- **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - `rsk claude tools` is now `rsk tools <allow|deny|list|remove>`, with `--for` (default `claude-code`).
 - The unused `catalog --stack` flag was removed.
 
@@ -76,6 +79,7 @@ Maintenance release.
 - `-o json` in the session shows the raw payload of the result view.
 
 ### Changed
+- **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - Tables, banner and palette are now drawn with termkit, and the banner wordmark gradient follows the active palette. The Claude tools list and `destroy` plan are shown as tables.
 
 ## v2.0.4 (2026-09-26)
@@ -94,6 +98,7 @@ Maintenance release.
 - `registry-remove` maintainer tool for pruning skills or versions from the registry.
 
 ### Changed
+- **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - Go toolchain requirement raised to 1.27.1.
 
 ## v2.0.1 (2026-09-22)
@@ -107,6 +112,7 @@ Maintenance release.
 - `-o`/`--output text|json` on `rsk status` and `rsk claude tools list`, so every read command supports it.
 
 ### Changed
+- **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - `rsk list --global` now has a Tool column, so a skill installed for several tools shows one labelled row per tool.
 
 ### Fixed
@@ -140,6 +146,7 @@ Maintenance release. No change to the `rsk` binary's behaviour.
 ## v1.3.2 (2026-06-10)
 
 ### Changed
+- **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - `rsk new` on an existing project now adds newly requested tools to `rsk.mod` instead of failing with "project already exists", and applies the already pinned skills to the new tools. It reports "updated" when it changes something and "already configured" when nothing needed changing.
 
 ### Fixed
@@ -160,6 +167,7 @@ Maintenance release.
 - `rsk destroy` lists what it will remove (the `.rsk/` folder, pinned skill imports and skill links) and asks for confirmation first.
 
 ### Changed
+- **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - `rsk init` now uses the shared prompt components, with a multi-select for the AI tools. Cancelling a prompt (Ctrl+C) exits silently with status 130.
 
 ## v1.1.0 (2026-05-23)
@@ -168,6 +176,7 @@ Maintenance release.
 - `rsk claude tools [list|allow|deny|remove]` manages tool permissions in a project's `.claude/settings.json`. It marks each tool as allowed, denied or not configured, and cleans up empty settings.
 
 ### Changed
+- **go-architect** (1.13.2): rule 7 now offers both routes for the frontend build — copy `dist` into an embed dir, or give `frontend/` its own module with `embed.go` (which also keeps `go build ./...` out of `node_modules`) — and asks for the choice to be recorded instead of forbidding the second one.
 - Project skill links now go directly into `<project>/.claude/skills/` instead of an intermediate `.rsk/skills/` folder, and `rsk new` no longer creates `.rsk/skills/`. OpenCode reads the same folder. The generated `.rsk/CLAUDE.md` imports now point to `../.claude/skills/<name>/SKILL.md`; projects created with 1.0.x need their skills reinstalled to move the links.
 - `rsk destroy` now also removes the skill links it installed in the project.
 
